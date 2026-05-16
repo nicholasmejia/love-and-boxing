@@ -1,0 +1,75 @@
+LOVE AND BOXING
+
+Working title: Love and Boxing: Heavy Weight Hearts Collide!
+
+Premise: You are Gorgeous, the worlds most beautiful and handsome boxer, determined to conquer both the ring and the hearts of your opponents.  Enter the ring, and get to know your opponent; connect with their feelings and then connect your fist to theier jaw!  No mercy, no love lost!
+
+Gameplay: Players compete against an opponent for 2 five minute rounds where they must block their opponents punches by pressing an increasing number of inputs in the right order, akin to playing "Simon", the memory game.  The player will have 3 seconds between each input to enter the next one, after which the enemy will punch the player, subtracting 1 health point, and the input requirements reset. Hitting the incorrect input will result in being punched and losing a health point, along with an input reset.  While the player is occupied with the memory game, they must solve a "puzzle" of sorts by answering a question related to the opponent.  Some text dialogue from the opponent will offer the player details about their personality and you will have 3 dialogue options to respond to the information with.  One will be a neutral answer that just advances you to the next puzzle/question, one will be a negative that results in the player immediately getting punched (which cancels any inputs the player has already completed and resets the input requirements) and takes 1 health point away from the player, and one that is positive which causes the opponent to drop their guard (blushing and getting embarased) enabling you to attack them.
+
+When entering the attack phase from the defend phase as described in the previous paragraph, all inputs requirements are dropped immediately to start a fresh new round of them for the attack phase.
+
+In order to attack the opponent, the player will be given a new input (follows the same rules as the blocking input memory game, where you have 3 seconds to hit the correct input, however a failed input will not subtract a health point here) which after, they will gain a combo point.  For every combo point the player has, it will give the player an additional command to input for the next attack phase after answering a riddle/question correctly.  Once a player has 3 combo points and answers the attack inputs correctly it will knock the opponent down, initiating a countdown sequence before the game loop repeats from the beginning.  A player must knock the enemy opponent down three times total in order to win.
+
+If a player fails any defense input chain and receives damage, they will lose their combo points and need to get three again to perform the next knock down.  Missing an input for your attack phase will not subtract a combo point (but I might change my mind on this if the game is too easy). Knock downs do not get reset, so once an opponent has been knocked down, it will always count against them for that round. Once the first round is over, one knockdown will subtracted from your knockdown counter but the player will also get back 1 health point.  If the player does not knock the opponent down 3 times and get the KO before the second 5 minute round ends, the game will end in a draw.  If the player loses all 5 of their health points, the game ends in a loss.
+
+Specifications:
+ Input:
+  - For defense and attack phase inputs, WASD treated as directional keys
+  	- W for head attack and defense
+  	- A for left hook attacks and defense
+  	- D for right hook attacks and defense
+  	- S for body blow attacks and defense
+  - For solving riddles and questions, IJKL will be used in a similar pattern
+  	- I highlights the middle answer
+  	- J highlights the left answer
+  	- L highlights the right answer
+  	- K submits your answer (this allows a user time to rethink an answer)
+
+  Gameplay UI:
+   - Opponent's character sprite will be displayed in the middle of the screen
+   	- Consists of a body, the left arm, and the right arm.
+   		- Depending on the action performed, a different sprite will be showed and slightly animated to communicate actions
+   - Player character only consists of two sprites, right arm and left arm
+   	- The arms will be displayed in the bottom corners of the screen to give the impression of a boxing guard stance
+   	 - When defending and attacking, the sprites will change to indicate blocking the enemies punch animations and causing damage when attacking which also changes with the opponents sprites to show damage inflicted.
+   - Timer at the top middle of screen, 5:00 minutes down to 0:00 seconds
+   - Player health bar in the top left, indicated by 5 hearts
+   	- as player takes damage they dissappear
+   	- after the first round ends, 1 heart is given back
+   - Combo meter is directly below player health, indicated by an x1, x2, and x3
+   - Knockdown meter in the top right of the screen, indicated by an icon to be decided on later
+   	- 1 more will be added per knockdown
+   - WASD defense/attack inputs required will be flashed in a WASD keyboard shape pattern:
+   	- W will be displayed over the enemeies head
+   	- A will be displayed to the left of enemies body
+   	- D will be displayed to the right of enemies body
+   	- S will be displayed in the middle of enemies body
+   - Riddle/Question content will be displayed in a bordered box in the middle of the screen, with the top of the box aligning with the X axis
+   	- Answers to the riddle/question will be in 3 bordered boxes directly below the riddle/question box in a row
+   	- Any defense/attack inputs will always have a higher z-index than the riddle/question box content, as it will be considered priority input so it needs to be visible immediately
+   	- Announcement content that can be dispalyed directly in the middle of the screen for starting, and ending rounds:
+   		- Ready?
+   		- Fight!
+   		- Round Over!
+   		- Knock Down!
+   		- Knock Out!
+   		- You Win!
+   		- You Lose!
+   		- Draw!
+   	 - When taking damage, the screen should flash red then shake and slightly fade to a slightly transparent black and back to visible, to indicate taking damage
+   
+   Other elements:
+   	- Game scenes of note:
+   		- Title Screen
+   		- Menu Screen (start, options, credits, quit)
+   		- Level select
+   			- 3 levels of difficulty initially, you must beat the easier one to unlock the next harder level
+   		- Gameplay screen
+   		- Match results screen
+   	- Options and credits are lower priority, we can address those later
+
+MAke sure the screen size is configured to scale up for larger devices - mobile gameplay is not being considered for this pass, so priotize it for desktop and laptop screen sizes.
+
+
+
+
