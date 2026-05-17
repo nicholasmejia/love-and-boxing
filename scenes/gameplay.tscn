@@ -72,17 +72,17 @@ grow_horizontal = 2
 
 [node name="RiddleBox" parent="." instance=ExtResource("6_riddle")]
 layout_mode = 1
-anchors_preset = 8
+anchors_preset = 7
 anchor_left = 0.5
-anchor_top = 0.5
+anchor_top = 1.0
 anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -654.0
-offset_top = -347.0
-offset_right = 654.0
-offset_bottom = 347.0
+anchor_bottom = 1.0
+offset_left = -450.0
+offset_top = -542.0
+offset_right = 450.0
+offset_bottom = -40.0
 grow_horizontal = 2
-grow_vertical = 2
+grow_vertical = 0
 
 [node name="EndButton" type="Button" parent="."]
 layout_mode = 1

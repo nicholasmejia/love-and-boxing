@@ -5,11 +5,11 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/answer_card.tscn" id="3_answer"]
 
 [node name="RiddleBox" type="Control"]
-custom_minimum_size = Vector2(1308, 694)
+custom_minimum_size = Vector2(900, 502)
 layout_mode = 3
 anchors_preset = 0
-offset_right = 1308.0
-offset_bottom = 694.0
+offset_right = 900.0
+offset_bottom = 502.0
 script = ExtResource("1_riddle")
 
 [node name="Layout" type="VBoxContainer" parent="."]
@@ -19,10 +19,10 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-theme_override_constants/separation = 32
+theme_override_constants/separation = 24
 
 [node name="Body" type="TextureRect" parent="Layout"]
-custom_minimum_size = Vector2(1200, 375)
+custom_minimum_size = Vector2(900, 281)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 0
@@ -35,10 +35,10 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 60.0
-offset_top = 60.0
-offset_right = -60.0
-offset_bottom = -60.0
+offset_left = 45.0
+offset_top = 45.0
+offset_right = -45.0
+offset_bottom = -45.0
 grow_horizontal = 2
 grow_vertical = 2
 bbcode_enabled = true
@@ -52,10 +52,10 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 60.0
-offset_top = 60.0
-offset_right = -60.0
-offset_bottom = -60.0
+offset_left = 45.0
+offset_top = 45.0
+offset_right = -45.0
+offset_bottom = -45.0
 grow_horizontal = 2
 grow_vertical = 2
 expand_mode = 1
@@ -65,7 +65,7 @@ stretch_mode = 5
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 0
-theme_override_constants/separation = 24
+theme_override_constants/separation = 18
 alignment = 1
 
 [node name="Left" parent="Layout/Answers" instance=ExtResource("3_answer")]
