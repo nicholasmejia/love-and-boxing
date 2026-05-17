@@ -13,7 +13,7 @@ signal answer_submitted(outcome: int)
 
 var _highlight_index: int = 1  # I = middle by default
 var _typewriter_speed: float = 30.0
-var _typing: bool = false
+var _typewriter_generation: int = 0
 
 func display(prompt: DialoguePrompt) -> void:
 	if prompt.has_image_body():
@@ -31,15 +31,17 @@ func display(prompt: DialoguePrompt) -> void:
 	_refresh_highlight()
 
 func _start_typewriter(text: String) -> void:
-	_typing = true
-	_body_text.text = ""
-	var idx := 0
-	while idx < text.length() and _typing:
-		_body_text.text += text[idx]
+	_typewriter_generation += 1
+	var my_generation := _typewriter_generation
+	_body_text.text = text
+	_body_text.visible_characters = 0
+	var total := text.length()
+	while _body_text.visible_characters < total:
+		if my_generation != _typewriter_generation:
+			return
+		_body_text.visible_characters += 1
 		AudioBus.play_sfx("babble")
-		idx += 1
 		await get_tree().create_timer(1.0 / _typewriter_speed).timeout
-	_typing = false
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("menu_left"):
