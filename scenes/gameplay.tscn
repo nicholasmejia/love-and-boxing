@@ -1,6 +1,11 @@
-[gd_scene load_steps=2 format=3 uid="uid://b1gameplay001"]
+[gd_scene load_steps=7 format=3 uid="uid://b1gameplay001"]
 
 [ext_resource type="Script" path="res://scripts/gameplay.gd" id="1_gmply"]
+[ext_resource type="PackedScene" path="res://scenes/ui/heart_row.tscn" id="2_hearts"]
+[ext_resource type="PackedScene" path="res://scenes/ui/combo_meter.tscn" id="3_combo"]
+[ext_resource type="PackedScene" path="res://scenes/ui/knockdown_meter.tscn" id="4_kd"]
+[ext_resource type="PackedScene" path="res://scenes/ui/match_timer.tscn" id="5_timer"]
+[ext_resource type="PackedScene" path="res://scenes/ui/riddle_box.tscn" id="6_riddle"]
 
 [node name="Gameplay" type="Control"]
 layout_mode = 3
@@ -11,25 +16,75 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_gmply")
 
-[node name="Header" type="Label" parent="."]
+[node name="HeartRow" parent="." instance=ExtResource("2_hearts")]
 layout_mode = 1
-anchors_preset = 10
-anchor_right = 1.0
-offset_top = 80.0
-offset_bottom = 160.0
-grow_horizontal = 2
-horizontal_alignment = 1
-vertical_alignment = 1
-text = "Gameplay Stub"
+anchors_preset = 2
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = 24.0
+offset_top = 24.0
+offset_right = 24.0
+offset_bottom = 24.0
+grow_vertical = 1
 
-[node name="CenterContainer" type="CenterContainer" parent="."]
+[node name="ComboMeter" parent="." instance=ExtResource("3_combo")]
 layout_mode = 1
-anchors_preset = 15
+anchors_preset = 2
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = 24.0
+offset_top = 100.0
+offset_right = 152.0
+offset_bottom = 164.0
+grow_vertical = 1
+
+[node name="KnockdownMeter" parent="." instance=ExtResource("4_kd")]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -260.0
+offset_top = 24.0
+offset_right = -40.0
+offset_bottom = 104.0
+grow_horizontal = 0
+
+[node name="MatchTimer" parent="." instance=ExtResource("5_timer")]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -150.0
+offset_top = 16.0
+offset_right = 150.0
+offset_bottom = 120.0
+grow_horizontal = 2
+
+[node name="RiddleBox" parent="." instance=ExtResource("6_riddle")]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -500.0
+offset_top = -540.0
+offset_right = 500.0
+offset_bottom = -80.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="EndButton" type="Button" parent="."]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-
-[node name="EndButton" type="Button" parent="CenterContainer"]
-layout_mode = 2
+offset_left = -280.0
+offset_top = -80.0
+offset_right = -40.0
+offset_bottom = -40.0
+grow_horizontal = 0
+grow_vertical = 0
 text = "End Match (K)"
