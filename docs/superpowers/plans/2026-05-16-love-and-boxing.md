@@ -2217,7 +2217,9 @@ git add scripts/actors/player_gloves.gd scenes/actors/player_gloves.tscn
 git commit -m "feat: add PlayerGloves with idle/block/punch states and placeholder art"
 ```
 
-### Task 6.2: Opponent scene
+### Task 6.2: Opponent scene (single-sprite swap)
+
+> **Important architectural note (2026-05-17):** The opponent uses a **single body sprite** that gets swapped per action. There is no separate arm rig. Some directions are rendered by setting `flip_h = true` on the sprite (the canonical art is drawn for the gorilla's left side; mirroring covers the right side). See `CONTEXT.md` → "Mirroring Rules" for the authoritative mapping.
 
 **Files:**
 - Create: `scripts/actors/opponent.gd`
@@ -2229,77 +2231,119 @@ git commit -m "feat: add PlayerGloves with idle/block/punch states and placehold
 class_name Opponent
 extends Node2D
 
-enum BodyState { IDLE, HURT, GUARD_DOWN, KNOCKED_DOWN, TALKING }
-enum ArmSide { LEFT, RIGHT }
-enum ArmState { GUARD, PUNCH_HEAD, PUNCH_BODY, PUNCH_HOOK, DOWN }
-
-@onready var _body: Sprite2D = $Body
-@onready var _arm_left: Sprite2D = $ArmLeft
-@onready var _arm_right: Sprite2D = $ArmRight
-
-const _BODY_TOKEN := {
-    BodyState.IDLE: "idle",
-    BodyState.HURT: "hurt",
-    BodyState.GUARD_DOWN: "guard_down",
-    BodyState.KNOCKED_DOWN: "knocked_down",
-    BodyState.TALKING: "talking",
+enum Action {
+    IDLE,           # default + guard stance
+    GUARD_DOWN,     # arms lowered after positive riddle
+    KNOCKED_DOWN,   # KO'd
+    TALKING,        # optional dialogue overlay
+    SWING_HIGH,     # opponent telegraphs head punch (W defense)
+    SWING_MID,      # opponent telegraphs body punch (S defense)
+    SWING_LOW,      # opponent telegraphs hook punch (A or D defense)
+    HIT_HIGH,       # player W-attack lands
+    HIT_LOW,        # player A/S/D attack lands
 }
-const _ARM_TOKEN := {
-    ArmState.GUARD: "guard",
-    ArmState.PUNCH_HEAD: "punch_head",
-    ArmState.PUNCH_BODY: "punch_body",
-    ArmState.PUNCH_HOOK: "punch_hook",
-    ArmState.DOWN: "down",
+
+enum Direction {
+    LEFT,           # canonical sprite (designed for left-side action)
+    RIGHT,          # flip_h = true (used for D-direction inputs)
 }
+
+const _ACTION_TOKEN := {
+    Action.IDLE: "idle",
+    Action.GUARD_DOWN: "guard_down",
+    Action.KNOCKED_DOWN: "knocked_down",
+    Action.TALKING: "talking",
+    Action.SWING_HIGH: "swing_high",
+    Action.SWING_MID: "swing_mid",
+    Action.SWING_LOW: "swing_low",
+    Action.HIT_HIGH: "hit_high",
+    Action.HIT_LOW: "hit_low",
+}
+
+@onready var _sprite: Sprite2D = $Body
 
 var _slug: String = "tofu"
 
 func configure(opponent_slug: String) -> void:
     _slug = opponent_slug
-    set_body(BodyState.IDLE)
-    set_arm(ArmSide.LEFT, ArmState.GUARD)
-    set_arm(ArmSide.RIGHT, ArmState.GUARD)
+    set_action(Action.IDLE)
 
-func set_body(state: int) -> void:
-    _body.texture = _resolve("body", _BODY_TOKEN[state], "")
+func set_action(action: int, direction: int = Direction.LEFT) -> void:
+    _sprite.texture = _load_texture(action)
+    _sprite.flip_h = (direction == Direction.RIGHT)
 
-func set_arm(side: int, state: int) -> void:
-    var side_token := "left" if side == ArmSide.LEFT else "right"
-    var sprite := _arm_left if side == ArmSide.LEFT else _arm_right
-    sprite.texture = _resolve("arm", _ARM_TOKEN[state], side_token)
-
-func _resolve(part: String, action: String, side: String) -> Texture2D:
-    var filename := "opponent_%s_%s" % [_slug, part]
-    if side != "":
-        filename += "_%s" % side
-    filename += "_%s.png" % action
-    var path := "res://assets/sprites/opponents/%s/%s" % [_slug, filename]
+func _load_texture(action: int) -> Texture2D:
+    var token: String = _ACTION_TOKEN[action]
+    var path := "res://assets/sprites/opponents/%s/opponent_%s_body_%s.png" % [_slug, _slug, token]
     if ResourceLoader.exists(path):
         return load(path)
-    return _placeholder(part)
+    return _placeholder()
 
-func _placeholder(part: String) -> Texture2D:
-    var color := Color(0.3, 0.4, 0.7) if part == "body" else Color(0.5, 0.5, 0.5)
-    var size := Vector2i(360, 540) if part == "body" else Vector2i(120, 360)
-    var img := Image.create(size.x, size.y, false, Image.FORMAT_RGBA8)
-    img.fill(color)
+func _placeholder() -> Texture2D:
+    var img := Image.create(360, 540, false, Image.FORMAT_RGBA8)
+    img.fill(Color(0.3, 0.4, 0.7))
     return ImageTexture.create_from_image(img)
 ```
 
 - [ ] **Step 2: Build the scene**
 
 `scenes/actors/opponent.tscn`:
-- Node2D (root) `Opponent`, position (960, 400) (rough centering)
-  - Sprite2D `Body` — centered
-  - Sprite2D `ArmLeft` — position offset (-200, 0)
-  - Sprite2D `ArmRight` — position offset (200, 0)
+- Node2D (root) `Opponent`, position roughly centered horizontally (e.g. `(960, 400)`)
+  - Sprite2D `Body` — centered at the Node2D's origin
+
+That's the entire scene tree. No arm nodes.
 
 - [ ] **Step 3: Commit**
 
 ```bash
 git add scripts/actors/opponent.gd scenes/actors/opponent.tscn
-git commit -m "feat: add Opponent rig with body and arm state setters"
+git commit -m "feat: add Opponent single-sprite rig with action and direction setters"
 ```
+
+### Direction Mapping (used by later milestones)
+
+When later milestones need to drive opponent animation from a WASD direction, use this mapping. The `Opponent` script doesn't bundle this helper — callers (Gameplay) provide it because they own the WASD-to-Opponent-action policy.
+
+```gdscript
+# In gameplay.gd (will be added in M7/M10), helper:
+
+func _opponent_defense_pose(wasd: int) -> Array:
+    # Returns [Opponent.Action, Opponent.Direction]
+    match wasd:
+        SimonSequence.Direction.HEAD:  return [Opponent.Action.SWING_HIGH, Opponent.Direction.LEFT]
+        SimonSequence.Direction.BODY:  return [Opponent.Action.SWING_MID, Opponent.Direction.LEFT]
+        SimonSequence.Direction.LEFT:  return [Opponent.Action.SWING_LOW, Opponent.Direction.LEFT]
+        SimonSequence.Direction.RIGHT: return [Opponent.Action.SWING_LOW, Opponent.Direction.RIGHT]
+    return [Opponent.Action.IDLE, Opponent.Direction.LEFT]
+
+func _opponent_hit_pose(wasd: int) -> Array:
+    match wasd:
+        SimonSequence.Direction.HEAD:  return [Opponent.Action.HIT_HIGH, Opponent.Direction.LEFT]
+        SimonSequence.Direction.BODY:  return [Opponent.Action.HIT_LOW, Opponent.Direction.LEFT]
+        SimonSequence.Direction.LEFT:  return [Opponent.Action.HIT_LOW, Opponent.Direction.LEFT]
+        SimonSequence.Direction.RIGHT: return [Opponent.Action.HIT_LOW, Opponent.Direction.RIGHT]
+    return [Opponent.Action.IDLE, Opponent.Direction.LEFT]
+```
+
+### Migration note for later milestones (M7, M10, M14)
+
+The plan's later milestones were originally written against the old 3-part-rig API (`set_body`, `set_arm`, `BodyState`, `ArmSide`, `ArmState`). When implementing those milestones, translate as follows — the new API is the source of truth.
+
+| Old call | New call |
+|---|---|
+| `_opponent.set_body(Opponent.BodyState.IDLE)` | `_opponent.set_action(Opponent.Action.IDLE)` |
+| `_opponent.set_body(Opponent.BodyState.GUARD_DOWN)` | `_opponent.set_action(Opponent.Action.GUARD_DOWN)` |
+| `_opponent.set_body(Opponent.BodyState.KNOCKED_DOWN)` | `_opponent.set_action(Opponent.Action.KNOCKED_DOWN)` |
+| `_opponent.set_body(Opponent.BodyState.HURT)` | `_opponent.set_action(Opponent.Action.HIT_HIGH)` if W-attack, else `Action.HIT_LOW` (with `Direction.RIGHT` only for D-attack) |
+| `_opponent.set_body(Opponent.BodyState.TALKING)` | `_opponent.set_action(Opponent.Action.TALKING)` |
+| `_opponent.set_arm(side, ArmState.GUARD)` | no-op — `Action.IDLE` already represents the guard stance |
+| `_opponent.set_arm(side, ArmState.DOWN)` | no-op — `Action.GUARD_DOWN` already represents both arms lowered |
+| `_opponent.set_arm(side, ArmState.PUNCH_HEAD)` (M7 defense show) | `_opponent.set_action(Opponent.Action.SWING_HIGH)` |
+| `_opponent.set_arm(side, ArmState.PUNCH_BODY)` | `_opponent.set_action(Opponent.Action.SWING_MID)` |
+| `_opponent.set_arm(LEFT, ArmState.PUNCH_HOOK)` (A defense) | `_opponent.set_action(Opponent.Action.SWING_LOW, Opponent.Direction.LEFT)` |
+| `_opponent.set_arm(RIGHT, ArmState.PUNCH_HOOK)` (D defense) | `_opponent.set_action(Opponent.Action.SWING_LOW, Opponent.Direction.RIGHT)` |
+
+Anywhere the original plan called `set_arm` twice in a row (e.g. resetting both arms to GUARD), collapse to a single `set_action(Action.IDLE)` — the new sprite covers both arms in one frame.
 
 ### Task 6.3: Add background and actors to Gameplay
 

@@ -21,7 +21,7 @@ This file is the canonical vocabulary for the project. When code, plans, or art 
 ## Player and Opponent
 
 - **Gorgeous** — Player-controlled character. Only two visible sprites: left glove and right glove, positioned in the bottom corners.
-- **Opponent** — The AI character centered on screen. Three-part rig: body + left arm + right arm.
+- **Opponent** — The AI character centered on screen. Rendered as a **single body sprite** that is swapped per action (idle, swinging at each height, taking a hit at each height, guard-down, knocked-down). Some directions are drawn by horizontally flipping the canonical sprite — see Mirroring Rules below. (Earlier drafts of the design used a three-part rig of body + left arm + right arm; that has been retired.)
 - **Opponent Roster** — Three opponents, one per difficulty tier:
   - `tofu` — Tier 1 (easy)
   - `minty` — Tier 2 (medium)
@@ -57,23 +57,41 @@ All asset filenames are lowercase, underscore-separated, and follow these patter
 - `player_glove_right_punch.png`
 
 ### Opponent Body (per opponent: tofu, minty, sebastian)
-- `opponent_<name>_body_idle.png`
-- `opponent_<name>_body_hurt.png`
-- `opponent_<name>_body_guard_down.png`
-- `opponent_<name>_body_knocked_down.png`
-- `opponent_<name>_body_talking.png` (optional overlay during dialogue)
 
-### Opponent Arms (per opponent, per side)
-- `opponent_<name>_arm_left_guard.png`
-- `opponent_<name>_arm_left_punch_head.png`
-- `opponent_<name>_arm_left_punch_body.png`
-- `opponent_<name>_arm_left_punch_hook.png` (left hook = A defense)
-- `opponent_<name>_arm_left_down.png`
-- `opponent_<name>_arm_right_guard.png`
-- `opponent_<name>_arm_right_punch_head.png`
-- `opponent_<name>_arm_right_punch_body.png`
-- `opponent_<name>_arm_right_punch_hook.png` (right hook = D defense)
-- `opponent_<name>_arm_right_down.png`
+Single sprite, swapped per action. Nine sprites per opponent (no per-arm variants).
+
+| Sprite | Shown when |
+|---|---|
+| `opponent_<name>_body_idle.png` | Default stance; also serves as the guard pose (no separate guard sprite) |
+| `opponent_<name>_body_guard_down.png` | Both arms lowered, after the player gives a *right* riddle answer; opponent is exposed for the attack phase |
+| `opponent_<name>_body_knocked_down.png` | Knockdown interlude |
+| `opponent_<name>_body_talking.png` | Optional overlay while dialogue is typing (the typewriter cue) |
+| `opponent_<name>_body_swing_high.png` | Opponent telegraphs a head punch (W defense step) |
+| `opponent_<name>_body_swing_mid.png` | Opponent telegraphs a body punch (S defense step) |
+| `opponent_<name>_body_swing_low.png` | Opponent telegraphs a hook punch (A or D defense step) |
+| `opponent_<name>_body_hit_high.png` | Player W-attack lands on the opponent's head |
+| `opponent_<name>_body_hit_low.png` | Player A / S / D attack lands on the opponent's body |
+
+**Note:** there is no separate `body_hurt` sprite; `hit_high` and `hit_low` are the only hurt poses, chosen by player attack direction.
+
+### Mirroring Rules
+
+All opponent sprites are drawn as if the action happens on **the gorilla's left side** (player's right). When the action belongs on the other side, render the sprite with `flip_h = true`.
+
+Applies to:
+
+| Gameplay direction | Sprite | Mirror? |
+|---|---|---|
+| Opponent W-defense (head punch) | `body_swing_high` | No |
+| Opponent A-defense (left hook from opponent) | `body_swing_low` | No |
+| Opponent D-defense (right hook from opponent) | `body_swing_low` | **Yes** (flip_h) |
+| Opponent S-defense (body punch) | `body_swing_mid` | No |
+| Player W-attack (gorilla hit on top) | `body_hit_high` | No |
+| Player A-attack (gorilla hit on its right) | `body_hit_low` | No |
+| Player D-attack (gorilla hit on its left) | `body_hit_low` | **Yes** (flip_h) |
+| Player S-attack (gorilla hit center) | `body_hit_low` | No |
+
+Only the **D** directions are mirrored. Idle, guard-down, knocked-down, talking, and the swing_high / swing_mid / hit_high sprites are inherently centered or symmetric and never need mirroring.
 
 ### UI
 - Input prompts: `prompt_w.png`, `prompt_a.png`, `prompt_s.png`, `prompt_d.png`
