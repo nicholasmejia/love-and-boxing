@@ -179,9 +179,9 @@ git commit -m "chore: configure 1920x1080 base resolution and input map"
 
 Open Godot editor → AssetLib tab → search "GUT" → install "Gut - Godot Unit Test" by Bitwes (version 9.x, Godot 4 branch).
 
-If AssetLib is unavailable, manually clone:
+If AssetLib is unavailable, manually clone (note: GUT renamed the `godot_4` branch; use the `v9.6.0` tag for GUT 9.x):
 ```bash
-git clone --depth=1 --branch godot_4 https://github.com/bitwes/Gut.git /tmp/gut
+git clone --depth=1 --branch v9.6.0 https://github.com/bitwes/Gut.git /tmp/gut
 cp -r /tmp/gut/addons/gut /Users/nicholasmejia/godot/love-and-boxing/addons/gut
 ```
 
@@ -224,9 +224,9 @@ In the GUT bottom panel, set the test directory to `res://tests` and click "Run 
 
 From the project root in a terminal:
 ```bash
-godot --headless -s res://addons/gut/gut_cmdln.gd -gdir=res://tests -gexit
+godot --headless -s res://addons/gut/gut_cmdln.gd -gdir=res://tests/unit -gexit
 ```
-Expected: GUT prints `1 passed` and exits with code 0.
+Expected: GUT prints `1/1 passed` and exits with code 0. (Note: GUT does NOT auto-recurse into subdirectories; point `-gdir` at the leaf directory containing tests, or use `-ginclude_subdirs`.)
 
 - [ ] **Step 4: Commit**
 
@@ -3725,7 +3725,7 @@ Verify:
 - [ ] **Step 3: Run full GUT suite**
 
 ```bash
-godot --headless -s res://addons/gut/gut_cmdln.gd -gdir=res://tests -gexit
+godot --headless -s res://addons/gut/gut_cmdln.gd -gdir=res://tests/unit -gexit
 ```
 
 All tests green.
