@@ -38,6 +38,12 @@ func test_reset_clears_chain():
 func test_direction_set_is_complete():
 	assert_eq(SimonSequence.ALL_DIRECTIONS.size(), 4)
 
+func test_validate_at_returns_false_for_out_of_range_index():
+	var seq := _seeded()
+	seq.extend()
+	assert_false(seq.validate_at(-1, SimonSequence.Direction.HEAD), "Negative index is invalid")
+	assert_false(seq.validate_at(99, SimonSequence.Direction.HEAD), "Index past end is invalid")
+
 func _wrong_direction(step: int) -> int:
 	for d in SimonSequence.ALL_DIRECTIONS:
 		if d != step:

@@ -48,3 +48,14 @@ func test_no_third_round():
 	c.advance_to_next_round()
 	c.tick(300.0)
 	assert_true(c.is_match_over())
+
+func test_advance_after_match_end_is_idempotent():
+	var c := MatchClock.new()
+	c.start()
+	c.tick(300.0)
+	c.advance_to_next_round()
+	c.tick(300.0)
+	c.advance_to_next_round()
+	c.advance_to_next_round()
+	assert_eq(c.current_round(), 2, "Round should not advance past round 2")
+	assert_true(c.is_match_over())
