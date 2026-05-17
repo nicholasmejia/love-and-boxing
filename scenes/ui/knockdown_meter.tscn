@@ -23,7 +23,10 @@ alignment = 1
 [node name="Icon" type="TextureRect" parent="HBox"]
 custom_minimum_size = Vector2(64, 64)
 layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
 expand_mode = 1
+stretch_mode = 5
 
 [node name="Label" type="Label" parent="HBox"]
 layout_mode = 2

@@ -3,11 +3,11 @@
 [ext_resource type="Script" path="res://scripts/ui/combo_meter.gd" id="1_combo"]
 
 [node name="ComboMeter" type="Control"]
-custom_minimum_size = Vector2(128, 64)
+custom_minimum_size = Vector2(96, 96)
 layout_mode = 3
 anchors_preset = 0
-offset_right = 128.0
-offset_bottom = 64.0
+offset_right = 96.0
+offset_bottom = 96.0
 script = ExtResource("1_combo")
 
 [node name="Texture" type="TextureRect" parent="."]
@@ -19,6 +19,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 expand_mode = 1
+stretch_mode = 5
 
 [node name="Label" type="Label" parent="."]
 layout_mode = 1
