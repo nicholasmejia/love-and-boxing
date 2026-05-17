@@ -7,6 +7,7 @@ extends Control
 ]
 
 var _focus_index: int = 0
+var _card_labels: Array[String] = []
 
 func _ready() -> void:
 	_apply_lock_states()
@@ -16,6 +17,9 @@ func _ready() -> void:
 	_update_focus()
 
 func _apply_lock_states() -> void:
+	if _card_labels.is_empty():
+		for card in _cards:
+			_card_labels.append(card.text)
 	var unlocked := SaveData.unlocked_tier()
 	for i in _cards.size():
 		var tier := i + 1
@@ -24,8 +28,9 @@ func _apply_lock_states() -> void:
 		card.disabled = locked
 		card.modulate = Color(0.4, 0.4, 0.4) if locked else Color.WHITE
 		if locked:
-			card.text = card.text.replace(" (Easy)", "").replace(" (Medium)", "").replace(" (Hard)", "")
-			card.text = "[LOCKED]\n" + card.text
+			card.text = "[LOCKED]\n" + _card_labels[i]
+		else:
+			card.text = _card_labels[i]
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("menu_left"):
@@ -48,7 +53,6 @@ func _select_tier(tier: int) -> void:
 	SceneRouter.goto_gameplay()
 
 func _wipe_progress() -> void:
-	var path := "user://progress.cfg"
-	if FileAccess.file_exists(path):
-		DirAccess.remove_absolute(ProjectSettings.globalize_path(path))
-	print("[LevelSelect] Progress wiped. Restart for changes to apply.")
+	SaveData.reset()
+	_apply_lock_states()
+	print("[LevelSelect] Progress wiped.")

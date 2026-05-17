@@ -24,6 +24,12 @@ func unlock_tier(tier: int) -> void:
 	_config.set_value("progress", "unlocked_tier", tier)
 	_config.save(_path)
 
+func reset() -> void:
+	if FileAccess.file_exists(_path):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(_path))
+	_config = ConfigFile.new()
+	_load()
+
 func _load() -> void:
 	var err := _config.load(_path)
 	if err != OK:
