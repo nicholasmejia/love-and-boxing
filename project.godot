@@ -18,6 +18,7 @@ run/main_scene="res://scenes/title_screen.tscn"
 [autoload]
 
 Globals="*res://scripts/autoload/globals.gd"
+SaveData="*res://scripts/autoload/save_data.gd"
 
 [display]
 
