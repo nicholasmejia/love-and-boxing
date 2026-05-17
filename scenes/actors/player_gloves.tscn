@@ -1,0 +1,12 @@
+[gd_scene load_steps=2 format=3 uid="uid://b1plyrglv001"]
+
+[ext_resource type="Script" path="res://scripts/actors/player_gloves.gd" id="1_gloves"]
+
+[node name="PlayerGloves" type="Node2D"]
+script = ExtResource("1_gloves")
+
+[node name="LeftGlove" type="Sprite2D" parent="."]
+position = Vector2(160, 920)
+
+[node name="RightGlove" type="Sprite2D" parent="."]
+position = Vector2(1760, 920)
