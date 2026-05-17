@@ -1,4 +1,4 @@
-[gd_scene load_steps=7 format=3 uid="uid://b1gameplay001"]
+[gd_scene load_steps=8 format=3 uid="uid://b1gameplay001"]
 
 [ext_resource type="Script" path="res://scripts/gameplay.gd" id="1_gmply"]
 [ext_resource type="PackedScene" path="res://scenes/ui/heart_row.tscn" id="2_hearts"]
@@ -6,6 +6,7 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/knockdown_meter.tscn" id="4_kd"]
 [ext_resource type="PackedScene" path="res://scenes/ui/match_timer.tscn" id="5_timer"]
 [ext_resource type="PackedScene" path="res://scenes/ui/riddle_box.tscn" id="6_riddle"]
+[ext_resource type="PackedScene" path="res://scenes/ui/announcement_banner.tscn" id="7_banner"]
 
 [node name="Gameplay" type="Control"]
 layout_mode = 3
@@ -98,3 +99,11 @@ offset_bottom = -40.0
 grow_horizontal = 0
 grow_vertical = 0
 text = "End Match (K)"
+
+[node name="AnnouncementBanner" parent="." instance=ExtResource("7_banner")]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
