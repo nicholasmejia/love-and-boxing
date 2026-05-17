@@ -4,11 +4,11 @@
 [ext_resource type="Texture2D" path="res://assets/sprites/ui/answer_box.png" id="2_answerbox"]
 
 [node name="AnswerCard" type="Control"]
-custom_minimum_size = Vector2(500, 156)
+custom_minimum_size = Vector2(420, 287)
 layout_mode = 3
 anchors_preset = 0
-offset_right = 500.0
-offset_bottom = 156.0
+offset_right = 420.0
+offset_bottom = 287.0
 script = ExtResource("1_answer")
 
 [node name="Background" type="TextureRect" parent="."]
@@ -40,10 +40,10 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-offset_left = 40.0
-offset_top = 30.0
-offset_right = -40.0
-offset_bottom = -30.0
+offset_left = 30.0
+offset_top = 40.0
+offset_right = -30.0
+offset_bottom = -40.0
 
 [node name="Text" type="RichTextLabel" parent="Stack"]
 layout_mode = 1
