@@ -19,6 +19,7 @@ run/main_scene="res://scenes/title_screen.tscn"
 
 Globals="*res://scripts/autoload/globals.gd"
 SaveData="*res://scripts/autoload/save_data.gd"
+AudioBus="*res://scripts/autoload/audio_bus.gd"
 
 [display]
 
