@@ -11,9 +11,9 @@ config_version=5
 [application]
 
 config/name="LoveAndBoxing"
+run/main_scene="res://scenes/title_screen.tscn"
 config/features=PackedStringArray("4.6", "GL Compatibility")
 config/icon="res://icon.svg"
-run/main_scene="res://scenes/title_screen.tscn"
 
 [autoload]
 
@@ -29,6 +29,7 @@ window/size/viewport_height=1080
 window/size/window_width_override=1600
 window/size/window_height_override=900
 window/size/resizable=true
+window/dpi/allow_hidpi=true
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
 
