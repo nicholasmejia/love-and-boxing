@@ -11,3 +11,10 @@ func show_message(message: String, duration_seconds: float) -> void:
 	visible = true
 	await get_tree().create_timer(duration_seconds).timeout
 	visible = false
+
+func show_prompt(message: String) -> void:
+	_label.text = message
+	visible = true
+
+func dismiss() -> void:
+	visible = false
