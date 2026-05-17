@@ -1,0 +1,61 @@
+[gd_scene load_steps=3 format=3 uid="uid://b1answercard001"]
+
+[ext_resource type="Script" path="res://scripts/ui/answer_card.gd" id="1_answer"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ui/answer_box.png" id="2_answerbox"]
+
+[node name="AnswerCard" type="Control"]
+custom_minimum_size = Vector2(280, 140)
+layout_mode = 3
+anchors_preset = 0
+offset_right = 280.0
+offset_bottom = 140.0
+script = ExtResource("1_answer")
+
+[node name="Background" type="NinePatchRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("2_answerbox")
+patch_margin_left = 32
+patch_margin_top = 32
+patch_margin_right = 32
+patch_margin_bottom = 32
+
+[node name="Highlight" type="ColorRect" parent="."]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(1, 1, 0, 0.3)
+
+[node name="Stack" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+offset_left = 12.0
+offset_top = 12.0
+offset_right = -12.0
+offset_bottom = -12.0
+
+[node name="Text" type="RichTextLabel" parent="Stack"]
+layout_mode = 2
+size_flags_vertical = 3
+bbcode_enabled = true
+fit_content = true
+scroll_active = false
+autowrap_mode = 3
+
+[node name="Image" type="TextureRect" parent="Stack"]
+visible = false
+layout_mode = 2
+size_flags_vertical = 3
+expand_mode = 1
