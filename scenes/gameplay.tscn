@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3 uid="uid://b1gameplay001"]
+[gd_scene load_steps=10 format=3 uid="uid://b1gameplay001"]
 
 [ext_resource type="Script" path="res://scripts/gameplay.gd" id="1_gmply"]
 [ext_resource type="PackedScene" path="res://scenes/ui/heart_row.tscn" id="2_hearts"]
@@ -7,6 +7,8 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/match_timer.tscn" id="5_timer"]
 [ext_resource type="PackedScene" path="res://scenes/ui/riddle_box.tscn" id="6_riddle"]
 [ext_resource type="PackedScene" path="res://scenes/ui/announcement_banner.tscn" id="7_banner"]
+[ext_resource type="PackedScene" path="res://scenes/actors/opponent.tscn" id="8_opp"]
+[ext_resource type="PackedScene" path="res://scenes/actors/player_gloves.tscn" id="9_gloves"]
 
 [node name="Gameplay" type="Control"]
 layout_mode = 3
@@ -25,7 +27,11 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(0.12, 0.08, 0.08, 1)
+color = Color(0.15, 0.1, 0.1, 1)
+
+[node name="Opponent" parent="." instance=ExtResource("8_opp")]
+
+[node name="PlayerGloves" parent="." instance=ExtResource("9_gloves")]
 
 [node name="HeartRow" parent="." instance=ExtResource("2_hearts")]
 layout_mode = 1

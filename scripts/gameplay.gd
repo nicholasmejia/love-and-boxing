@@ -5,12 +5,14 @@ signal _continue_pressed
 @onready var _riddle: RiddleBox = $RiddleBox
 @onready var _timer_view: MatchTimerView = $MatchTimer
 @onready var _banner: AnnouncementBanner = $AnnouncementBanner
+@onready var _opponent: Opponent = $Opponent
 
 var _clock := MatchClock.new()
 var _transitioning: bool = false
 var _awaiting_continue: bool = false
 
 func _ready() -> void:
+	_opponent.configure("tofu")
 	Globals.last_played_tier = 1
 	Globals.last_match_outcome = Globals.MatchOutcome.DRAW
 	$EndButton.pressed.connect(SceneRouter.goto_match_results)
