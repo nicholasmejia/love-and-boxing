@@ -18,6 +18,7 @@ enum RiddleVisibility {
 @onready var _input_bar: InputTimerBar = $InputTimerBar
 @onready var _combo_meter: ComboMeter = $ComboMeter
 @onready var _knockdown_meter: KnockdownMeter = $KnockdownMeter
+@onready var _damage_effect: DamageEffect = $DamageEffect
 
 var _clock := MatchClock.new()
 var _hearts := Hearts.new()
@@ -231,6 +232,9 @@ func _on_damage_taken(expected_direction: int) -> void:
 	_hearts.take_damage()
 	AudioBus.play_sfx("hurt")
 	_refresh_heart_row()
+	_combo.on_damage_taken()
+	_refresh_combo_meter()
+	_damage_effect.play()
 	if _hearts.is_empty():
 		_end_match_loss()
 		return
@@ -437,6 +441,9 @@ func _on_answer_submitted(outcome: int) -> void:
 			_hearts.take_damage()
 			AudioBus.play_sfx("hurt")
 			_refresh_heart_row()
+			_combo.on_damage_taken()
+			_refresh_combo_meter()
+			_damage_effect.play()
 			if _hearts.is_empty():
 				_end_match_loss()
 				return
