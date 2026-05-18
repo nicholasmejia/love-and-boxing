@@ -43,6 +43,9 @@ func _ready() -> void:
 	var config: DifficultyConfig = Globals.selected_difficulty
 	if config == null:
 		config = load("res://data/difficulty/tofu.tres") as DifficultyConfig
+	var bg_path := "res://assets/sprites/background.png"
+	if ResourceLoader.exists(bg_path):
+		$Background.texture = load(bg_path)
 	_opponent.configure(config.opponent_slug)
 	Globals.last_played_tier = config.tier
 	Globals.last_match_outcome = Globals.MatchOutcome.DRAW
