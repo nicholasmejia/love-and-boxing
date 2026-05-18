@@ -15,6 +15,7 @@ enum RiddleVisibility {
 @onready var _prompts: WasdPromptLayer = $WasdPromptLayer
 @onready var _gloves: PlayerGloves = $PlayerGloves
 @onready var _heart_row: HeartRow = $HeartRow
+@onready var _input_bar: InputTimerBar = $InputTimerBar
 
 var _clock := MatchClock.new()
 var _hearts := Hearts.new()
@@ -37,6 +38,9 @@ func _ready() -> void:
 	_defense.step_flashed.connect(_on_step_flashed)
 	_defense.step_blocked.connect(_on_step_blocked)
 	_defense.damage_taken.connect(_on_damage_taken)
+	_defense.repeat_started.connect(_on_repeat_started)
+	_defense.sequence_completed.connect(_input_bar.cancel)
+	_defense.show_started.connect(_on_show_started)
 	_riddle.visible = false
 	_refresh_heart_row()
 	_start_round_one()
@@ -77,6 +81,7 @@ func _handle_round_end() -> void:
 	_transitioning = true
 	_clock.pause()
 	_defense.stop()
+	_input_bar.cancel()
 	_prompts.hide_all()
 	_riddle.visible = false
 	_visibility = RiddleVisibility.FRESH_START_GAP
@@ -152,10 +157,21 @@ func _on_step_flashed(direction: int) -> void:
 	# IDLE until the player actually engages in the repeat phase.
 	_prompts.flash(direction, _defense.step_seconds)
 
+func _on_repeat_started() -> void:
+	_input_bar.start(_defense.input_window_seconds)
+
+func _on_show_started(_steps: Array) -> void:
+	# Defensive: ensure no leftover bar from a prior phase.
+	_input_bar.cancel()
+
 func _on_step_blocked(index: int) -> void:
 	AudioBus.play_sfx("block")
 	var direction: int = _defense.current_sequence().steps()[index]
 	var side: int = PlayerGloves.Side.RIGHT if direction == SimonSequence.Direction.RIGHT else PlayerGloves.Side.LEFT
+	# Reset the input-window bar for the next keystroke. If this was the last
+	# step, sequence_completed fires immediately after and cancels it (synchronous,
+	# same frame — no flicker).
+	_input_bar.start(_defense.input_window_seconds)
 	# Punch and block land on the same frame so the block reads as one.
 	_swing_opponent_for(direction)
 	_gloves.set_state(side, PlayerGloves.State.BLOCK)
@@ -164,6 +180,7 @@ func _on_step_blocked(index: int) -> void:
 	_opponent_idle()
 
 func _on_damage_taken(expected_direction: int) -> void:
+	_input_bar.cancel()
 	# Punch lands at the direction the player failed to block; gloves stay idle.
 	_swing_opponent_for(expected_direction)
 	_hearts.take_damage()
@@ -185,6 +202,7 @@ func _end_match_loss() -> void:
 	_transitioning = true
 	_clock.pause()
 	_defense.stop()
+	_input_bar.cancel()
 	_prompts.hide_all()
 	_riddle.visible = false
 	_gap_generation += 1  # invalidate any in-flight gap awaits

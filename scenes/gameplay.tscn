@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3 uid="uid://b1gameplay001"]
+[gd_scene load_steps=12 format=3 uid="uid://b1gameplay001"]
 
 [ext_resource type="Script" path="res://scripts/gameplay.gd" id="1_gmply"]
 [ext_resource type="PackedScene" path="res://scenes/ui/heart_row.tscn" id="2_hearts"]
@@ -10,6 +10,7 @@
 [ext_resource type="PackedScene" path="res://scenes/actors/opponent.tscn" id="8_opp"]
 [ext_resource type="PackedScene" path="res://scenes/actors/player_gloves.tscn" id="9_gloves"]
 [ext_resource type="PackedScene" path="res://scenes/ui/wasd_prompt_layer.tscn" id="10_wasd"]
+[ext_resource type="PackedScene" path="res://scenes/ui/input_timer_bar.tscn" id="11_inputbar"]
 
 [node name="Gameplay" type="Control"]
 layout_mode = 3
@@ -76,6 +77,17 @@ offset_left = -170.0
 offset_top = 16.0
 offset_right = 170.0
 offset_bottom = 116.0
+grow_horizontal = 2
+
+[node name="InputTimerBar" parent="." instance=ExtResource("11_inputbar")]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -170.0
+offset_top = 120.0
+offset_right = 170.0
+offset_bottom = 144.0
 grow_horizontal = 2
 
 [node name="RiddleBox" parent="." instance=ExtResource("6_riddle")]
