@@ -85,10 +85,24 @@ func _fail_with_damage() -> void:
 	if _running:
 		_begin_next_round()
 
+func replay() -> void:
+	# Re-run the show phase of the current chain from step 0 without extending
+	# or resetting. Used by gameplay for NEUTRAL answer's "Try again!" hint.
+	assert(_sequence.length() > 0, "DefensePhase.replay called with empty sequence")
+	_repeat_active = false
+	_timeout_timer.stop()
+	_running = true
+	_run_show_then_repeat()
+
 func _begin_next_round() -> void:
 	if not _running:
 		return
 	_sequence.extend()
+	_run_show_then_repeat()
+
+func _run_show_then_repeat() -> void:
+	if not _running:
+		return
 	await get_tree().create_timer(interlude_seconds).timeout
 	if not _running:
 		return

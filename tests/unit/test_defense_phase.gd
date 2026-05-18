@@ -63,3 +63,53 @@ func test_player_input_noop_when_repeat_inactive():
 	d.player_input(d._sequence.steps()[0])
 	assert_false(flags["blocked"])
 	assert_false(flags["damaged"])
+
+func _make_fast_defense_phase() -> DefensePhase:
+	var d := DefensePhase.new()
+	d.step_seconds = 0.001
+	d.gap_seconds = 0.001
+	d.interlude_seconds = 0.001
+	d.input_window_seconds = 10.0
+	return d
+
+func test_replay_keeps_existing_chain_length():
+	var d := _make_fast_defense_phase()
+	add_child_autoqfree(d)
+	var captured := {"steps": null}
+	d.show_started.connect(func(steps): captured["steps"] = steps.duplicate())
+	d._sequence.seed_rng(1)
+	d._sequence.extend()
+	d._sequence.extend()
+	# Chain is length 2 — replay must NOT extend or reset it.
+	d.replay()
+	# Wait long enough for interlude_seconds + show loop to run.
+	await get_tree().create_timer(0.2).timeout
+	assert_not_null(captured["steps"], "show_started should fire from replay")
+	assert_eq(captured["steps"].size(), 2, "replay must re-run the existing length, not extend or reset")
+
+func test_replay_emits_show_completed_then_repeat_started():
+	var d := _make_fast_defense_phase()
+	add_child_autoqfree(d)
+	var order: Array = []
+	d.show_completed.connect(func(): order.append("show_completed"))
+	d.repeat_started.connect(func(): order.append("repeat_started"))
+	d._sequence.seed_rng(1)
+	d._sequence.extend()
+	d.replay()
+	await get_tree().create_timer(0.2).timeout
+	assert_eq(order.size(), 2, "expected both show_completed and repeat_started to fire")
+	assert_eq(order[0], "show_completed")
+	assert_eq(order[1], "repeat_started")
+
+func test_replay_after_stop_resumes():
+	var d := _make_fast_defense_phase()
+	add_child_autoqfree(d)
+	var flags := {"show_started": false}
+	d.show_started.connect(func(_steps): flags["show_started"] = true)
+	d._sequence.seed_rng(1)
+	d._sequence.extend()
+	d.stop()
+	# After stop(), _running is false. replay() must flip it back to true.
+	d.replay()
+	await get_tree().create_timer(0.2).timeout
+	assert_true(flags["show_started"], "replay must re-set _running so the show phase fires")
