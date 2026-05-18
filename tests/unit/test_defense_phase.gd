@@ -113,3 +113,56 @@ func test_replay_after_stop_resumes():
 	d.replay()
 	await get_tree().create_timer(0.2).timeout
 	assert_true(flags["show_started"], "replay must re-set _running so the show phase fires")
+
+func test_stop_then_start_cancels_in_flight_show_loop():
+	# Reproduces the M9 WRONG-outcome race: an in-flight show loop from the
+	# OLD chain was emitting step_flashed for its remaining steps after stop()
+	# then start() flipped _running back to true. With the generation token,
+	# only the NEW chain (length 1 after start's reset) emits step_flashed.
+	#
+	# Timing setup: per-step gap is long (0.2s) so the OLD loop is guaranteed
+	# to be mid-await when we cancel and restart. interlude is small so the
+	# NEW chain's single step runs within the post-cancel wait window.
+	var d := DefensePhase.new()
+	d.step_seconds = 0.01
+	d.gap_seconds = 0.2
+	d.interlude_seconds = 0.001
+	d.input_window_seconds = 10.0
+	add_child_autoqfree(d)
+	# Wrap in dict so the lambda captures by reference (GDScript captures
+	# locals by value otherwise — see test_correct_input_emits_step_blocked).
+	var counter := {"steps": 0}
+	d.step_flashed.connect(func(_dir): counter["steps"] += 1)
+
+	# Seed a length-3 sequence and start the show loop manually so we know
+	# exactly how many emissions to expect if the loop is NOT canceled.
+	d._sequence.seed_rng(1)
+	d._sequence.extend()
+	d._sequence.extend()
+	d._sequence.extend()
+	d._running = true
+	d._generation += 1
+	d._run_show_then_repeat()
+
+	# Yield long enough for the old loop to emit its FIRST step_flashed and
+	# enter the long gap-await for step 2, but short enough that steps 2 and
+	# 3 have NOT yet emitted.
+	await get_tree().create_timer(0.05).timeout
+	var old_count_before: int = counter["steps"]
+	assert_eq(old_count_before, 1, "sanity: old loop should have emitted exactly 1 step before cancel; got %d" % old_count_before)
+
+	# Cancel + restart. start() resets the sequence to length 0 then extends
+	# to length 1, so the NEW chain has exactly 1 step. With the generation
+	# token, the old loop's pending awaits must bail before emitting steps 2/3.
+	d.stop()
+	d.start()
+
+	# Wait long enough for: (a) the OLD loop's remaining gap-await (~0.2s) to
+	# resolve and try to continue (it must bail via generation check), and
+	# (b) the NEW chain to complete its single show step.
+	await get_tree().create_timer(0.4).timeout
+
+	# Expect: 1 from old loop (before cancel) + 1 from new chain = 2.
+	# Without the generation token, the old loop would leak steps 2 and 3 (= 4 total).
+	var leaked: int = counter["steps"] - 2
+	assert_eq(counter["steps"], 2, "stop+start must cancel the in-flight show loop; leaked %d extra step_flashed emissions after cancel" % leaked)

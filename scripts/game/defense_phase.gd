@@ -19,6 +19,12 @@ var _running: bool = false
 var _expected_index: int = 0
 var _repeat_active: bool = false
 var _timeout_timer: Timer
+# Bumps on every start/stop/replay. _run_show_then_repeat captures this at
+# entry and bails when a newer call has bumped it. Closes a stop()+start()
+# race where the previous _running flag flip is masked by the immediate
+# re-set to true, letting the old loop's awaits resolve and continue emitting
+# step_flashed for the dead chain.
+var _generation: int = 0
 
 func _ready() -> void:
 	_timeout_timer = Timer.new()
@@ -32,10 +38,12 @@ func start() -> void:
 	# step_seconds <= 0 that would collapse that assumption.
 	assert(step_seconds > 0.0, "DefensePhase.step_seconds must be > 0")
 	_sequence.reset()
+	_generation += 1
 	_running = true
 	_begin_next_round()
 
 func stop() -> void:
+	_generation += 1
 	_running = false
 	_repeat_active = false
 	_timeout_timer.stop()
@@ -89,6 +97,7 @@ func replay() -> void:
 	# Re-run the show phase of the current chain from step 0 without extending
 	# or resetting. Used by gameplay for NEUTRAL answer's "Try again!" hint.
 	assert(_sequence.length() > 0, "DefensePhase.replay called with empty sequence")
+	_generation += 1
 	_repeat_active = false
 	_timeout_timer.stop()
 	_running = true
@@ -101,20 +110,19 @@ func _begin_next_round() -> void:
 	_run_show_then_repeat()
 
 func _run_show_then_repeat() -> void:
-	if not _running:
-		return
+	var my_gen := _generation
 	await get_tree().create_timer(interlude_seconds).timeout
-	if not _running:
+	if my_gen != _generation:
 		return
 	show_started.emit(_sequence.steps())
 	for step in _sequence.steps():
-		if not _running:
+		if my_gen != _generation:
 			return
 		step_flashed.emit(step)
 		await get_tree().create_timer(step_seconds).timeout
-		if not _running:
+		if my_gen != _generation:
 			return
 		await get_tree().create_timer(gap_seconds).timeout
 	show_completed.emit()
-	if _running:
+	if my_gen == _generation:
 		begin_repeat_phase()
