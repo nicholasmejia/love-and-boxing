@@ -4,14 +4,25 @@ This file is the canonical vocabulary for the project. When code, plans, or art 
 
 ## Core Gameplay Terms
 
-- **Match** — A full game session against one opponent. Two rounds of five minutes each (max 10:00 of clock time, plus paused-time during knockdowns).
+- **Match** — A full game session against one opponent. Two rounds of five minutes each (max 10:00 of clock time, plus paused-time during knockdowns). Riddle Gaps do *not* pause the clock — knockdown is the only pause source.
 - **Round** — One five-minute segment of a Match. Round 1 ends at 0:00; Round 2 begins after a brief transition.
-- **Defense Phase** — The default state when the player isn't attacking. Player blocks incoming punches via a Simon-style sequence while concurrently engaging the riddle box.
-- **Attack Phase** — Entered when the player answers a riddle with the *right* outcome. Player executes a sequence of attack inputs to build combo or knock down the opponent. The opponent's guard is down throughout.
+- **Defense Phase** — The default state when the player isn't attacking. Player blocks incoming punches via a continuous Simon-style sequence. The riddle box flickers in and out during this phase: it is visible during **Riddle Encounters** and hidden during **Riddle Gaps**. The Simon-defense loop runs continuously through both (with one narrow exception: the 1s "dead air" at the front of a Fresh-Start Gap).
+- **Attack Phase** — Entered when the player answers a riddle with the *right* outcome. Player executes a sequence of attack inputs to build combo or knock down the opponent. The opponent's guard is down throughout. No riddle is visible during Attack Phase.
 - **Simon Sequence** — The accumulating chain of WASD inputs that drives both defense and attack phases. Classic Simon rules: show phase flashes the sequence, repeat phase requires the player to reproduce it from memory. Starts at length 1, extends by 1 each successful cycle, resets to 1 on damage taken or phase transition. No natural cap — chain grows indefinitely until interrupted.
 - **Show Phase** — The part of a Simon Sequence where the game flashes the chain to the player. Pace is per-opponent (difficulty config).
 - **Repeat Phase** — The part of a Simon Sequence where the player must reproduce the chain. The player has 3 seconds per keystroke on Easy (Tofu), shorter on harder tiers.
-- **Riddle / Dialogue Prompt** — A piece of opponent content with a body (text or image) and three answers (each text or image). Always visible during defense. Sits behind WASD prompts in z-order.
+- **Riddle / Dialogue Prompt** — A piece of opponent content with a body (text or image) and three answers (each text or image). Visible during a Riddle Encounter; hidden during a Riddle Gap. Sits behind WASD prompts in z-order when visible.
+- **Riddle Encounter** — A discrete window during Defense Phase in which the riddle box and answer cards are visible and the player can navigate / submit an answer with IJKL. The encounter starts when the riddle UI snaps in (the previous gap ends), and ends when one of these events fires:
+  - Player K-presses an answer (wrong/neutral → Breather Gap; right → Attack Phase begins immediately, riddle hides, no gap until Attack Phase ends).
+  - Player takes Simon damage (encounter ends, Breather Gap begins, prompt advances to the next entry in the deck).
+- **Riddle Gap** — The complement of a Riddle Encounter: a window during Defense Phase when no riddle UI is visible on screen. Two flavors:
+  - **Fresh-Start Gap** — 3 seconds total. The first 1 second is "dead air" with Simon defense paused (opponent idle). Then Simon defense activates for the remaining 2 seconds, with the riddle still hidden, before the next encounter starts. Used at Round 1 start (after the Fight! banner), Round 2 start (after the Fight! banner), and immediately after a knockdown's clock pause ends.
+  - **Breather Gap** — 4 seconds. Simon defense remains active the entire time (no dead air). Used after a wrong answer, neutral answer, player Simon damage, and attack-phase end (non-knockdown).
+- **Gap Timing Rules** —
+  - The gap timer starts at the *event itself* (K-press, punch landed, attack-phase-end), not after the event's effects (damage flash, outcome banner) finish playing — effects play *inside* the gap.
+  - A new gap-triggering event during an active gap *resets* the timer to the new event's full duration. Rapid consecutive events (e.g., repeated Simon damage) can therefore push the next riddle further out, by design.
+  - Show/hide is a snap, not a fade. Fade is reserved as a polish item for a later milestone.
+  - The match clock keeps ticking through every gap. Knockdown remains the only event that pauses the clock.
 - **Outcome** — The classification of a riddle answer. One of: `wrong` (deals 1 damage, resets Simon chain), `neutral` (advances to next prompt, no effect), `right` (triggers Attack Phase).
 - **Dialogue Deck** — The pool of prompts for one opponent. Shuffled without replacement. Resets at the start of each round.
 - **Combo** — The player's escalation state during the match. Displayed as `x1`, `x2`, `x3`. Resets to `x1` only when the player takes damage during Defense. Failed attack inputs do *not* reset combo.

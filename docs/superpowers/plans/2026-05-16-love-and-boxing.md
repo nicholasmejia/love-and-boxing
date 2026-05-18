@@ -2378,7 +2378,7 @@ func _ready() -> void:
 
 - [ ] **Step 3: Run, confirm visuals**
 
-Enter Gameplay. See dark red background, blue placeholder body in center with two grey arms, two tan placeholder gloves in bottom corners, full HUD on top.
+Enter Gameplay. See dark red background, the Tofu idle body sprite centered (or a blue placeholder rectangle if the art isn't on disk), two glove sprites (or tan placeholders) in the bottom corners, full HUD on top. No arms — the opponent is a single body sprite.
 
 - [ ] **Step 4: Commit**
 
@@ -2389,8 +2389,53 @@ git commit -m "feat: compose background, opponent, and player gloves on Gameplay
 
 ### Manual Test for Milestone 6
 
-- Enter Gameplay. Visually confirm: background, opponent body+arms centered, player gloves in corners, HUD on top.
+- Enter Gameplay. Visually confirm: background, single opponent body sprite centered, player gloves in corners, HUD on top.
 - Resize the window. Confirm everything scales (no UI elements clip or distort).
+
+---
+
+## Cross-Cutting Thread: Riddle Encounter Visibility
+
+> **Added 2026-05-17** after a `/grill-with-docs` session decided the riddle should appear/disappear in discrete encounter windows rather than being visible for the entire match. See `CONTEXT.md` → "Riddle Encounter" / "Riddle Gap" / "Gap Timing Rules" for the authoritative model.
+
+This thread is *not* a standalone milestone. The work is distributed across M7, M8, M9, M10, and M14 because each piece depends on the event source for its gap trigger being wired first. The full encounter-visibility surface is only complete once all five milestones land.
+
+### Pacing constants (introduce in M7)
+
+When the first encounter-visibility task lands in M7, also create a single source-of-truth file for the timing numbers so later milestones reference the same constants:
+
+```gdscript
+# scripts/match_pacing.gd
+class_name MatchPacing
+
+# Riddle gap durations, in seconds. See CONTEXT.md → "Riddle Gap".
+const FRESH_START_GAP := 3.0
+const FRESH_START_DEAD_AIR := 1.0   # Front portion of FRESH_START_GAP with Simon defense paused
+const BREATHER_GAP := 4.0
+
+# Knockdown pause, in seconds. See CONTEXT.md → "Match" + "Knockdown".
+const KNOCKDOWN_PAUSE := 5.0
+```
+
+Subsequent milestones import these constants by name; no other file should hardcode `3.0`, `4.0`, etc.
+
+### Per-milestone sub-tasks (cross-references)
+
+| Milestone | Encounter-visibility sub-task |
+|---|---|
+| **M7** | Hide riddle during all banner sequences (Ready/Fight + Round Over). Implement Fresh-Start Gap at Round 1 start and Round 2 start (3s gap, with the first 1s being dead air where Simon defense is paused and the opponent stays in `Action.IDLE`). Add the `MatchPacing` constants script. After the gap completes, the existing `_show_placeholder_prompt()` runs and the riddle snaps in. |
+| **M8** | When the player takes Simon damage during Repeat Phase: snap-hide the riddle and start a 4s Breather Gap. Simon defense continues (the new shorter sequence's show phase begins immediately during the gap). The riddle reappears after 4s with the *next* prompt from the deck (or with the same prompt if M9 hasn't landed yet). New Simon damage events during the gap *reset* the 4s timer (rule (v)). |
+| **M9** | When the player K-presses an answer: snap-hide the riddle. For `wrong`/`neutral` outcomes, start a 4s Breather Gap, then snap-show the *next* prompt. For `right`, transition into Attack Phase (M10 handles the gap on exit). New events during the 4s reset the timer. |
+| **M10** | On attack-phase entry: confirm the riddle is hidden (it was hidden at K-press in M9, but assert/guard against re-show). On attack-phase exit (non-knockdown): start a 4s Breather Gap, snap-show next prompt after. On attack-phase exit *with* knockdown: pause the match clock for `KNOCKDOWN_PAUSE` seconds, play the Knock Down banner / knocked_down sprite, then resume the clock and start a Fresh-Start Gap (3s, with 1s dead air) before snapping the next riddle in. |
+| **M14** | Polish pass — verify all five encounter-visibility transitions feel right under real play. If a fade animation is decided on (vs the snap default), wire it here. Verify `body_talking` cue is NOT wired (per the (B)-encounter framing reversibility plan; only add it later if we commit to (B) for good). |
+
+### Implementation notes shared across milestones
+
+- **State machine:** Gameplay needs a single source of truth for "is a riddle visible right now?" — recommend a small enum like `RiddleVisibility { ENCOUNTER, FRESH_START_GAP, BREATHER_GAP }` and a single `Timer` node that fires the next show. Avoid distributed timers across multiple controllers.
+- **Encounter end is event-driven, not time-driven.** An encounter does not end on its own timer — it ends only when an event fires (K-press, Simon damage, attack-phase entry, round end). Gaps end on a timer; encounters end on events.
+- **The 1s dead air** is special: only Fresh-Start Gaps have it, and only the first second. During dead air, the opponent must be in `Action.IDLE` and no WASD prompts may flash. After dead air ends inside the Fresh-Start Gap, Simon's show phase can begin even though the riddle is still hidden (2 more seconds).
+- **`_show_placeholder_prompt()` in `scripts/gameplay.gd:69`** currently runs in `_ready` and stays visible the whole match. M7 should defer that call until after the first Fresh-Start Gap completes.
+- **Round transition banners.** M5 already hides the riddle on `_handle_round_end` (line 45) and re-shows it after the next Ready/Fight (line 57). M7 should refine this so the re-show is *gated by the Fresh-Start Gap* — the riddle does not reappear immediately after the Fight! banner; it waits 3s.
 
 ---
 
