@@ -20,6 +20,7 @@ enum RiddleVisibility {
 var _clock := MatchClock.new()
 var _hearts := Hearts.new()
 var _defense: DefensePhase
+var _deck := DialogueDeck.new()
 var _transitioning: bool = false
 var _awaiting_continue: bool = false
 var _visibility: int = RiddleVisibility.FRESH_START_GAP
@@ -41,6 +42,8 @@ func _ready() -> void:
 	_defense.repeat_started.connect(_on_repeat_started)
 	_defense.sequence_completed.connect(_input_bar.cancel)
 	_defense.show_started.connect(_on_show_started)
+	_deck.load_prompts(_build_placeholder_deck())
+	_riddle.answer_submitted.connect(_on_answer_submitted)
 	_riddle.visible = false
 	_refresh_heart_row()
 	_start_round_one()
@@ -96,6 +99,7 @@ func _handle_round_end() -> void:
 	await _wait_for_continue()
 	_banner.dismiss()
 	_clock.advance_to_next_round()
+	_deck.reset()
 	await _play_ready_fight()
 	_clock.start()
 	_transitioning = false
@@ -132,7 +136,7 @@ func _begin_fresh_start_gap() -> void:
 	if my_generation != _gap_generation:
 		return
 	_visibility = RiddleVisibility.ENCOUNTER
-	_show_placeholder_prompt()
+	_show_next_prompt()
 	_riddle.visible = true
 
 # Breather Gap (CONTEXT.md → Riddle Gap / Riddle Encounter Visibility):
@@ -149,7 +153,7 @@ func _begin_breather_gap() -> void:
 	if my_generation != _gap_generation:
 		return
 	_visibility = RiddleVisibility.ENCOUNTER
-	_show_placeholder_prompt()
+	_show_next_prompt()
 	_riddle.visible = true
 
 func _on_step_flashed(direction: int) -> void:
@@ -230,14 +234,69 @@ func _swing_opponent_for(direction: int) -> void:
 func _opponent_idle() -> void:
 	_opponent.set_action(Opponent.Action.IDLE, Opponent.Direction.LEFT)
 
-func _show_placeholder_prompt() -> void:
-	var prompt := DialoguePrompt.new()
-	prompt.body_text = "[riddle goes here]"
-	prompt.answers = [_a("wrong", Outcome.Type.WRONG), _a("neutral", Outcome.Type.NEUTRAL), _a("right", Outcome.Type.RIGHT)]
-	_riddle.display(prompt)
+func _show_next_prompt() -> void:
+	var prompt := _deck.draw()
+	if prompt != null:
+		_riddle.display(prompt)
 
-func _a(text: String, outcome: int) -> DialogueAnswer:
+# Placeholder deck for M9. Real per-opponent dialogue resources will land later
+# (CONTEXT.md → Dialogue Deck). Answer-card order is LEFT/MIDDLE/RIGHT =
+# WRONG/NEUTRAL/RIGHT to make the manual test trivial; real prompts will have
+# their own per-answer layout.
+func _build_placeholder_deck() -> Array[DialoguePrompt]:
+	var prompts: Array[DialoguePrompt] = []
+	for i in range(1, 6):
+		var prompt := DialoguePrompt.new()
+		prompt.body_text = "Placeholder dialogue line %d." % i
+		prompt.answers = [
+			_make_answer("wrong", Outcome.Type.WRONG),
+			_make_answer("neutral", Outcome.Type.NEUTRAL),
+			_make_answer("right", Outcome.Type.RIGHT),
+		]
+		prompts.append(prompt)
+	return prompts
+
+func _make_answer(text: String, outcome: int) -> DialogueAnswer:
 	var a := DialogueAnswer.new()
 	a.text = text
 	a.outcome = outcome
 	return a
+
+# Riddle answer submission (K-press on the highlighted answer card). RiddleBox
+# emits answer_submitted whenever K fires while it's mounted — including while
+# the box is hidden (gaps / round transitions). The visibility gate below is
+# the single source of truth for "is the player actually answering a prompt
+# right now".
+func _on_answer_submitted(outcome: int) -> void:
+	if _visibility != RiddleVisibility.ENCOUNTER:
+		return
+	match outcome:
+		Outcome.Type.WRONG:
+			_riddle.visible = false
+			_hearts.take_damage()
+			AudioBus.play_sfx("hurt")
+			_refresh_heart_row()
+			if _hearts.is_empty():
+				_end_match_loss()
+				return
+			# Reset Simon chain (CONTEXT.md → Outcome: wrong resets chain).
+			# stop() clears _running so any in-flight show-phase awaits bail
+			# out; start() reseeds the sequence at length 1 and reschedules a
+			# fresh show phase after interlude_seconds.
+			_defense.stop()
+			_defense.start()
+			_begin_breather_gap()
+		Outcome.Type.NEUTRAL:
+			_riddle.visible = false
+			_begin_breather_gap()
+		Outcome.Type.RIGHT:
+			# Placeholder for M10's Attack Phase entry. The 1s banner reads as
+			# a quick celebratory beat; then a Breather Gap reshows the next
+			# prompt. _transitioning gates only player input (see
+			# _unhandled_input), so the in-flight defense show phase keeps
+			# emitting signals to the input bar / glove handlers normally.
+			_riddle.visible = false
+			_transitioning = true
+			await _banner.show_message("Attack Window!", 1.0)
+			_transitioning = false
+			_begin_breather_gap()
