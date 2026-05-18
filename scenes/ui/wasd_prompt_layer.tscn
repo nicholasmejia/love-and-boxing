@@ -15,28 +15,28 @@ script = ExtResource("1_layer")
 
 [node name="Head" parent="." instance=ExtResource("2_prompt")]
 layout_mode = 1
-offset_left = 900.0
-offset_top = 140.0
-offset_right = 1020.0
-offset_bottom = 260.0
+offset_left = 885.0
+offset_top = 125.0
+offset_right = 1035.0
+offset_bottom = 275.0
 
 [node name="Left" parent="." instance=ExtResource("2_prompt")]
 layout_mode = 1
-offset_left = 700.0
-offset_top = 340.0
-offset_right = 820.0
-offset_bottom = 460.0
+offset_left = 585.0
+offset_top = 385.0
+offset_right = 735.0
+offset_bottom = 535.0
 
 [node name="Body" parent="." instance=ExtResource("2_prompt")]
 layout_mode = 1
-offset_left = 900.0
-offset_top = 340.0
-offset_right = 1020.0
-offset_bottom = 460.0
+offset_left = 885.0
+offset_top = 385.0
+offset_right = 1035.0
+offset_bottom = 535.0
 
 [node name="Right" parent="." instance=ExtResource("2_prompt")]
 layout_mode = 1
-offset_left = 1100.0
-offset_top = 340.0
-offset_right = 1220.0
-offset_bottom = 460.0
+offset_left = 1185.0
+offset_top = 385.0
+offset_right = 1335.0
+offset_bottom = 535.0
