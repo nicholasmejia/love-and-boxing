@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="DifficultyConfig" load_steps=2 format=3 uid="uid://c1diff_sebastian"]
+
+[ext_resource type="Script" path="res://scripts/game/difficulty_config.gd" id="1_diff"]
+
+[resource]
+script = ExtResource("1_diff")
+opponent_slug = "tofu"
+tier = 3
+show_phase_step_seconds = 0.35
+repeat_phase_window_seconds = 2.0
+dialogue_deck_path = ""

@@ -40,12 +40,17 @@ const _PUNCH_FLASH_SECONDS := 0.15
 const _MISS_FLASH_SECONDS := 0.35
 
 func _ready() -> void:
-	_opponent.configure("tofu")
-	Globals.last_played_tier = 1
+	var config: DifficultyConfig = Globals.selected_difficulty
+	if config == null:
+		config = load("res://data/difficulty/tofu.tres") as DifficultyConfig
+	_opponent.configure(config.opponent_slug)
+	Globals.last_played_tier = config.tier
 	Globals.last_match_outcome = Globals.MatchOutcome.DRAW
 	$EndButton.pressed.connect(SceneRouter.goto_match_results)
 	_defense = DefensePhase.new()
 	add_child(_defense)
+	_defense.step_seconds = config.show_phase_step_seconds
+	_defense.input_window_seconds = config.repeat_phase_window_seconds
 	_defense.step_flashed.connect(_on_step_flashed)
 	_defense.step_blocked.connect(_on_step_blocked)
 	_defense.damage_taken.connect(_on_damage_taken)
@@ -54,6 +59,8 @@ func _ready() -> void:
 	_defense.show_started.connect(_on_show_started)
 	_attack = AttackPhase.new()
 	add_child(_attack)
+	_attack.step_seconds = config.show_phase_step_seconds
+	_attack.input_window_seconds = config.repeat_phase_window_seconds
 	_attack.show_started.connect(_on_show_started)
 	_attack.step_flashed.connect(_on_attack_step_flashed)
 	_attack.repeat_started.connect(_on_attack_repeat_started)

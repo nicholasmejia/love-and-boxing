@@ -1,5 +1,11 @@
 extends Control
 
+const TIER_CONFIGS := [
+	"res://data/difficulty/tofu.tres",
+	"res://data/difficulty/minty.tres",
+	"res://data/difficulty/sebastian.tres",
+]
+
 @onready var _cards: Array[Button] = [
 	$HBoxContainer/TofuCard,
 	$HBoxContainer/MintyCard,
@@ -50,6 +56,9 @@ func _update_focus() -> void:
 	_cards[_focus_index].grab_focus()
 
 func _select_tier(tier: int) -> void:
+	var path: String = TIER_CONFIGS[tier - 1]
+	Globals.selected_difficulty = load(path)
+	Globals.last_played_tier = tier
 	SceneRouter.goto_gameplay()
 
 func _wipe_progress() -> void:
