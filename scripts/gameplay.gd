@@ -153,10 +153,7 @@ func _on_step_flashed(direction: int) -> void:
 func _on_step_blocked(index: int) -> void:
 	AudioBus.play_sfx("block")
 	var direction: int = _defense.current_sequence().steps()[index]
-	var side: int = PlayerGloves.Side.LEFT
-	if direction == SimonSequence.Direction.RIGHT:
-		side = PlayerGloves.Side.RIGHT
-	# HEAD, BODY, LEFT all blocked by LEFT glove per plan rule.
+	var side: int = PlayerGloves.Side.RIGHT if direction == SimonSequence.Direction.RIGHT else PlayerGloves.Side.LEFT
 	_gloves.set_state(side, PlayerGloves.State.BLOCK)
 	await get_tree().create_timer(_BLOCK_FLASH_SECONDS).timeout
 	_gloves.set_state(side, PlayerGloves.State.IDLE)

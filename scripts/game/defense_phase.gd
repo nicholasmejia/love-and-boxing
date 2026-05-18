@@ -38,8 +38,7 @@ func start() -> void:
 func stop() -> void:
 	_running = false
 	_repeat_active = false
-	if _timeout_timer:
-		_timeout_timer.stop()
+	_timeout_timer.stop()
 
 func current_steps() -> Array:
 	return _sequence.steps()
@@ -51,8 +50,7 @@ func begin_repeat_phase() -> void:
 	_expected_index = 0
 	_repeat_active = true
 	repeat_started.emit()
-	if _timeout_timer:
-		_timeout_timer.start(input_window_seconds)
+	_timeout_timer.start(input_window_seconds)
 
 func player_input(direction: int) -> void:
 	if not _repeat_active:
@@ -62,14 +60,12 @@ func player_input(direction: int) -> void:
 		_expected_index += 1
 		if _expected_index >= _sequence.length():
 			_repeat_active = false
-			if _timeout_timer:
-				_timeout_timer.stop()
+			_timeout_timer.stop()
 			sequence_completed.emit()
 			if _running:
 				_begin_next_round()
 		else:
-			if _timeout_timer:
-				_timeout_timer.start(input_window_seconds)
+			_timeout_timer.start(input_window_seconds)
 	else:
 		_fail_with_damage()
 
@@ -79,8 +75,7 @@ func _on_input_timeout() -> void:
 
 func _fail_with_damage() -> void:
 	_repeat_active = false
-	if _timeout_timer:
-		_timeout_timer.stop()
+	_timeout_timer.stop()
 	damage_taken.emit()
 	_sequence.reset()
 	if _running:
