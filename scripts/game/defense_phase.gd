@@ -11,7 +11,7 @@ signal damage_taken(expected_direction: int)
 
 @export var step_seconds: float = 0.8
 @export var gap_seconds: float = 0.25
-@export var interlude_seconds: float = 0.6
+@export var interlude_seconds: float = 2.0
 @export var input_window_seconds: float = 3.0
 
 var _sequence: SimonSequence = SimonSequence.new()
