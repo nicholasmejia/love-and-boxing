@@ -3194,50 +3194,102 @@ git commit -m "feat: add AttackPhase controller with success/failure signals"
 
 **Files:**
 - Modify: `scripts/gameplay.gd`
+- Modify: `scripts/match_pacing.gd`
 
-- [ ] **Step 1: Replace placeholder with real flow**
+> **Stale-API gotchas this section already accounts for** (do not re-introduce):
+> - `Opponent.BodyState` / `Opponent.set_body(…)` are retired — use `Opponent.Action` / `Opponent.set_action(action, direction = LEFT)`. The migration table earlier in this plan is the source of truth.
+> - The M9 polish pass inlined the WRONG and NEUTRAL outcome branches directly into `_on_answer_submitted`. `_take_riddle_damage()` and `_show_next_prompt_after_beat()` do **not** exist. Splice the new RIGHT branch into the existing match statement — do not rewrite the function.
+> - `_show_next_prompt()` already sets `_current_prompt` (M9). Don't re-introduce a local-only version.
+> - Bare timing literals (`0.1`, `2.0`, `3.0`, `5.0`) are forbidden — every pause is a named `MatchPacing` constant or a local `const _*_SECONDS`, matching the M8/M9 convention (`_BLOCK_FLASH_SECONDS`, `_DAMAGE_HIT_SECONDS`, `MatchPacing.READY_BANNER`, etc.).
+> - Attack-phase exit routes through the existing gap helpers. Non-knockdown exit → `_begin_breather_gap()` (4s, riddle hidden, defense already running). Knockdown exit, after the clock resumes → `_begin_fresh_start_gap()` (CONTEXT.md: "immediately after a knockdown's clock pause ends" is one of the three Fresh-Start Gap triggers).
+> - Three-part arm rig is gone. Anything that wanted "arms down" is now part of `Action.GUARD_DOWN`. Do not call `set_arm(…)`.
 
-Replace `_trigger_attack_window_placeholder()` with:
+- [ ] **Step 0: Add MatchPacing constants for the attack/knockdown beat**
+
+Append to `scripts/match_pacing.gd`:
+
+```gdscript
+# Attack phase and knockdown timings, in seconds. See CONTEXT.md → "Attack Phase" + "Knockdown".
+const KNOCK_DOWN_BANNER := 2.0
+const KNOCK_OUT_BANNER := 2.0
+const YOU_WIN_BANNER := 2.0
+```
+
+`MatchPacing.KNOCKDOWN_PAUSE` (5.0) already exists and remains the total clock-pause duration during a knockdown.
+
+- [ ] **Step 1: Wire the attack-phase state into `scripts/gameplay.gd`**
+
+Add module-level fields next to `_clock`, `_hearts`, `_defense`:
 
 ```gdscript
 var _combo := ComboState.new()
 var _knockdowns := Knockdowns.new()
 var _attack: AttackPhase
 var _in_attack: bool = false
+```
 
-# In _ready, add:
-#   _combo = ComboState.new()
-#   _knockdowns = Knockdowns.new()
-#   _attack = AttackPhase.new()
-#   add_child(_attack)
-#   _attack.step_flashed.connect(_on_attack_step_flashed)
-#   _attack.step_landed.connect(_on_attack_step_landed)
-#   _attack.attack_succeeded.connect(_on_attack_succeeded)
-#   _attack.attack_failed.connect(_on_attack_failed)
-#   _refresh_combo_meter()
-#   _refresh_knockdown_meter()
+Add `@onready` references for the meters (the scene already has `$ComboMeter` and `$KnockdownMeter` from Task 6.3):
 
+```gdscript
+@onready var _combo_meter: ComboMeter = $ComboMeter
+@onready var _knockdown_meter: KnockdownMeter = $KnockdownMeter
+```
+
+Add a punch-flash constant next to `_BLOCK_FLASH_SECONDS` (mirror the block timing for a matched feel):
+
+```gdscript
+const _PUNCH_FLASH_SECONDS := 0.15
+```
+
+In `_ready()`, after the existing `_defense` wiring, before `_start_round_one()`:
+
+```gdscript
+_attack = AttackPhase.new()
+add_child(_attack)
+_attack.step_flashed.connect(_on_attack_step_flashed)
+_attack.step_landed.connect(_on_attack_step_landed)
+_attack.attack_succeeded.connect(_on_attack_succeeded)
+_attack.attack_failed.connect(_on_attack_failed)
+_refresh_combo_meter()
+_refresh_knockdown_meter()
+```
+
+Helpers:
+
+```gdscript
 func _refresh_combo_meter() -> void:
-    $ComboMeter.set_level(_combo.level())
+    _combo_meter.set_level(_combo.level())
 
 func _refresh_knockdown_meter() -> void:
-    $KnockdownMeter.set_count(_knockdowns.count())
+    _knockdown_meter.set_count(_knockdowns.count())
 
+func _glove_side_for(direction: int) -> int:
+    # D-hook lands with the right glove; everything else uses the left glove,
+    # matching the block-side convention in _on_step_blocked.
+    return PlayerGloves.Side.RIGHT if direction == SimonSequence.Direction.RIGHT else PlayerGloves.Side.LEFT
+```
+
+Attack-phase entry/exit:
+
+```gdscript
 func _trigger_attack_phase() -> void:
     _in_attack = true
     _defense.stop()
-    _prompts.hide_all()
-    _opponent.set_body(Opponent.BodyState.GUARD_DOWN)
+    _snap_clear_simon_visuals()
+    _opponent.set_action(Opponent.Action.GUARD_DOWN, Opponent.Direction.LEFT)
     _attack.begin(_combo.input_count())
 
 func _on_attack_step_flashed(direction: int) -> void:
     _prompts.flash(direction, _attack.step_seconds)
 
-func _on_attack_step_landed(_index: int) -> void:
+func _on_attack_step_landed(index: int) -> void:
     AudioBus.play_sfx("punch")
-    $PlayerGloves.set_state(PlayerGloves.Side.RIGHT, PlayerGloves.State.PUNCH)
-    await get_tree().create_timer(0.1).timeout
-    $PlayerGloves.set_state(PlayerGloves.Side.RIGHT, PlayerGloves.State.IDLE)
+    var direction: int = _attack.current_sequence().steps()[index]
+    var side: int = _glove_side_for(direction)
+    _prompts.flash_success(direction, _PUNCH_FLASH_SECONDS)
+    _gloves.set_state(side, PlayerGloves.State.PUNCH)
+    await get_tree().create_timer(_PUNCH_FLASH_SECONDS).timeout
+    _gloves.set_state(side, PlayerGloves.State.IDLE)
 
 func _on_attack_succeeded() -> void:
     if _combo.is_at_knockdown_threshold():
@@ -3245,60 +3297,71 @@ func _on_attack_succeeded() -> void:
     else:
         _combo.on_attack_success()
         _refresh_combo_meter()
-        _return_to_defense()
+        _return_to_defense_after_attack()
 
 func _on_attack_failed() -> void:
-    _return_to_defense()
+    # CONTEXT.md → "Combo": failed attack inputs do not reset combo. We just
+    # return to defense.
+    _return_to_defense_after_attack()
 
-func _return_to_defense() -> void:
+func _return_to_defense_after_attack() -> void:
     _in_attack = false
-    _opponent.set_body(Opponent.BodyState.IDLE)
-    _show_next_prompt()
+    _opponent_idle()
+    # Phase transition resets the Simon chain to length 1 (CONTEXT.md → Simon
+    # Sequence). stop+start clears any in-flight show generation and reseeds.
+    _defense.stop()
     _defense.start()
+    _begin_breather_gap()  # 4s, riddle hidden, snap-show next prompt on exit
 
 func _play_knockdown_sequence() -> void:
     _in_attack = false
     _clock.pause()
     _knockdowns.increment()
     _refresh_knockdown_meter()
-    _opponent.set_body(Opponent.BodyState.KNOCKED_DOWN)
-    await _banner.show_message("Knock Down!", 2.0)
-    await get_tree().create_timer(3.0).timeout
+    _opponent.set_action(Opponent.Action.KNOCKED_DOWN, Opponent.Direction.LEFT)
+    await _banner.show_message("Knock Down!", MatchPacing.KNOCK_DOWN_BANNER)
+    # KNOCKDOWN_PAUSE is the total clock-pause duration; the banner ate part of
+    # it, hold the remainder before resuming the clock.
+    var remainder := MatchPacing.KNOCKDOWN_PAUSE - MatchPacing.KNOCK_DOWN_BANNER
+    if remainder > 0.0:
+        await get_tree().create_timer(remainder).timeout
     if _knockdowns.is_knockout():
-        await _banner.show_message("Knock Out!", 2.0)
-        await _banner.show_message("You Win!", 2.0)
+        await _banner.show_message("Knock Out!", MatchPacing.KNOCK_OUT_BANNER)
+        await _banner.show_message("You Win!", MatchPacing.YOU_WIN_BANNER)
         Globals.last_match_outcome = Globals.MatchOutcome.WIN
         SceneRouter.goto_match_results()
         return
     _combo.on_knockdown_completed()
     _refresh_combo_meter()
-    _opponent.set_body(Opponent.BodyState.IDLE)
+    _opponent_idle()
     _clock.resume()
-    _show_next_prompt()
-    _defense.start()
+    # CONTEXT.md → Fresh-Start Gap is the post-knockdown entry, not Breather Gap.
+    # Defense restarts inside _begin_fresh_start_gap() after the 1s dead-air front.
+    _defense.stop()
+    _begin_fresh_start_gap()
 ```
 
-Also update `_on_answer_submitted` to call `_trigger_attack_phase()` instead of the placeholder:
+Splice the RIGHT branch into the existing `_on_answer_submitted` — replace the placeholder block only, keep the WRONG and NEUTRAL branches as they are:
 
 ```gdscript
-func _on_answer_submitted(outcome: int) -> void:
-    if _in_attack:
-        return  # Ignore riddle inputs during attack phase
-    match outcome:
-        Outcome.Type.WRONG:
-            _take_riddle_damage()
-        Outcome.Type.NEUTRAL:
-            _show_next_prompt_after_beat()
         Outcome.Type.RIGHT:
             _trigger_attack_phase()
 ```
 
-Update `_unhandled_input` so WASD routes to AttackPhase during attack:
+(The prelude that flips `_visibility` to `BREATHER_GAP` and hides the riddle stays; entering attack phase keeps the K-press gate satisfied for the duration of the attack.)
+
+Extend `_unhandled_input` so WASD routes to AttackPhase during attack — keep the existing F8 and `menu_confirm` paths intact:
 
 ```gdscript
 func _unhandled_input(event: InputEvent) -> void:
     if event is InputEventKey and event.pressed and event.keycode == KEY_F8:
         _clock.tick(280.0)
+        return
+    if _awaiting_continue and event.is_action_pressed("menu_confirm"):
+        _awaiting_continue = false
+        _continue_pressed.emit()
+        return
+    if _transitioning:
         return
     var direction := -1
     if event.is_action_pressed("attack_head"):
@@ -3319,12 +3382,12 @@ func _unhandled_input(event: InputEvent) -> void:
 
 - [ ] **Step 2: Run and verify**
 
-Submit "right" → opponent guard down → flash sequence → repeat correctly → return to defense with combo x2. Repeat → x3 → KD → "Knock Out!" after 3 KDs → "You Win!".
+Submit "right" → opponent guard down → 1-step flash → repeat correctly → 4s Breather Gap → next prompt, combo x2. Repeat → x3, 3-step sequence on next "right". Complete x3 attack → Knockdown banner, 5s clock-pause total, opponent knocked-down sprite, Fresh-Start Gap on resume. Three knockdowns → "Knock Out!" → "You Win!" → MatchResults. Deliberately fail an attack repeat → return to defense with combo preserved + 4s Breather Gap.
 
 - [ ] **Step 3: Commit**
 
 ```bash
-git add scripts/gameplay.gd
+git add scripts/gameplay.gd scripts/match_pacing.gd
 git commit -m "feat: wire AttackPhase with combo progression, knockdowns, and KO win"
 ```
 
@@ -3701,46 +3764,11 @@ git add scripts/gameplay.gd
 git commit -m "feat: flash opponent hurt sprite on attack-step landings"
 ```
 
-### Task 14.2: Arms down during guard_down
+### Task 14.2: Arms down during guard_down — **retired by M6**
 
-**Files:**
-- Modify: `scripts/gameplay.gd`
+Retired by the M6 rig consolidation. `Opponent.Action.GUARD_DOWN` is now a single-sprite pose with both arms already lowered, and `Action.IDLE` is the guard stance — there is no separate `set_arm` to call. M10's `_trigger_attack_phase` already issues `set_action(Opponent.Action.GUARD_DOWN)` and `_return_to_defense_after_attack` already issues the equivalent `_opponent_idle()`.
 
-- [ ] **Step 1: Set arms down on attack phase entry**
-
-In `_trigger_attack_phase()`:
-
-```gdscript
-func _trigger_attack_phase() -> void:
-    _in_attack = true
-    _defense.stop()
-    _prompts.hide_all()
-    _opponent.set_body(Opponent.BodyState.GUARD_DOWN)
-    _opponent.set_arm(Opponent.ArmSide.LEFT, Opponent.ArmState.DOWN)
-    _opponent.set_arm(Opponent.ArmSide.RIGHT, Opponent.ArmState.DOWN)
-    _attack.begin(_combo.input_count())
-```
-
-And reset arms when returning to defense:
-
-```gdscript
-func _return_to_defense() -> void:
-    _in_attack = false
-    _opponent.set_body(Opponent.BodyState.IDLE)
-    _opponent.set_arm(Opponent.ArmSide.LEFT, Opponent.ArmState.GUARD)
-    _opponent.set_arm(Opponent.ArmSide.RIGHT, Opponent.ArmState.GUARD)
-    _show_next_prompt()
-    _defense.start()
-```
-
-Also reset arms inside `_play_knockdown_sequence` after the opponent gets back up.
-
-- [ ] **Step 2: Commit**
-
-```bash
-git add scripts/gameplay.gd
-git commit -m "feat: animate opponent arms down during guard_down, guard during defense"
-```
+- [ ] **Step 1: No code change needed — proceed.**
 
 ### Task 14.3: MatchResults shows the right banner
 
