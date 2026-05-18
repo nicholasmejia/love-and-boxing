@@ -315,6 +315,9 @@ func _on_attack_step_landed(index: int) -> void:
 	_input_bar.start(_attack.input_window_seconds)
 	_prompts.flash_success(direction, _PUNCH_FLASH_SECONDS)
 	_gloves.set_state(side, PlayerGloves.State.PUNCH)
+	# The 0.15s glove-IDLE reset can land during the Knock Down banner if this
+	# was the x3 finisher step — visually benign (the glove is going to IDLE
+	# regardless), but worth knowing the awaits overlap on that one frame.
 	await get_tree().create_timer(_PUNCH_FLASH_SECONDS).timeout
 	_gloves.set_state(side, PlayerGloves.State.IDLE)
 
@@ -325,7 +328,7 @@ func _on_attack_succeeded() -> void:
 	else:
 		_combo.on_attack_success()
 		_refresh_combo_meter()
-		_return_to_defense_after_attack()
+		_return_to_defense()
 
 func _on_attack_failed(expected_direction: int) -> void:
 	# CONTEXT.md → "Combo": failed attack inputs do not reset combo. We just
@@ -334,9 +337,9 @@ func _on_attack_failed(expected_direction: int) -> void:
 	# so the wrong-key and timeout cases read identically.
 	_input_bar.cancel()
 	_prompts.flash_fail(expected_direction, _MISS_FLASH_SECONDS)
-	_return_to_defense_after_attack()
+	_return_to_defense()
 
-func _return_to_defense_after_attack() -> void:
+func _return_to_defense() -> void:
 	_in_attack = false
 	_opponent_idle()
 	# Phase transition resets the Simon chain to length 1 (CONTEXT.md → Simon
@@ -348,6 +351,11 @@ func _return_to_defense_after_attack() -> void:
 func _play_knockdown_sequence() -> void:
 	_in_attack = false
 	_clock.pause()
+	# Defensive snap-clear: the x3 finisher's flash_success and glove-PUNCH can
+	# still be on screen as we land here. Matches the snap-clear pattern used
+	# everywhere else a banner takes over the frame (round end, match loss,
+	# attack-phase entry).
+	_snap_clear_simon_visuals()
 	_knockdowns.increment()
 	_refresh_knockdown_meter()
 	_opponent.set_action(Opponent.Action.KNOCKED_DOWN, Opponent.Direction.LEFT)
