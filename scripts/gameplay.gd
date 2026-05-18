@@ -16,10 +16,16 @@ enum RiddleVisibility {
 @onready var _gloves: PlayerGloves = $PlayerGloves
 @onready var _heart_row: HeartRow = $HeartRow
 @onready var _input_bar: InputTimerBar = $InputTimerBar
+@onready var _combo_meter: ComboMeter = $ComboMeter
+@onready var _knockdown_meter: KnockdownMeter = $KnockdownMeter
 
 var _clock := MatchClock.new()
 var _hearts := Hearts.new()
 var _defense: DefensePhase
+var _combo := ComboState.new()
+var _knockdowns := Knockdowns.new()
+var _attack: AttackPhase
+var _in_attack: bool = false
 var _deck := DialogueDeck.new()
 var _transitioning: bool = false
 var _awaiting_continue: bool = false
@@ -29,6 +35,7 @@ var _current_prompt: DialoguePrompt
 
 const _BLOCK_FLASH_SECONDS := 0.15
 const _DAMAGE_HIT_SECONDS := 0.35
+const _PUNCH_FLASH_SECONDS := 0.15
 
 func _ready() -> void:
 	_opponent.configure("tofu")
@@ -43,10 +50,18 @@ func _ready() -> void:
 	_defense.repeat_started.connect(_on_repeat_started)
 	_defense.sequence_completed.connect(_input_bar.cancel)
 	_defense.show_started.connect(_on_show_started)
+	_attack = AttackPhase.new()
+	add_child(_attack)
+	_attack.step_flashed.connect(_on_attack_step_flashed)
+	_attack.step_landed.connect(_on_attack_step_landed)
+	_attack.attack_succeeded.connect(_on_attack_succeeded)
+	_attack.attack_failed.connect(_on_attack_failed)
 	_deck.load_prompts(_build_placeholder_deck())
 	_riddle.answer_submitted.connect(_on_answer_submitted)
 	_riddle.visible = false
 	_refresh_heart_row()
+	_refresh_combo_meter()
+	_refresh_knockdown_meter()
 	_start_round_one()
 
 func _start_round_one() -> void:
@@ -72,16 +87,25 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if _transitioning:
 		return
+	var direction := -1
 	if event.is_action_pressed("attack_head"):
-		_defense.player_input(SimonSequence.Direction.HEAD)
+		direction = SimonSequence.Direction.HEAD
 	elif event.is_action_pressed("attack_left"):
-		_defense.player_input(SimonSequence.Direction.LEFT)
+		direction = SimonSequence.Direction.LEFT
 	elif event.is_action_pressed("attack_body"):
-		_defense.player_input(SimonSequence.Direction.BODY)
+		direction = SimonSequence.Direction.BODY
 	elif event.is_action_pressed("attack_right"):
-		_defense.player_input(SimonSequence.Direction.RIGHT)
+		direction = SimonSequence.Direction.RIGHT
+	if direction == -1:
+		return
+	if _in_attack:
+		_attack.player_input(direction)
+	else:
+		_defense.player_input(direction)
 
 func _handle_round_end() -> void:
+	if _in_attack:
+		return  # let attack finish; round-end check re-fires after attack exit
 	_transitioning = true
 	_clock.pause()
 	_defense.stop()
@@ -254,6 +278,85 @@ func _snap_clear_simon_visuals() -> void:
 	_gloves.set_state(PlayerGloves.Side.RIGHT, PlayerGloves.State.IDLE)
 	_opponent.set_action(Opponent.Action.IDLE, Opponent.Direction.LEFT)
 
+func _refresh_combo_meter() -> void:
+	_combo_meter.set_level(_combo.level())
+
+func _refresh_knockdown_meter() -> void:
+	_knockdown_meter.set_count(_knockdowns.count())
+
+func _glove_side_for(direction: int) -> int:
+	# D-hook lands with the right glove; everything else uses the left glove,
+	# matching the block-side convention in _on_step_blocked.
+	return PlayerGloves.Side.RIGHT if direction == SimonSequence.Direction.RIGHT else PlayerGloves.Side.LEFT
+
+func _trigger_attack_phase() -> void:
+	_in_attack = true
+	_defense.stop()
+	_snap_clear_simon_visuals()
+	_opponent.set_action(Opponent.Action.GUARD_DOWN, Opponent.Direction.LEFT)
+	_attack.begin(_combo.input_count())
+
+func _on_attack_step_flashed(direction: int) -> void:
+	_prompts.flash(direction, _attack.step_seconds)
+
+func _on_attack_step_landed(index: int) -> void:
+	AudioBus.play_sfx("punch")
+	var direction: int = _attack.current_sequence().steps()[index]
+	var side: int = _glove_side_for(direction)
+	_prompts.flash_success(direction, _PUNCH_FLASH_SECONDS)
+	_gloves.set_state(side, PlayerGloves.State.PUNCH)
+	await get_tree().create_timer(_PUNCH_FLASH_SECONDS).timeout
+	_gloves.set_state(side, PlayerGloves.State.IDLE)
+
+func _on_attack_succeeded() -> void:
+	if _combo.is_at_knockdown_threshold():
+		await _play_knockdown_sequence()
+	else:
+		_combo.on_attack_success()
+		_refresh_combo_meter()
+		_return_to_defense_after_attack()
+
+func _on_attack_failed() -> void:
+	# CONTEXT.md → "Combo": failed attack inputs do not reset combo. We just
+	# return to defense.
+	_return_to_defense_after_attack()
+
+func _return_to_defense_after_attack() -> void:
+	_in_attack = false
+	_opponent_idle()
+	# Phase transition resets the Simon chain to length 1 (CONTEXT.md → Simon
+	# Sequence). stop+start clears any in-flight show generation and reseeds.
+	_defense.stop()
+	_defense.start()
+	_begin_breather_gap()  # 4s, riddle hidden, snap-show next prompt on exit
+
+func _play_knockdown_sequence() -> void:
+	_in_attack = false
+	_clock.pause()
+	_knockdowns.increment()
+	_refresh_knockdown_meter()
+	_opponent.set_action(Opponent.Action.KNOCKED_DOWN, Opponent.Direction.LEFT)
+	await _banner.show_message("Knock Down!", MatchPacing.KNOCK_DOWN_BANNER)
+	# KNOCKDOWN_PAUSE is the total clock-pause duration; the banner ate part of
+	# it, hold the remainder before resuming the clock.
+	var remainder := MatchPacing.KNOCKDOWN_PAUSE - MatchPacing.KNOCK_DOWN_BANNER
+	if remainder > 0.0:
+		await get_tree().create_timer(remainder).timeout
+	if _knockdowns.is_knockout():
+		await _banner.show_message("Knock Out!", MatchPacing.KNOCK_OUT_BANNER)
+		await _banner.show_message("You Win!", MatchPacing.YOU_WIN_BANNER)
+		Globals.last_match_outcome = Globals.MatchOutcome.WIN
+		SceneRouter.goto_match_results()
+		return
+	_combo.on_knockdown_completed()
+	_refresh_combo_meter()
+	_opponent_idle()
+	_clock.resume()
+	# CONTEXT.md → Fresh-Start Gap is the post-knockdown entry, not Breather Gap.
+	# Defense restarts inside _begin_fresh_start_gap() after the 1s dead-air front.
+	_defense.stop()
+	_begin_fresh_start_gap()
+
 # Placeholder deck for M9. Real per-opponent dialogue resources will land later
 # (CONTEXT.md → Dialogue Deck). Answer-card order is LEFT/MIDDLE/RIGHT =
 # WRONG/NEUTRAL/RIGHT to make the manual test trivial; real prompts will have
@@ -339,8 +442,4 @@ func _on_answer_submitted(outcome: int) -> void:
 			_visibility = RiddleVisibility.ENCOUNTER
 			_defense.replay()
 		Outcome.Type.RIGHT:
-			# Placeholder for M10's Attack Phase entry. M10 will replace the 1s
-			# banner with the real attack sequence and decide what to do with the
-			# round clock during it.
-			await _banner.show_message("Attack Window!", 1.0)
-			_begin_breather_gap()
+			_trigger_attack_phase()
