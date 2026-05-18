@@ -18,6 +18,11 @@ var _expected_index: int = 0
 var _repeat_active: bool = false
 var _timeout_timer: Timer
 var _expected_count: int = 1
+# Bumps on every begin()/stop(). _show captures this at entry and bails after
+# each await when a newer call has bumped it. Mirrors DefensePhase._generation
+# (see commit b89de48) — closes the same stop()+begin() race where an old
+# show loop's pending awaits would resolve on top of a fresh chain.
+var _generation: int = 0
 
 func _ready() -> void:
 	_timeout_timer = Timer.new()
@@ -30,7 +35,13 @@ func begin(input_count: int) -> void:
 	_sequence.reset()
 	for i in input_count:
 		_sequence.extend()
+	_generation += 1
 	_show()
+
+func stop() -> void:
+	_generation += 1
+	_repeat_active = false
+	_timeout_timer.stop()
 
 func expected_inputs() -> int:
 	return _expected_count
@@ -39,13 +50,21 @@ func current_sequence() -> SimonSequence:
 	return _sequence
 
 func _show() -> void:
+	var my_gen := _generation
 	await get_tree().create_timer(interlude_seconds).timeout
+	if my_gen != _generation:
+		return
 	show_started.emit(_sequence.steps())
 	for step in _sequence.steps():
+		if my_gen != _generation:
+			return
 		step_flashed.emit(step)
 		await get_tree().create_timer(step_seconds).timeout
+		if my_gen != _generation:
+			return
 		await get_tree().create_timer(gap_seconds).timeout
-	_begin_repeat()
+	if my_gen == _generation:
+		_begin_repeat()
 
 func _begin_repeat() -> void:
 	_expected_index = 0
