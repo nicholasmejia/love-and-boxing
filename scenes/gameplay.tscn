@@ -1,0 +1,134 @@
+[gd_scene load_steps=13 format=3 uid="uid://b1gameplay001"]
+
+[ext_resource type="Script" path="res://scripts/gameplay.gd" id="1_gmply"]
+[ext_resource type="PackedScene" path="res://scenes/ui/heart_row.tscn" id="2_hearts"]
+[ext_resource type="PackedScene" path="res://scenes/ui/combo_meter.tscn" id="3_combo"]
+[ext_resource type="PackedScene" path="res://scenes/ui/knockdown_meter.tscn" id="4_kd"]
+[ext_resource type="PackedScene" path="res://scenes/ui/match_timer.tscn" id="5_timer"]
+[ext_resource type="PackedScene" path="res://scenes/ui/riddle_box.tscn" id="6_riddle"]
+[ext_resource type="PackedScene" path="res://scenes/ui/announcement_banner.tscn" id="7_banner"]
+[ext_resource type="PackedScene" path="res://scenes/actors/opponent.tscn" id="8_opp"]
+[ext_resource type="PackedScene" path="res://scenes/actors/player_gloves.tscn" id="9_gloves"]
+[ext_resource type="PackedScene" path="res://scenes/ui/wasd_prompt_layer.tscn" id="10_wasd"]
+[ext_resource type="PackedScene" path="res://scenes/ui/input_timer_bar.tscn" id="11_inputbar"]
+[ext_resource type="PackedScene" path="res://scenes/ui/damage_effect.tscn" id="12_dmgfx"]
+
+[node name="Gameplay" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_gmply")
+
+[node name="Background" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 6
+
+[node name="Opponent" parent="." instance=ExtResource("8_opp")]
+
+[node name="PlayerGloves" parent="." instance=ExtResource("9_gloves")]
+
+[node name="HeartRow" parent="." instance=ExtResource("2_hearts")]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = 24.0
+offset_top = 24.0
+offset_right = 24.0
+offset_bottom = 24.0
+grow_vertical = 1
+
+[node name="ComboMeter" parent="." instance=ExtResource("3_combo")]
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 0.0
+anchor_bottom = 0.0
+offset_left = 24.0
+offset_top = 100.0
+offset_right = 120.0
+offset_bottom = 196.0
+grow_vertical = 1
+
+[node name="KnockdownMeter" parent="." instance=ExtResource("4_kd")]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -260.0
+offset_top = 24.0
+offset_right = -40.0
+offset_bottom = 104.0
+grow_horizontal = 0
+
+[node name="MatchTimer" parent="." instance=ExtResource("5_timer")]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -170.0
+offset_top = 16.0
+offset_right = 170.0
+offset_bottom = 116.0
+grow_horizontal = 2
+
+[node name="InputTimerBar" parent="." instance=ExtResource("11_inputbar")]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -170.0
+offset_top = 120.0
+offset_right = 170.0
+offset_bottom = 144.0
+grow_horizontal = 2
+
+[node name="RiddleBox" parent="." instance=ExtResource("6_riddle")]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -450.0
+offset_top = -542.0
+offset_right = 450.0
+offset_bottom = -40.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="EndButton" type="Button" parent="."]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -280.0
+offset_top = -80.0
+offset_right = -40.0
+offset_bottom = -40.0
+grow_horizontal = 0
+grow_vertical = 0
+text = "End Match (K)"
+
+[node name="WasdPromptLayer" parent="." instance=ExtResource("10_wasd")]
+
+[node name="AnnouncementBanner" parent="." instance=ExtResource("7_banner")]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="DamageEffect" parent="." instance=ExtResource("12_dmgfx")]

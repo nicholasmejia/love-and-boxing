@@ -1,0 +1,84 @@
+[gd_scene load_steps=4 format=3 uid="uid://b1riddlebox001"]
+
+[ext_resource type="Script" path="res://scripts/ui/riddle_box.gd" id="1_riddle"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ui/riddle_box.png" id="2_riddlebg"]
+[ext_resource type="PackedScene" path="res://scenes/ui/answer_card.tscn" id="3_answer"]
+
+[node name="RiddleBox" type="Control"]
+custom_minimum_size = Vector2(900, 502)
+layout_mode = 3
+anchors_preset = 0
+offset_right = 900.0
+offset_bottom = 502.0
+script = ExtResource("1_riddle")
+
+[node name="Layout" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 24
+
+[node name="Body" type="TextureRect" parent="Layout"]
+custom_minimum_size = Vector2(900, 281)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 0
+texture = ExtResource("2_riddlebg")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Text" type="RichTextLabel" parent="Layout/Body"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 45.0
+offset_top = 45.0
+offset_right = -45.0
+offset_bottom = -45.0
+grow_horizontal = 2
+grow_vertical = 2
+bbcode_enabled = true
+fit_content = true
+scroll_active = false
+autowrap_mode = 3
+
+[node name="Image" type="TextureRect" parent="Layout/Body"]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 45.0
+offset_top = 45.0
+offset_right = -45.0
+offset_bottom = -45.0
+grow_horizontal = 2
+grow_vertical = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Answers" type="HBoxContainer" parent="Layout"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 0
+theme_override_constants/separation = 18
+alignment = 1
+
+[node name="Left" parent="Layout/Answers" instance=ExtResource("3_answer")]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+
+[node name="Middle" parent="Layout/Answers" instance=ExtResource("3_answer")]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+
+[node name="Right" parent="Layout/Answers" instance=ExtResource("3_answer")]
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
