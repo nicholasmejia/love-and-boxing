@@ -148,8 +148,9 @@ func _begin_breather_gap() -> void:
 	_riddle.visible = true
 
 func _on_step_flashed(direction: int) -> void:
+	# Show phase telegraphs via the WASD prompt only — the opponent stays in
+	# IDLE until the player actually engages in the repeat phase.
 	_prompts.flash(direction, _defense.step_seconds)
-	_animate_opponent_punch(direction)
 
 func _on_step_blocked(index: int) -> void:
 	AudioBus.play_sfx("block")
@@ -190,11 +191,6 @@ func _end_match_loss() -> void:
 	await _banner.show_message("You Lose!", MatchPacing.ROUND_OVER_BANNER)
 	Globals.last_match_outcome = Globals.MatchOutcome.LOSE
 	SceneRouter.goto_match_results()
-
-func _animate_opponent_punch(direction: int) -> void:
-	_swing_opponent_for(direction)
-	await get_tree().create_timer(_defense.step_seconds).timeout
-	_opponent_idle()
 
 func _swing_opponent_for(direction: int) -> void:
 	var action_dir := Opponent.Direction.LEFT
