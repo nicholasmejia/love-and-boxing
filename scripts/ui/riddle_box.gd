@@ -24,9 +24,13 @@ func display(prompt: DialoguePrompt) -> void:
 		_body_text.visible = true
 		_body_image.visible = false
 		_start_typewriter(prompt.body_text)
+	# Answer cards are shuffled per display so position never reveals outcome.
+	# Don't mutate prompt.answers — the deck reuses prompts across redraws.
+	var shuffled := prompt.answers.duplicate()
+	shuffled.shuffle()
 	for i in _cards.size():
-		if i < prompt.answers.size():
-			_cards[i].display(prompt.answers[i])
+		if i < shuffled.size():
+			_cards[i].display(shuffled[i])
 	_highlight_index = 1
 	_refresh_highlight()
 
