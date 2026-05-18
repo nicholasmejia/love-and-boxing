@@ -13,3 +13,4 @@ const KNOCKDOWN_PAUSE := 5.0
 const READY_BANNER := 1.0
 const FIGHT_BANNER := 1.0
 const ROUND_OVER_BANNER := 3.0
+const TRY_AGAIN_BANNER := 1.5  # "Try again!" banner shown on NEUTRAL answer

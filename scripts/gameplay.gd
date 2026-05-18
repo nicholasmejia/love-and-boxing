@@ -25,6 +25,7 @@ var _transitioning: bool = false
 var _awaiting_continue: bool = false
 var _visibility: int = RiddleVisibility.FRESH_START_GAP
 var _gap_generation: int = 0
+var _current_prompt: DialoguePrompt
 
 const _BLOCK_FLASH_SECONDS := 0.15
 const _DAMAGE_HIT_SECONDS := 0.35
@@ -235,9 +236,16 @@ func _opponent_idle() -> void:
 	_opponent.set_action(Opponent.Action.IDLE, Opponent.Direction.LEFT)
 
 func _show_next_prompt() -> void:
-	var prompt := _deck.draw()
-	assert(prompt != null, "DialogueDeck.draw() returned null — deck not loaded?")
-	_riddle.display(prompt)
+	_current_prompt = _deck.draw()
+	assert(_current_prompt != null, "DialogueDeck.draw() returned null — deck not loaded?")
+	_riddle.display(_current_prompt)
+
+func _snap_clear_simon_visuals() -> void:
+	_prompts.hide_all()
+	_input_bar.cancel()
+	_gloves.set_state(PlayerGloves.Side.LEFT, PlayerGloves.State.IDLE)
+	_gloves.set_state(PlayerGloves.Side.RIGHT, PlayerGloves.State.IDLE)
+	_opponent.set_action(Opponent.Action.IDLE, Opponent.Direction.LEFT)
 
 # Placeholder deck for M9. Real per-opponent dialogue resources will land later
 # (CONTEXT.md → Dialogue Deck). Answer-card order is LEFT/MIDDLE/RIGHT =
@@ -280,12 +288,20 @@ func _on_answer_submitted(outcome: int) -> void:
 	_riddle.visible = false
 	match outcome:
 		Outcome.Type.WRONG:
+			# Snap-clear first so leftover Simon visuals don't co-exist with the
+			# new opponent swing pose.
+			_snap_clear_simon_visuals()
+
+			assert(_defense.current_sequence().length() > 0, "WRONG submitted with empty Simon chain")
+			var hit_direction: int = _defense.current_sequence().steps()[0]
+			_swing_opponent_for(hit_direction)
 			_hearts.take_damage()
 			AudioBus.play_sfx("hurt")
 			_refresh_heart_row()
 			if _hearts.is_empty():
 				_end_match_loss()
 				return
+
 			# Reset Simon chain (CONTEXT.md → Outcome: wrong resets chain).
 			# stop() clears _running so any in-flight show-phase awaits bail
 			# out; start() reseeds the sequence at length 1 and reschedules a
@@ -293,8 +309,28 @@ func _on_answer_submitted(outcome: int) -> void:
 			_defense.stop()
 			_defense.start()
 			_begin_breather_gap()
+
+			# Hold the punch frame briefly so the hit reads, then recover to IDLE.
+			# Runs in parallel with the 4s gap (same pattern as _on_damage_taken).
+			await get_tree().create_timer(_DAMAGE_HIT_SECONDS).timeout
+			_opponent_idle()
 		Outcome.Type.NEUTRAL:
-			_begin_breather_gap()
+			# "Try again!" hint: snap-clear leftover Simon visuals, stop the
+			# current chain, show the banner, then re-display the SAME prompt
+			# (cards reshuffle on display) and replay the chain at its current
+			# length from step 0.
+			_snap_clear_simon_visuals()
+			_defense.stop()
+
+			var my_gen := _gap_generation
+			await _banner.show_message("Try again!", MatchPacing.TRY_AGAIN_BANNER)
+			if my_gen != _gap_generation:
+				return  # round end / match loss invalidated this flow
+
+			_riddle.display(_current_prompt)
+			_riddle.visible = true
+			_visibility = RiddleVisibility.ENCOUNTER
+			_defense.replay()
 		Outcome.Type.RIGHT:
 			# Placeholder for M10's Attack Phase entry. M10 will replace the 1s
 			# banner with the real attack sequence and decide what to do with the
