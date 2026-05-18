@@ -8,3 +8,8 @@ const BREATHER_GAP := 4.0
 
 # Knockdown pause, in seconds. See CONTEXT.md → "Match" + "Knockdown".
 const KNOCKDOWN_PAUSE := 5.0
+
+# Banner display durations, in seconds. AnnouncementBanner.show_message awaits these.
+const READY_BANNER := 1.0
+const FIGHT_BANNER := 1.0
+const ROUND_OVER_BANNER := 3.0

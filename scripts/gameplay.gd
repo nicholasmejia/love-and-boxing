@@ -62,11 +62,11 @@ func _handle_round_end() -> void:
 	_visibility = RiddleVisibility.FRESH_START_GAP
 	_gap_generation += 1  # invalidate any in-flight gap awaits
 	if _clock.current_round() >= MatchClock.TOTAL_ROUNDS:
-		await _banner.show_message("Round Over!", 3.0)
+		await _banner.show_message("Round Over!", MatchPacing.ROUND_OVER_BANNER)
 		Globals.last_match_outcome = Globals.MatchOutcome.DRAW
 		SceneRouter.goto_match_results()
 		return
-	await _banner.show_message("Round Over!", 3.0)
+	await _banner.show_message("Round Over!", MatchPacing.ROUND_OVER_BANNER)
 	_banner.show_prompt("Press K to start Round %d" % (_clock.current_round() + 1))
 	await _wait_for_continue()
 	_banner.dismiss()
@@ -81,8 +81,8 @@ func _wait_for_continue() -> void:
 	await _continue_pressed
 
 func _play_ready_fight() -> void:
-	await _banner.show_message("Ready?", 1.0)
-	await _banner.show_message("Fight!", 1.0)
+	await _banner.show_message("Ready?", MatchPacing.READY_BANNER)
+	await _banner.show_message("Fight!", MatchPacing.FIGHT_BANNER)
 
 # Fresh-Start Gap (CONTEXT.md → Riddle Gap):
 #   total: MatchPacing.FRESH_START_GAP seconds, riddle hidden throughout.

@@ -13,6 +13,10 @@ var _sequence: SimonSequence = SimonSequence.new()
 var _running: bool = false
 
 func start() -> void:
+	# Listeners of step_flashed assume the previous step's await (also step_seconds long)
+	# resolves inside the subsequent gap_seconds window. Guard against a misconfigured
+	# step_seconds <= 0 that would collapse that assumption.
+	assert(step_seconds > 0.0, "DefensePhase.step_seconds must be > 0")
 	_sequence.reset()
 	_running = true
 	_next_round()
