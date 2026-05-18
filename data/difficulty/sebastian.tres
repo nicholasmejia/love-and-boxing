@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="DifficultyConfig" load_steps=2 format=3 uid="uid://c1diff_sebastian"]
+[gd_resource type="Resource" script_class="DifficultyConfig" load_steps=2 format=3 uid="uid://c1diffseb"]
 
 [ext_resource type="Script" path="res://scripts/game/difficulty_config.gd" id="1_diff"]
 

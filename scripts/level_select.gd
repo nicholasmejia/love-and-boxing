@@ -57,8 +57,7 @@ func _update_focus() -> void:
 
 func _select_tier(tier: int) -> void:
 	var path: String = TIER_CONFIGS[tier - 1]
-	Globals.selected_difficulty = load(path)
-	Globals.last_played_tier = tier
+	Globals.selected_difficulty = load(path) as DifficultyConfig
 	SceneRouter.goto_gameplay()
 
 func _wipe_progress() -> void:
