@@ -11,19 +11,19 @@ This file is the canonical vocabulary for the project. When code, plans, or art 
 - **Simon Sequence** — The accumulating chain of WASD inputs that drives both defense and attack phases. Classic Simon rules: show phase flashes the sequence, repeat phase requires the player to reproduce it from memory. Starts at length 1, extends by 1 each successful cycle, resets to 1 on damage taken or phase transition. No natural cap — chain grows indefinitely until interrupted.
 - **Show Phase** — The part of a Simon Sequence where the game flashes the chain to the player. Pace is per-opponent (difficulty config).
 - **Repeat Phase** — The part of a Simon Sequence where the player must reproduce the chain. The player has 3 seconds per keystroke on Easy (Tofu), shorter on harder tiers.
-- **Riddle / Dialogue Prompt** — A piece of opponent content with a body (text or image) and three answers (each text or image). Visible during a Riddle Encounter; hidden during a Riddle Gap. Sits behind WASD prompts in z-order when visible.
+- **Riddle / Dialogue Prompt** — A piece of opponent content with a body (text or image) and three answers (each text or image). Visible during a Riddle Encounter; hidden during a Riddle Gap. Sits behind WASD prompts in z-order when visible. Answer cards are shuffled per display: each time `RiddleBox.display(prompt)` is called, the three answers are reshuffled before being placed into the left/middle/right slots.
 - **Riddle Encounter** — A discrete window during Defense Phase in which the riddle box and answer cards are visible and the player can navigate / submit an answer with IJKL. The encounter starts when the riddle UI snaps in (the previous gap ends), and ends when one of these events fires:
-  - Player K-presses an answer (wrong/neutral → Breather Gap; right → Attack Phase begins immediately, riddle hides, no gap until Attack Phase ends).
+  - Player K-presses an answer (wrong → Breather Gap; neutral → "Try again!" banner + Simon chain replay, same prompt and encounter continue; right → Attack Phase begins immediately, riddle hides, no gap until Attack Phase ends).
   - Player takes Simon damage (encounter ends, Breather Gap begins, prompt advances to the next entry in the deck).
 - **Riddle Gap** — The complement of a Riddle Encounter: a window during Defense Phase when no riddle UI is visible on screen. Two flavors:
   - **Fresh-Start Gap** — 3 seconds total. The first 1 second is "dead air" with Simon defense paused (opponent idle). Then Simon defense activates for the remaining 2 seconds, with the riddle still hidden, before the next encounter starts. Used at Round 1 start (after the Fight! banner), Round 2 start (after the Fight! banner), and immediately after a knockdown's clock pause ends.
-  - **Breather Gap** — 4 seconds. Simon defense remains active the entire time (no dead air). Used after a wrong answer, neutral answer, player Simon damage, and attack-phase end (non-knockdown).
+  - **Breather Gap** — 4 seconds. Simon defense remains active the entire time (no dead air). Used after a wrong answer, player Simon damage, and attack-phase end (non-knockdown).
 - **Gap Timing Rules** —
   - The gap timer starts at the *event itself* (K-press, punch landed, attack-phase-end), not after the event's effects (damage flash, outcome banner) finish playing — effects play *inside* the gap.
   - A new gap-triggering event during an active gap *resets* the timer to the new event's full duration. Rapid consecutive events (e.g., repeated Simon damage) can therefore push the next riddle further out, by design.
   - Show/hide is a snap, not a fade. Fade is reserved as a polish item for a later milestone.
   - The match clock keeps ticking through every gap. Knockdown remains the only event that pauses the clock.
-- **Outcome** — The classification of a riddle answer. One of: `wrong` (deals 1 damage, resets Simon chain), `neutral` (advances to next prompt, no effect), `right` (triggers Attack Phase).
+- **Outcome** — The classification of a riddle answer. One of: `wrong` (deals 1 damage, resets Simon chain), `neutral` (shows a "Try again!" banner and replays the current Simon chain at the same length from step 0; the prompt stays the same and answer cards re-shuffle on re-display), `right` (triggers Attack Phase).
 - **Dialogue Deck** — The pool of prompts for one opponent. Shuffled without replacement. Resets at the start of each round.
 - **Combo** — The player's escalation state during the match. Displayed as `x1`, `x2`, `x3`. Resets to `x1` only when the player takes damage during Defense. Failed attack inputs do *not* reset combo.
 - **Knockdown** — A successful Attack Phase completed at combo level `x3`. Increments the Knockdown counter and pauses the match clock for ~5 seconds.
