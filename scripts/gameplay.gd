@@ -36,6 +36,7 @@ var _current_prompt: DialoguePrompt
 const _BLOCK_FLASH_SECONDS := 0.15
 const _DAMAGE_HIT_SECONDS := 0.35
 const _PUNCH_FLASH_SECONDS := 0.15
+const _MISS_FLASH_SECONDS := 0.35
 
 func _ready() -> void:
 	_opponent.configure("tofu")
@@ -326,10 +327,13 @@ func _on_attack_succeeded() -> void:
 		_refresh_combo_meter()
 		_return_to_defense_after_attack()
 
-func _on_attack_failed() -> void:
+func _on_attack_failed(expected_direction: int) -> void:
 	# CONTEXT.md → "Combo": failed attack inputs do not reset combo. We just
-	# return to defense.
+	# flash the missed key (mirrors the defense-fail flash) and return to
+	# defense. flash_fail shows the _fail.png variant at the EXPECTED direction
+	# so the wrong-key and timeout cases read identically.
 	_input_bar.cancel()
+	_prompts.flash_fail(expected_direction, _MISS_FLASH_SECONDS)
 	_return_to_defense_after_attack()
 
 func _return_to_defense_after_attack() -> void:

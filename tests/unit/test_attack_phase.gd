@@ -26,15 +26,17 @@ func test_complete_sequence_emits_success():
 	a.player_input(step)
 	assert_true(done["emitted"])
 
-func test_wrong_input_emits_failure():
+func test_wrong_input_emits_failure_with_expected_direction():
 	var a := AttackPhase.new()
 	a.step_seconds = 0.001
 	a.gap_seconds = 0.001
 	a.interlude_seconds = 0.01
 	a.input_window_seconds = 10.0
 	add_child_autoqfree(a)
-	var failed := {"emitted": false}
-	a.attack_failed.connect(func(): failed["emitted"] = true)
+	var failed := {"emitted": false, "direction": -1}
+	a.attack_failed.connect(func(direction):
+		failed["emitted"] = true
+		failed["direction"] = direction)
 	a._sequence.seed_rng(1)
 	a.begin(1)
 	await get_tree().create_timer(0.1).timeout
@@ -42,6 +44,7 @@ func test_wrong_input_emits_failure():
 	var wrong := SimonSequence.Direction.HEAD if step != SimonSequence.Direction.HEAD else SimonSequence.Direction.BODY
 	a.player_input(wrong)
 	assert_true(failed["emitted"])
+	assert_eq(failed["direction"], step, "attack_failed carries the missed step's direction")
 
 func test_multi_step_sequence_advances_through_inputs():
 	# Guards against an off-by-one in the `_expected_index >= _sequence.length()`
@@ -76,10 +79,13 @@ func test_timeout_emits_failure():
 	a.interlude_seconds = 0.01
 	a.input_window_seconds = 0.05
 	add_child_autoqfree(a)
-	var failed := {"emitted": false}
-	a.attack_failed.connect(func(): failed["emitted"] = true)
+	var failed := {"emitted": false, "direction": -1}
+	a.attack_failed.connect(func(direction):
+		failed["emitted"] = true
+		failed["direction"] = direction)
 	a._sequence.seed_rng(1)
 	a.begin(1)
 	# Wait past show (interlude + step + gap ~= 0.012s) + input window (0.05s).
 	await get_tree().create_timer(0.2).timeout
 	assert_true(failed["emitted"], "attack_failed must fire when the input window expires with no input")
+	assert_eq(failed["direction"], a.current_sequence().steps()[0], "timeout fail carries the expected direction at _expected_index")

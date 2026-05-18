@@ -6,7 +6,7 @@ signal step_flashed(direction: int)
 signal repeat_started
 signal step_landed(index: int)
 signal attack_succeeded
-signal attack_failed
+signal attack_failed(expected_direction: int)
 
 @export var step_seconds: float = 0.8
 @export var gap_seconds: float = 0.25
@@ -92,6 +92,11 @@ func _on_input_timeout() -> void:
 		_fail()
 
 func _fail() -> void:
+	# Invariant: _fail is only reachable while _repeat_active is true, which
+	# means the show phase populated _sequence and _expected_index points at
+	# the missed step. Read the direction BEFORE clearing state, matching
+	# DefensePhase._fail_with_damage.
+	var expected_direction: int = _sequence.steps()[_expected_index]
 	_repeat_active = false
 	_timeout_timer.stop()
-	attack_failed.emit()
+	attack_failed.emit(expected_direction)
