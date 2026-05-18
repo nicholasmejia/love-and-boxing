@@ -52,7 +52,9 @@ func _ready() -> void:
 	_defense.show_started.connect(_on_show_started)
 	_attack = AttackPhase.new()
 	add_child(_attack)
+	_attack.show_started.connect(_on_show_started)
 	_attack.step_flashed.connect(_on_attack_step_flashed)
+	_attack.repeat_started.connect(_on_attack_repeat_started)
 	_attack.step_landed.connect(_on_attack_step_landed)
 	_attack.attack_succeeded.connect(_on_attack_succeeded)
 	_attack.attack_failed.connect(_on_attack_failed)
@@ -299,16 +301,24 @@ func _trigger_attack_phase() -> void:
 func _on_attack_step_flashed(direction: int) -> void:
 	_prompts.flash(direction, _attack.step_seconds)
 
+func _on_attack_repeat_started() -> void:
+	_input_bar.start(_attack.input_window_seconds)
+
 func _on_attack_step_landed(index: int) -> void:
 	AudioBus.play_sfx("punch")
 	var direction: int = _attack.current_sequence().steps()[index]
 	var side: int = _glove_side_for(direction)
+	# Restart the input-window bar for the next attack keystroke. The final
+	# step's attack_succeeded handler cancels it synchronously (same frame —
+	# no flicker), matching the defense-side block flow.
+	_input_bar.start(_attack.input_window_seconds)
 	_prompts.flash_success(direction, _PUNCH_FLASH_SECONDS)
 	_gloves.set_state(side, PlayerGloves.State.PUNCH)
 	await get_tree().create_timer(_PUNCH_FLASH_SECONDS).timeout
 	_gloves.set_state(side, PlayerGloves.State.IDLE)
 
 func _on_attack_succeeded() -> void:
+	_input_bar.cancel()
 	if _combo.is_at_knockdown_threshold():
 		await _play_knockdown_sequence()
 	else:
@@ -319,6 +329,7 @@ func _on_attack_succeeded() -> void:
 func _on_attack_failed() -> void:
 	# CONTEXT.md → "Combo": failed attack inputs do not reset combo. We just
 	# return to defense.
+	_input_bar.cancel()
 	_return_to_defense_after_attack()
 
 func _return_to_defense_after_attack() -> void:
