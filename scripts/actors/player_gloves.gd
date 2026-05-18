@@ -7,7 +7,7 @@ enum State { IDLE, BLOCK, PUNCH }
 @onready var _left: Sprite2D = $LeftGlove
 @onready var _right: Sprite2D = $RightGlove
 
-const _STATE_PREFIX := {
+const _STATE_TOKEN := {
 	State.IDLE: "idle",
 	State.BLOCK: "block",
 	State.PUNCH: "punch",
@@ -20,7 +20,8 @@ func _ready() -> void:
 func set_state(side: int, state: int) -> void:
 	var sprite := _left if side == Side.LEFT else _right
 	var side_token := "left" if side == Side.LEFT else "right"
-	var path := "res://assets/sprites/player/player_glove_%s_%s.png" % [side_token, _STATE_PREFIX[state]]
+	var safe_state: int = state if _STATE_TOKEN.has(state) else State.IDLE
+	var path := "res://assets/sprites/player/player_glove_%s_%s.png" % [side_token, _STATE_TOKEN[safe_state]]
 	if ResourceLoader.exists(path):
 		sprite.texture = load(path)
 	else:

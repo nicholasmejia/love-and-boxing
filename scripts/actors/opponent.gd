@@ -43,7 +43,8 @@ func set_action(action: int, direction: int = Direction.LEFT) -> void:
 	_sprite.flip_h = (direction == Direction.RIGHT)
 
 func _load_texture(action: int) -> Texture2D:
-	var token: String = _ACTION_TOKEN[action]
+	var safe_action: int = action if _ACTION_TOKEN.has(action) else Action.IDLE
+	var token: String = _ACTION_TOKEN[safe_action]
 	var path := "res://assets/sprites/opponents/%s/opponent_%s_body_%s.png" % [_slug, _slug, token]
 	if ResourceLoader.exists(path):
 		return load(path)
