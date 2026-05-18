@@ -12,11 +12,20 @@ func _ready() -> void:
 	hide_all()
 
 func flash(direction: int, duration_seconds: float) -> void:
-	var prompt: WasdPrompt = _prompts[direction]
-	prompt.show_direction(direction)
-	await get_tree().create_timer(duration_seconds).timeout
-	prompt.hide_prompt()
+	_flash_variant(direction, duration_seconds, WasdPrompt.Variant.PROMPT)
+
+func flash_success(direction: int, duration_seconds: float) -> void:
+	_flash_variant(direction, duration_seconds, WasdPrompt.Variant.SUCCESS)
+
+func flash_fail(direction: int, duration_seconds: float) -> void:
+	_flash_variant(direction, duration_seconds, WasdPrompt.Variant.FAIL)
 
 func hide_all() -> void:
 	for p in _prompts.values():
 		p.hide_prompt()
+
+func _flash_variant(direction: int, duration_seconds: float, variant: int) -> void:
+	var prompt: WasdPrompt = _prompts[direction]
+	prompt.display(direction, variant)
+	await get_tree().create_timer(duration_seconds).timeout
+	prompt.hide_prompt()

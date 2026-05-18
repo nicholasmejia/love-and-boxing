@@ -177,7 +177,9 @@ func _on_step_blocked(index: int) -> void:
 	# step, sequence_completed fires immediately after and cancels it (synchronous,
 	# same frame — no flicker).
 	_input_bar.start(_defense.input_window_seconds)
-	# Punch and block land on the same frame so the block reads as one.
+	# SUCCESS flash, opponent swing, and glove BLOCK pose all land on the same
+	# frame so the block reads as a single beat.
+	_prompts.flash_success(direction, _BLOCK_FLASH_SECONDS)
 	_swing_opponent_for(direction)
 	_gloves.set_state(side, PlayerGloves.State.BLOCK)
 	await get_tree().create_timer(_BLOCK_FLASH_SECONDS).timeout
@@ -186,6 +188,11 @@ func _on_step_blocked(index: int) -> void:
 
 func _on_damage_taken(expected_direction: int) -> void:
 	_input_bar.cancel()
+	# FAIL flashes at the EXPECTED direction (the direction the opponent is
+	# punching), not the wrong key the player pressed. This makes the timeout
+	# and wrong-key cases identical visually and reads as "you needed to block
+	# W, you didn't — here's W coming at you".
+	_prompts.flash_fail(expected_direction, _DAMAGE_HIT_SECONDS)
 	# Punch lands at the direction the player failed to block; gloves stay idle.
 	_swing_opponent_for(expected_direction)
 	_hearts.take_damage()

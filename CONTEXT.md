@@ -52,7 +52,7 @@ This file is the canonical vocabulary for the project. When code, plans, or art 
 - **Match Timer** — Top-center. `5:00` countdown.
 - **Riddle Box** — Center of screen, top edge aligned with the X (vertical) midline. Renders text or image content.
 - **Answer Cards** — Three boxes in a row below the Riddle Box. Each renders text or image content.
-- **WASD Prompts** — Input indicators flashed during Simon Sequences. `W` over the opponent's head, `S` over the opponent's body center, `A` to the opponent's left, `D` to the opponent's right. Higher z-index than Riddle Box.
+- **WASD Prompts** — Input indicators flashed during Simon Sequences. `W` over the opponent's head, `S` over the opponent's body center, `A` to the opponent's left, `D` to the opponent's right. Higher z-index than Riddle Box. Each direction has three variants (`prompt`, `success`, `fail`) — see Command Sprites in the asset manifest.
 - **Announcement Banner** — Full-screen overlay used for state transitions (Ready?, Fight!, Round Over!, Knock Down!, Knock Out!, You Win!, You Lose!, Draw!).
 
 ## Asset Naming Conventions
@@ -105,12 +105,19 @@ Applies to:
 Only the **D** directions are mirrored. Idle, guard-down, knocked-down, talking, and the swing_high / swing_mid / hit_high sprites are inherently centered or symmetric and never need mirroring.
 
 ### UI
-- Input prompts: `prompt_w.png`, `prompt_a.png`, `prompt_s.png`, `prompt_d.png`
 - Hearts: `heart_full.png`, `heart_empty.png`
 - Combo: `combo_x1.png`, `combo_x2.png`, `combo_x3.png`
 - Knockdown: `knockdown_icon.png`
 - Timer background: `timer_bg.png`
 - Boxes: `riddle_box.png`, `answer_box.png` (must accommodate text or image content)
+
+### Command Sprites (in `assets/sprites/commands/`)
+
+Per-direction WASD sprites with three variants. The Simon show phase displays the `prompt` variant; the repeat phase flashes `success` on a correct keystroke and `fail` on a missed keystroke (or input-window timeout).
+
+- Prompt: `w_prompt.png`, `a_prompt.png`, `s_prompt.png`, `d_prompt.png`
+- Success: `w_success.png`, `a_success.png`, `s_success.png`, `d_success.png`
+- Fail: `w_fail.png`, `a_fail.png`, `s_fail.png`, `d_fail.png`
 
 ### Banners (full-screen overlays)
 - `banner_ready.png`, `banner_fight.png`, `banner_round_over.png`
