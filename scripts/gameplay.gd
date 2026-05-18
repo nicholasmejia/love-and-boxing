@@ -128,6 +128,12 @@ func _handle_round_end() -> void:
 	_banner.dismiss()
 	_clock.advance_to_next_round()
 	_deck.reset()
+	_hearts.heal()
+	_knockdowns.apply_round_end_decrement()
+	_combo.on_knockdown_completed()
+	_refresh_heart_row()
+	_refresh_knockdown_meter()
+	_refresh_combo_meter()
 	await _play_ready_fight()
 	_clock.start()
 	_transitioning = false
