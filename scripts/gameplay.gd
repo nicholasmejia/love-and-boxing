@@ -25,6 +25,7 @@ var _visibility: int = RiddleVisibility.FRESH_START_GAP
 var _gap_generation: int = 0
 
 const _BLOCK_FLASH_SECONDS := 0.15
+const _DAMAGE_HIT_SECONDS := 0.35
 
 func _ready() -> void:
 	_opponent.configure("tofu")
@@ -154,19 +155,27 @@ func _on_step_blocked(index: int) -> void:
 	AudioBus.play_sfx("block")
 	var direction: int = _defense.current_sequence().steps()[index]
 	var side: int = PlayerGloves.Side.RIGHT if direction == SimonSequence.Direction.RIGHT else PlayerGloves.Side.LEFT
+	# Punch and block land on the same frame so the block reads as one.
+	_swing_opponent_for(direction)
 	_gloves.set_state(side, PlayerGloves.State.BLOCK)
 	await get_tree().create_timer(_BLOCK_FLASH_SECONDS).timeout
 	_gloves.set_state(side, PlayerGloves.State.IDLE)
+	_opponent_idle()
 
-func _on_damage_taken() -> void:
+func _on_damage_taken(expected_direction: int) -> void:
+	# Punch lands at the direction the player failed to block; gloves stay idle.
+	_swing_opponent_for(expected_direction)
 	_hearts.take_damage()
 	AudioBus.play_sfx("hurt")
 	_refresh_heart_row()
-	_opponent.set_action(Opponent.Action.IDLE, Opponent.Direction.LEFT)
 	if _hearts.is_empty():
 		_end_match_loss()
 		return
 	_begin_breather_gap()
+	# Hold the punch frame briefly so the hit reads, then recover to IDLE before
+	# the new show phase's first step lands (interlude_seconds after the damage).
+	await get_tree().create_timer(_DAMAGE_HIT_SECONDS).timeout
+	_opponent_idle()
 
 func _refresh_heart_row() -> void:
 	_heart_row.set_hearts(_hearts.current())
@@ -183,6 +192,11 @@ func _end_match_loss() -> void:
 	SceneRouter.goto_match_results()
 
 func _animate_opponent_punch(direction: int) -> void:
+	_swing_opponent_for(direction)
+	await get_tree().create_timer(_defense.step_seconds).timeout
+	_opponent_idle()
+
+func _swing_opponent_for(direction: int) -> void:
 	var action_dir := Opponent.Direction.LEFT
 	var action: int
 	match direction:
@@ -198,7 +212,8 @@ func _animate_opponent_punch(direction: int) -> void:
 		_:
 			action = Opponent.Action.IDLE
 	_opponent.set_action(action, action_dir)
-	await get_tree().create_timer(_defense.step_seconds).timeout
+
+func _opponent_idle() -> void:
 	_opponent.set_action(Opponent.Action.IDLE, Opponent.Direction.LEFT)
 
 func _show_placeholder_prompt() -> void:

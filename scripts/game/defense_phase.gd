@@ -7,7 +7,7 @@ signal step_flashed(direction: int)
 signal repeat_started
 signal step_blocked(index: int)
 signal sequence_completed
-signal damage_taken
+signal damage_taken(expected_direction: int)
 
 @export var step_seconds: float = 0.8
 @export var gap_seconds: float = 0.25
@@ -74,9 +74,13 @@ func _on_input_timeout() -> void:
 		_fail_with_damage()
 
 func _fail_with_damage() -> void:
+	# Invariant: _fail_with_damage is only reachable while _repeat_active is true,
+	# which implies the show phase populated _sequence and _expected_index points at
+	# the missed step. Read the direction BEFORE resetting the sequence.
+	var expected_direction: int = _sequence.steps()[_expected_index]
 	_repeat_active = false
 	_timeout_timer.stop()
-	damage_taken.emit()
+	damage_taken.emit(expected_direction)
 	_sequence.reset()
 	if _running:
 		_begin_next_round()

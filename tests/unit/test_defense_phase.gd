@@ -19,8 +19,10 @@ func test_correct_input_emits_step_blocked():
 func test_wrong_input_emits_damage_taken():
 	var d := DefensePhase.new()
 	add_child_autoqfree(d)
-	var flags := {"emitted": false}
-	d.damage_taken.connect(func(): flags["emitted"] = true)
+	var flags := {"emitted": false, "direction": -1}
+	d.damage_taken.connect(func(direction):
+		flags["emitted"] = true
+		flags["direction"] = direction)
 	d._sequence.seed_rng(1)
 	d._sequence.extend()
 	var step: int = d._sequence.steps()[0]
@@ -30,6 +32,7 @@ func test_wrong_input_emits_damage_taken():
 	d.begin_repeat_phase()
 	d.player_input(wrong)
 	assert_true(flags["emitted"])
+	assert_eq(flags["direction"], step, "damage_taken carries the missed step's direction")
 
 func test_sequence_completed_when_last_step_correct():
 	var d := DefensePhase.new()
@@ -53,7 +56,7 @@ func test_player_input_noop_when_repeat_inactive():
 	add_child_autoqfree(d)
 	var flags := {"blocked": false, "damaged": false}
 	d.step_blocked.connect(func(_idx): flags["blocked"] = true)
-	d.damage_taken.connect(func(): flags["damaged"] = true)
+	d.damage_taken.connect(func(_direction): flags["damaged"] = true)
 	d._sequence.seed_rng(1)
 	d._sequence.extend()
 	# _repeat_active stays false; input should be ignored.
