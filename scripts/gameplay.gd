@@ -236,8 +236,8 @@ func _opponent_idle() -> void:
 
 func _show_next_prompt() -> void:
 	var prompt := _deck.draw()
-	if prompt != null:
-		_riddle.display(prompt)
+	assert(prompt != null, "DialogueDeck.draw() returned null — deck not loaded?")
+	_riddle.display(prompt)
 
 # Placeholder deck for M9. Real per-opponent dialogue resources will land later
 # (CONTEXT.md → Dialogue Deck). Answer-card order is LEFT/MIDDLE/RIGHT =
@@ -270,9 +270,16 @@ func _make_answer(text: String, outcome: int) -> DialogueAnswer:
 func _on_answer_submitted(outcome: int) -> void:
 	if _visibility != RiddleVisibility.ENCOUNTER:
 		return
+	# Snap the riddle hidden and flip visibility out of ENCOUNTER immediately so
+	# any re-entrant K-press during the awaited banner below hits the gate above
+	# and bails. _begin_breather_gap() will set this again (and bump
+	# _gap_generation) — doing it here is just an early gate, not a behavior
+	# change. RiddleBox._unhandled_input doesn't self-check `visible`, so without
+	# this prelude a mashed K can re-enter this handler mid-banner.
+	_visibility = RiddleVisibility.BREATHER_GAP
+	_riddle.visible = false
 	match outcome:
 		Outcome.Type.WRONG:
-			_riddle.visible = false
 			_hearts.take_damage()
 			AudioBus.play_sfx("hurt")
 			_refresh_heart_row()
@@ -287,16 +294,10 @@ func _on_answer_submitted(outcome: int) -> void:
 			_defense.start()
 			_begin_breather_gap()
 		Outcome.Type.NEUTRAL:
-			_riddle.visible = false
 			_begin_breather_gap()
 		Outcome.Type.RIGHT:
-			# Placeholder for M10's Attack Phase entry. The 1s banner reads as
-			# a quick celebratory beat; then a Breather Gap reshows the next
-			# prompt. _transitioning gates only player input (see
-			# _unhandled_input), so the in-flight defense show phase keeps
-			# emitting signals to the input bar / glove handlers normally.
-			_riddle.visible = false
-			_transitioning = true
+			# Placeholder for M10's Attack Phase entry. M10 will replace the 1s
+			# banner with the real attack sequence and decide what to do with the
+			# round clock during it.
 			await _banner.show_message("Attack Window!", 1.0)
-			_transitioning = false
 			_begin_breather_gap()
