@@ -283,6 +283,23 @@ func _swing_opponent_for(direction: int) -> void:
 			action = Opponent.Action.IDLE
 	_opponent.set_action(action, action_dir)
 
+func _hit_opponent_for(direction: int) -> void:
+	var action_dir := Opponent.Direction.LEFT
+	var action: int
+	match direction:
+		SimonSequence.Direction.HEAD:
+			action = Opponent.Action.HIT_HIGH
+		SimonSequence.Direction.BODY:
+			action = Opponent.Action.HIT_LOW
+		SimonSequence.Direction.LEFT:
+			action = Opponent.Action.HIT_LOW
+		SimonSequence.Direction.RIGHT:
+			action = Opponent.Action.HIT_LOW
+			action_dir = Opponent.Direction.RIGHT
+		_:
+			action = Opponent.Action.IDLE
+	_opponent.set_action(action, action_dir)
+
 func _opponent_idle() -> void:
 	_opponent.set_action(Opponent.Action.IDLE, Opponent.Direction.LEFT)
 
@@ -331,15 +348,25 @@ func _on_attack_step_landed(index: int) -> void:
 	# no flicker), matching the defense-side block flow.
 	_input_bar.start(_attack.input_window_seconds)
 	_prompts.flash_success(direction, _PUNCH_FLASH_SECONDS)
+	_hit_opponent_for(direction)
 	_gloves.set_state(side, PlayerGloves.State.PUNCH)
 	# The 0.15s glove-IDLE reset can land during the Knock Down banner if this
 	# was the x3 finisher step — visually benign (the glove is going to IDLE
 	# regardless), but worth knowing the awaits overlap on that one frame.
 	await get_tree().create_timer(_PUNCH_FLASH_SECONDS).timeout
 	_gloves.set_state(side, PlayerGloves.State.IDLE)
+	# Skip the GUARD_DOWN reset when attack has ended — _play_knockdown_sequence
+	# has set KNOCKED_DOWN, or _return_to_defense has set IDLE; both flip _in_attack.
+	if _in_attack:
+		_opponent.set_action(Opponent.Action.GUARD_DOWN, Opponent.Direction.LEFT)
 
 func _on_attack_succeeded() -> void:
 	_input_bar.cancel()
+	# Hold the final HIT sprite for the same dwell non-final steps get.
+	# AttackPhase emits step_landed and attack_succeeded synchronously back-to-back
+	# on the last input — without this await, KNOCKED_DOWN or IDLE would clobber
+	# the HIT sprite within the same frame, before any render.
+	await get_tree().create_timer(_PUNCH_FLASH_SECONDS).timeout
 	if _combo.is_at_knockdown_threshold():
 		await _play_knockdown_sequence()
 	else:
