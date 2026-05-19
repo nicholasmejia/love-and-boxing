@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="DialogueDeckResource" load_steps=12 format=3 uid="uid://c1tofudeck"]
+
+[ext_resource type="Script" path="res://scripts/game/dialogue_deck_resource.gd" id="1_deck"]
+[ext_resource type="Resource" path="res://data/dialogue/tofu/tier_0/banana.tres" id="t0_banana"]
+[ext_resource type="Resource" path="res://data/dialogue/tofu/tier_0/coconut.tres" id="t0_coconut"]
+[ext_resource type="Resource" path="res://data/dialogue/tofu/tier_0/palm_tree.tres" id="t0_palm"]
+[ext_resource type="Resource" path="res://data/dialogue/tofu/tier_1/banana.tres" id="t1_banana"]
+[ext_resource type="Resource" path="res://data/dialogue/tofu/tier_1/coconut.tres" id="t1_coconut"]
+[ext_resource type="Resource" path="res://data/dialogue/tofu/tier_1/tree.tres" id="t1_tree"]
+[ext_resource type="Resource" path="res://data/dialogue/tofu/tier_2/banana.tres" id="t2_banana"]
+[ext_resource type="Resource" path="res://data/dialogue/tofu/tier_2/sun.tres" id="t2_sun"]
+[ext_resource type="Resource" path="res://data/dialogue/tofu/tier_2/heart.tres" id="t2_heart"]
+
+[resource]
+script = ExtResource("1_deck")
+tier_0 = Array[Resource]([ExtResource("t0_banana"), ExtResource("t0_coconut"), ExtResource("t0_palm")])
+tier_1 = Array[Resource]([ExtResource("t1_banana"), ExtResource("t1_coconut"), ExtResource("t1_tree")])
+tier_2 = Array[Resource]([ExtResource("t2_banana"), ExtResource("t2_sun"), ExtResource("t2_heart")])
