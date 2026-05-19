@@ -1,28 +1,32 @@
-[gd_resource type="Resource" script_class="DialoguePrompt" load_steps=5 format=3]
+[gd_resource type="Resource" script_class="DialoguePrompt" load_steps=9 format=3]
 
 [ext_resource type="Script" path="res://scripts/game/dialogue_prompt.gd" id="1_prompt"]
 [ext_resource type="Script" path="res://scripts/game/dialogue_answer.gd" id="2_answer"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ui/tofu-riddles/sun.png" id="3_sun"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ui/tofu-riddles/mango.png" id="4_mango"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ui/tofu-riddles/sunflower.png" id="5_sunflower"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ui/tofu-riddles/snowflake.png" id="6_snowflake"]
 
 [sub_resource type="Resource" id="ans_right"]
 script = ExtResource("2_answer")
-text = "RIPE MANGO"
-image = null
+text = ""
+image = ExtResource("4_mango")
 outcome = 2
 
 [sub_resource type="Resource" id="ans_neutral"]
 script = ExtResource("2_answer")
-text = "SUNFLOWER"
-image = null
+text = ""
+image = ExtResource("5_sunflower")
 outcome = 1
 
 [sub_resource type="Resource" id="ans_wrong"]
 script = ExtResource("2_answer")
-text = "SNOWFLAKE"
-image = null
+text = ""
+image = ExtResource("6_snowflake")
 outcome = 0
 
 [resource]
 script = ExtResource("1_prompt")
-body_text = "SUN"
-body_image = null
+body_text = ""
+body_image = ExtResource("3_sun")
 answers = Array[Resource]([SubResource("ans_right"), SubResource("ans_neutral"), SubResource("ans_wrong")])
