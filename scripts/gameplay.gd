@@ -136,11 +136,11 @@ func _handle_round_end() -> void:
 	_visibility = RiddleVisibility.FRESH_START_GAP
 	_gap_generation += 1  # invalidate any in-flight gap awaits
 	if _clock.current_round() >= MatchClock.TOTAL_ROUNDS:
-		await _banner.show_message("Round Over!", MatchPacing.ROUND_OVER_BANNER)
+		await _banner.show_banner("round_over", MatchPacing.ROUND_OVER_BANNER)
 		Globals.last_match_outcome = Globals.MatchOutcome.DRAW
 		SceneRouter.goto_match_results()
 		return
-	await _banner.show_message("Round Over!", MatchPacing.ROUND_OVER_BANNER)
+	await _banner.show_banner("round_over", MatchPacing.ROUND_OVER_BANNER)
 	_banner.show_prompt("Press K to start Round %d" % (_clock.current_round() + 1))
 	await _wait_for_continue()
 	_banner.dismiss()
@@ -163,8 +163,8 @@ func _wait_for_continue() -> void:
 	await _continue_pressed
 
 func _play_ready_fight() -> void:
-	await _banner.show_message("Ready?", MatchPacing.READY_BANNER)
-	await _banner.show_message("Fight!", MatchPacing.FIGHT_BANNER)
+	await _banner.show_banner("ready", MatchPacing.READY_BANNER)
+	await _banner.show_banner("fight", MatchPacing.FIGHT_BANNER)
 
 # Fresh-Start Gap (CONTEXT.md → Riddle Gap):
 #   total: MatchPacing.FRESH_START_GAP seconds, riddle hidden throughout.
@@ -273,7 +273,7 @@ func _end_match_loss() -> void:
 	_prompts.hide_all()
 	_riddle.visible = false
 	_gap_generation += 1  # invalidate any in-flight gap awaits
-	await _banner.show_message("You Lose!", MatchPacing.ROUND_OVER_BANNER)
+	await _banner.show_banner("you_lose", MatchPacing.ROUND_OVER_BANNER)
 	Globals.last_match_outcome = Globals.MatchOutcome.LOSE
 	SceneRouter.goto_match_results()
 
@@ -414,15 +414,15 @@ func _play_knockdown_sequence() -> void:
 	_knockdowns.increment()
 	_refresh_knockdown_meter()
 	_opponent.set_action(Opponent.Action.KNOCKED_DOWN, Opponent.Direction.LEFT)
-	await _banner.show_message("Knock Down!", MatchPacing.KNOCK_DOWN_BANNER)
+	await _banner.show_banner("knock_down", MatchPacing.KNOCK_DOWN_BANNER)
 	# KNOCKDOWN_PAUSE is the total clock-pause duration; the banner ate part of
 	# it, hold the remainder before resuming the clock.
 	var remainder := MatchPacing.KNOCKDOWN_PAUSE - MatchPacing.KNOCK_DOWN_BANNER
 	if remainder > 0.0:
 		await get_tree().create_timer(remainder).timeout
 	if _knockdowns.is_knockout():
-		await _banner.show_message("Knock Out!", MatchPacing.KNOCK_OUT_BANNER)
-		await _banner.show_message("You Win!", MatchPacing.YOU_WIN_BANNER)
+		await _banner.show_banner("knock_out", MatchPacing.KNOCK_OUT_BANNER)
+		await _banner.show_banner("you_win", MatchPacing.YOU_WIN_BANNER)
 		Globals.last_match_outcome = Globals.MatchOutcome.WIN
 		SceneRouter.goto_match_results()
 		return
