@@ -2,6 +2,7 @@ class_name AnnouncementBanner
 extends Control
 
 const _BANNERS_DIR := "res://assets/sprites/ui/banners/"
+const _BANNER_SCALE := 0.5
 
 @onready var _image: TextureRect = $CenterContainer/Image
 @onready var _label: Label = $CenterContainer/Label
@@ -13,6 +14,7 @@ func show_banner(banner_name: String, duration_seconds: float) -> void:
 	var path := "%sbanner_%s.png" % [_BANNERS_DIR, banner_name]
 	if ResourceLoader.exists(path):
 		_image.texture = load(path)
+		_image.custom_minimum_size = _image.texture.get_size() * _BANNER_SCALE
 		_image.visible = true
 		_label.visible = false
 	else:

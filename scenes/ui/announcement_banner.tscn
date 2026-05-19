@@ -34,6 +34,8 @@ mouse_filter = 2
 [node name="Image" type="TextureRect" parent="CenterContainer"]
 visible = false
 layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
 
 [node name="Label" type="Label" parent="CenterContainer"]
 layout_mode = 2
