@@ -1,4 +1,4 @@
-[gd_resource type="Resource" script_class="DialogueDeckResource" load_steps=12 format=3 uid="uid://c1tofudeck"]
+[gd_resource type="Resource" script_class="DialogueDeckResource" load_steps=11 format=3 uid="uid://c1tofudeck"]
 
 [ext_resource type="Script" path="res://scripts/game/dialogue_deck_resource.gd" id="1_deck"]
 [ext_resource type="Resource" path="res://data/dialogue/tofu/tier_0/banana.tres" id="t0_banana"]
