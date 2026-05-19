@@ -70,7 +70,14 @@ func _ready() -> void:
 	_attack.step_landed.connect(_on_attack_step_landed)
 	_attack.attack_succeeded.connect(_on_attack_succeeded)
 	_attack.attack_failed.connect(_on_attack_failed)
-	_deck.load_prompts(_build_placeholder_deck())
+	var deck_path := config.dialogue_deck_path
+	if deck_path == "" or not ResourceLoader.exists(deck_path):
+		deck_path = "res://data/dialogue/tofu/deck.tres"
+	var deck_res := load(deck_path) as DialogueDeckResource
+	_deck.load_tier(0, deck_res.tier_0)
+	_deck.load_tier(1, deck_res.tier_1)
+	_deck.load_tier(2, deck_res.tier_2)
+	_deck.set_active_tier(_knockdowns.count())
 	_riddle.answer_submitted.connect(_on_answer_submitted)
 	_riddle.visible = false
 	_refresh_heart_row()
@@ -141,6 +148,7 @@ func _handle_round_end() -> void:
 	_deck.reset()
 	_hearts.heal()
 	_knockdowns.apply_round_end_decrement()
+	_deck.set_active_tier(_knockdowns.count())
 	_combo.on_knockdown_completed()
 	_refresh_heart_row()
 	_refresh_knockdown_meter()
@@ -418,6 +426,7 @@ func _play_knockdown_sequence() -> void:
 		Globals.last_match_outcome = Globals.MatchOutcome.WIN
 		SceneRouter.goto_match_results()
 		return
+	_deck.set_active_tier(_knockdowns.count())
 	_combo.on_knockdown_completed()
 	_refresh_combo_meter()
 	_opponent_idle()
@@ -426,29 +435,6 @@ func _play_knockdown_sequence() -> void:
 	# Defense restarts inside _begin_fresh_start_gap() after the 1s dead-air front.
 	_defense.stop()
 	_begin_fresh_start_gap()
-
-# Placeholder deck for M9. Real per-opponent dialogue resources will land later
-# (CONTEXT.md → Dialogue Deck). Answer-card order is LEFT/MIDDLE/RIGHT =
-# WRONG/NEUTRAL/RIGHT to make the manual test trivial; real prompts will have
-# their own per-answer layout.
-func _build_placeholder_deck() -> Array[DialoguePrompt]:
-	var prompts: Array[DialoguePrompt] = []
-	for i in range(1, 6):
-		var prompt := DialoguePrompt.new()
-		prompt.body_text = "Placeholder dialogue line %d." % i
-		prompt.answers = [
-			_make_answer("wrong", Outcome.Type.WRONG),
-			_make_answer("neutral", Outcome.Type.NEUTRAL),
-			_make_answer("right", Outcome.Type.RIGHT),
-		]
-		prompts.append(prompt)
-	return prompts
-
-func _make_answer(text: String, outcome: int) -> DialogueAnswer:
-	var a := DialogueAnswer.new()
-	a.text = text
-	a.outcome = outcome
-	return a
 
 # Riddle answer submission (K-press on the highlighted answer card). RiddleBox
 # emits answer_submitted whenever K fires while it's mounted — including while

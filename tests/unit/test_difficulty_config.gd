@@ -24,7 +24,7 @@ func test_tofu_resource_loads_with_expected_values():
 	assert_eq(d.tier, 1)
 	assert_almost_eq(d.show_phase_step_seconds, 0.8, 0.001)
 	assert_almost_eq(d.repeat_phase_window_seconds, 3.0, 0.001)
-	assert_eq(d.dialogue_deck_path, "")
+	assert_eq(d.dialogue_deck_path, "res://data/dialogue/tofu/deck.tres")
 
 func test_minty_resource_loads_with_expected_values():
 	# opponent_slug = "tofu" is intentional for the M13 placeholder phase —
