@@ -27,22 +27,18 @@ func test_tofu_resource_loads_with_expected_values():
 	assert_eq(d.dialogue_deck_path, "res://data/dialogue/tofu/deck.tres")
 
 func test_minty_resource_loads_with_expected_values():
-	# opponent_slug = "tofu" is intentional for the M13 placeholder phase —
-	# future milestones will swap in real per-tier slugs.
 	var d: DifficultyConfig = load("res://data/difficulty/minty.tres")
 	assert_not_null(d, "minty.tres should load")
-	assert_eq(d.opponent_slug, "tofu")
+	assert_eq(d.opponent_slug, "minty")
 	assert_eq(d.tier, 2)
 	assert_almost_eq(d.show_phase_step_seconds, 0.55, 0.001)
 	assert_almost_eq(d.repeat_phase_window_seconds, 2.5, 0.001)
 	assert_eq(d.dialogue_deck_path, "")
 
 func test_sebastian_resource_loads_with_expected_values():
-	# opponent_slug = "tofu" is intentional for the M13 placeholder phase —
-	# future milestones will swap in real per-tier slugs.
 	var d: DifficultyConfig = load("res://data/difficulty/sebastian.tres")
 	assert_not_null(d, "sebastian.tres should load")
-	assert_eq(d.opponent_slug, "tofu")
+	assert_eq(d.opponent_slug, "sebastian")
 	assert_eq(d.tier, 3)
 	assert_almost_eq(d.show_phase_step_seconds, 0.35, 0.001)
 	assert_almost_eq(d.repeat_phase_window_seconds, 2.0, 0.001)
