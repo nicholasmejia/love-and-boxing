@@ -381,7 +381,7 @@ func _on_attack_step_landed(index: int) -> void:
 		return
 	_gloves.set_state(PlayerGloves.State.IDLE)
 	# Skip the GUARD_DOWN reset when attack has ended — _play_knockdown_sequence
-	# has set KNOCKED_DOWN, or _return_to_defense has set IDLE; both flip _in_attack.
+	# is mid-fall/recover, or _return_to_defense has set IDLE; both flip _in_attack.
 	if _in_attack:
 		_opponent.set_action(Opponent.Action.GUARD_DOWN, Opponent.Direction.LEFT)
 
