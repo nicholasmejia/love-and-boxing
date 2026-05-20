@@ -13,10 +13,10 @@ const SWAY_PHASE_OFFSET := PI
 
 # Per-WASD-direction block targets. Both gloves move.
 const BLOCK_TARGETS := {
-	SimonSequence.Direction.HEAD:  { "left": Vector2(160, 840),  "right": Vector2(1760, 840) },
-	SimonSequence.Direction.BODY:  { "left": Vector2(400, 920),  "right": Vector2(1520, 920) },
-	SimonSequence.Direction.LEFT:  { "left": Vector2(240, 920),  "right": Vector2(1360, 920) },
-	SimonSequence.Direction.RIGHT: { "left": Vector2(560, 920),  "right": Vector2(1680, 920) },
+	SimonSequence.Direction.HEAD:  { "left": Vector2(600, 700),  "right": Vector2(1320, 700) },
+	SimonSequence.Direction.BODY:  { "left": Vector2(600, 920),  "right": Vector2(1320, 920) },
+	SimonSequence.Direction.LEFT:  { "left": Vector2(440, 860),  "right": Vector2(1360, 860) },
+	SimonSequence.Direction.RIGHT: { "left": Vector2(560, 860),  "right": Vector2(1480, 860) },
 }
 const BLOCK_OUT_DURATION := 0.20
 const BLOCK_RETURN_DURATION := 0.30
@@ -24,11 +24,13 @@ const BLOCK_OUT_TRANSITION := Tween.TRANS_BACK
 const BLOCK_RETURN_TRANSITION := Tween.TRANS_QUAD
 
 # Per-WASD-direction punch targets. Only the punching glove moves.
+# Rotations tilt INWARD (toward the opponent's centerline): positive sign for
+# the left glove (top tilts right), negative for the right glove (top tilts left).
 const PUNCH_TARGETS := {
-	SimonSequence.Direction.LEFT:  { "glove": Side.LEFT,  "pos": Vector2(700, 700),  "scale": 0.65, "rotation_deg": -15.0 },
-	SimonSequence.Direction.RIGHT: { "glove": Side.RIGHT, "pos": Vector2(1220, 700), "scale": 0.65, "rotation_deg": +15.0 },
-	SimonSequence.Direction.BODY:  { "glove": Side.LEFT,  "pos": Vector2(900, 780),  "scale": 0.70, "rotation_deg": -10.0 },
-	SimonSequence.Direction.HEAD:  { "glove": Side.RIGHT, "pos": Vector2(1500, 500), "scale": 0.55, "rotation_deg": +20.0 },
+	SimonSequence.Direction.LEFT:  { "glove": Side.LEFT,  "pos": Vector2(700, 700),  "scale": 0.65, "rotation_deg": +15.0 },
+	SimonSequence.Direction.RIGHT: { "glove": Side.RIGHT, "pos": Vector2(1220, 700), "scale": 0.65, "rotation_deg": -15.0 },
+	SimonSequence.Direction.BODY:  { "glove": Side.LEFT,  "pos": Vector2(900, 780),  "scale": 0.70, "rotation_deg": +10.0 },
+	SimonSequence.Direction.HEAD:  { "glove": Side.RIGHT, "pos": Vector2(1500, 500), "scale": 0.55, "rotation_deg": -20.0 },
 }
 const PUNCH_OUT_DURATION := 0.20
 const PUNCH_RETURN_DURATION := 0.30
