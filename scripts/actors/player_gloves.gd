@@ -111,12 +111,16 @@ func _apply_block_pose(direction: int) -> void:
 func _apply_punch_pose(direction: int) -> void:
 	var spec: Dictionary = PUNCH_TARGETS[direction]
 	var side: int = spec["glove"]
+	var other_side: int = Side.RIGHT if side == Side.LEFT else Side.LEFT
 	var is_repeat := _last_pose_state == State.PUNCH and _last_pose_direction == direction
 	_last_pose_state = State.PUNCH
 	_last_pose_direction = direction
 	if is_repeat:
 		_kill_glove_tween(side)
 		_snap_glove_to_base(side)
+	# Snap the non-punching glove back to base so a previous A-punch doesn't
+	# leave the left glove lingering when D fires next (and vice versa).
+	_set_glove_state(other_side, State.IDLE)
 	_set_glove_state(side, State.PUNCH)
 	var base_scale: Vector2 = _left_base_scale if side == Side.LEFT else _right_base_scale
 	var target_scale: Vector2 = base_scale * spec["scale"]
