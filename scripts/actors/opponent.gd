@@ -148,8 +148,11 @@ static func idle_bob_offset(t: float, amp_x: float, amp_y: float, period: float)
 	return Vector2(x, y)
 
 static func guard_bounce_offset(t: float, amp: float, period: float) -> Vector2:
-	var phase := t * TAU / period
-	var y := -amp * (1.0 - cos(phase)) / 2.0
+	# Half-sine arc per period: max velocity at takeoff and at landing, slow at peak.
+	# The velocity reversal at each period boundary reads as a sudden landing
+	# rather than a smooth rebound.
+	var phase := fmod(t, period)
+	var y := -amp * sin(phase * PI / period)
 	return Vector2(0.0, y)
 
 static func swing_shift(action: int, direction: int, shift: float) -> float:

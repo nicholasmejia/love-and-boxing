@@ -72,7 +72,8 @@ func test_recoil_shift_non_hit_returns_zero():
 	var s := Opponent.recoil_shift(Opponent.Action.IDLE, Opponent.Direction.LEFT, 40.0)
 	assert_almost_eq(s, 0.0, 0.001)
 
-# Guard bounce: y = -amp * (1 - cos(t * 2π / period)) / 2
+# Guard bounce: y = -amp * sin((t mod period) * π / period)
+# Half-sine arc per period — max velocity at boundaries, slow at peak.
 # Always ≤ 0 (above base in Godot Y-down). Range [-amp, 0].
 
 func test_guard_bounce_at_t_zero_is_planted():
@@ -81,13 +82,13 @@ func test_guard_bounce_at_t_zero_is_planted():
 	assert_almost_eq(v.y, 0.0, 0.001)
 
 func test_guard_bounce_at_half_period_is_peak():
-	# cos(π) = -1 → (1 - (-1)) / 2 = 1 → y = -18
+	# sin(π/2) = 1 → y = -18
 	var v := Opponent.guard_bounce_offset(0.225, 18.0, 0.45)
 	assert_almost_eq(v.x, 0.0, 0.001)
 	assert_almost_eq(v.y, -18.0, 0.01)
 
 func test_guard_bounce_at_full_period_back_to_planted():
-	# cos(2π) = 1 → (1 - 1) / 2 = 0
+	# fmod(period, period) = 0 → sin(0) = 0 → y = 0
 	var v := Opponent.guard_bounce_offset(0.45, 18.0, 0.45)
 	assert_almost_eq(v.x, 0.0, 0.001)
 	assert_almost_eq(v.y, 0.0, 0.01)
