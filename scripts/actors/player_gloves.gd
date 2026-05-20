@@ -1,13 +1,39 @@
 class_name PlayerGloves
 extends Node2D
 
+const SimonSequence = preload("res://scripts/game/simon_sequence.gd")
+
 enum Side { LEFT, RIGHT }
 enum State { IDLE, BLOCK, PUNCH }
 
 const SWAY_AMPLITUDE_X := 6.0
 const SWAY_AMPLITUDE_Y := 4.0
 const SWAY_PERIOD := 1.6
-const SWAY_PHASE_OFFSET := PI  # right glove vs left glove
+const SWAY_PHASE_OFFSET := PI
+
+# Per-WASD-direction block targets. Both gloves move.
+const BLOCK_TARGETS := {
+	SimonSequence.Direction.HEAD:  { "left": Vector2(160, 840),  "right": Vector2(1760, 840) },
+	SimonSequence.Direction.BODY:  { "left": Vector2(400, 920),  "right": Vector2(1520, 920) },
+	SimonSequence.Direction.LEFT:  { "left": Vector2(240, 920),  "right": Vector2(1360, 920) },
+	SimonSequence.Direction.RIGHT: { "left": Vector2(560, 920),  "right": Vector2(1680, 920) },
+}
+const BLOCK_OUT_DURATION := 0.10
+const BLOCK_RETURN_DURATION := 0.15
+const BLOCK_OUT_TRANSITION := Tween.TRANS_BACK
+const BLOCK_RETURN_TRANSITION := Tween.TRANS_QUAD
+
+# Per-WASD-direction punch targets. Only the punching glove moves.
+const PUNCH_TARGETS := {
+	SimonSequence.Direction.LEFT:  { "glove": Side.LEFT,  "pos": Vector2(700, 700),  "scale": 0.65, "rotation_deg": -15.0 },
+	SimonSequence.Direction.RIGHT: { "glove": Side.RIGHT, "pos": Vector2(1220, 700), "scale": 0.65, "rotation_deg": +15.0 },
+	SimonSequence.Direction.BODY:  { "glove": Side.LEFT,  "pos": Vector2(900, 780),  "scale": 0.70, "rotation_deg": -10.0 },
+	SimonSequence.Direction.HEAD:  { "glove": Side.RIGHT, "pos": Vector2(1500, 500), "scale": 0.55, "rotation_deg": +20.0 },
+}
+const PUNCH_OUT_DURATION := 0.10
+const PUNCH_RETURN_DURATION := 0.15
+const PUNCH_OUT_TRANSITION := Tween.TRANS_BACK
+const PUNCH_RETURN_TRANSITION := Tween.TRANS_QUAD
 
 @onready var _left: Sprite2D = $LeftGlove
 @onready var _right: Sprite2D = $RightGlove
@@ -19,8 +45,7 @@ const _STATE_TOKEN := {
 }
 
 # Initialized at declaration so any pre-`_ready()` caller (tests, editor tools)
-# sees safe defaults. Scale fields are unused this task but reserved for the
-# block/punch tweens Task 2.1 lands.
+# sees safe defaults.
 var _left_base_position: Vector2 = Vector2.ZERO
 var _left_base_scale: Vector2 = Vector2.ONE
 var _left_base_rotation: float = 0.0
@@ -31,6 +56,9 @@ var _right_base_rotation: float = 0.0
 var _left_state: int = State.IDLE
 var _right_state: int = State.IDLE
 
+var _left_tween: Tween = null
+var _right_tween: Tween = null
+
 var _t: float = 0.0
 
 func _ready() -> void:
@@ -40,10 +68,37 @@ func _ready() -> void:
 	_right_base_position = _right.position
 	_right_base_scale = _right.scale
 	_right_base_rotation = _right.rotation
-	set_state(Side.LEFT, State.IDLE)
-	set_state(Side.RIGHT, State.IDLE)
+	set_state(State.IDLE)
 
-func set_state(side: int, state: int) -> void:
+func set_state(state: int, direction: int = -1) -> void:
+	match state:
+		State.IDLE:
+			_set_glove_state(Side.LEFT, State.IDLE)
+			_set_glove_state(Side.RIGHT, State.IDLE)
+		State.BLOCK:
+			assert(direction >= 0, "BLOCK requires a direction (SimonSequence.Direction)")
+			_apply_block_pose(direction)
+		State.PUNCH:
+			assert(direction >= 0, "PUNCH requires a direction (SimonSequence.Direction)")
+			_apply_punch_pose(direction)
+
+func _apply_block_pose(direction: int) -> void:
+	var targets: Dictionary = BLOCK_TARGETS[direction]
+	_set_glove_state(Side.LEFT, State.BLOCK)
+	_set_glove_state(Side.RIGHT, State.BLOCK)
+	_tween_glove_to(Side.LEFT, targets["left"], _left_base_scale, _left_base_rotation, BLOCK_OUT_DURATION, BLOCK_OUT_TRANSITION, Tween.EASE_OUT)
+	_tween_glove_to(Side.RIGHT, targets["right"], _right_base_scale, _right_base_rotation, BLOCK_OUT_DURATION, BLOCK_OUT_TRANSITION, Tween.EASE_OUT)
+
+func _apply_punch_pose(direction: int) -> void:
+	var spec: Dictionary = PUNCH_TARGETS[direction]
+	var side: int = spec["glove"]
+	_set_glove_state(side, State.PUNCH)
+	var base_scale: Vector2 = _left_base_scale if side == Side.LEFT else _right_base_scale
+	var target_scale: Vector2 = base_scale * spec["scale"]
+	var target_rotation: float = deg_to_rad(spec["rotation_deg"])
+	_tween_glove_to(side, spec["pos"], target_scale, target_rotation, PUNCH_OUT_DURATION, PUNCH_OUT_TRANSITION, Tween.EASE_OUT)
+
+func _set_glove_state(side: int, state: int) -> void:
 	var sprite := _left if side == Side.LEFT else _right
 	var side_token := "left" if side == Side.LEFT else "right"
 	var safe_state: int = state if _STATE_TOKEN.has(state) else State.IDLE
@@ -52,10 +107,48 @@ func set_state(side: int, state: int) -> void:
 		sprite.texture = load(path)
 	else:
 		sprite.texture = _placeholder()
+	_kill_glove_tween(side)
 	if side == Side.LEFT:
 		_left_state = state
+		if state == State.IDLE:
+			_snap_glove_to_base(Side.LEFT)
 	else:
 		_right_state = state
+		if state == State.IDLE:
+			_snap_glove_to_base(Side.RIGHT)
+
+func _tween_glove_to(side: int, target_pos: Vector2, target_scale: Vector2, target_rotation: float, duration: float, transition: int, ease: int) -> void:
+	var sprite := _left if side == Side.LEFT else _right
+	_kill_glove_tween(side)
+	var t := create_tween().set_parallel(true)
+	t.set_trans(transition).set_ease(ease)
+	t.tween_property(sprite, "position", target_pos, duration)
+	t.tween_property(sprite, "scale", target_scale, duration)
+	t.tween_property(sprite, "rotation", target_rotation, duration)
+	if side == Side.LEFT:
+		_left_tween = t
+	else:
+		_right_tween = t
+
+func _kill_glove_tween(side: int) -> void:
+	var t := _left_tween if side == Side.LEFT else _right_tween
+	if t != null and t.is_running():
+		t.kill()
+	if side == Side.LEFT:
+		_left_tween = null
+	else:
+		_right_tween = null
+
+func _snap_glove_to_base(side: int) -> void:
+	var sprite := _left if side == Side.LEFT else _right
+	if side == Side.LEFT:
+		sprite.position = _left_base_position
+		sprite.scale = _left_base_scale
+		sprite.rotation = _left_base_rotation
+	else:
+		sprite.position = _right_base_position
+		sprite.scale = _right_base_scale
+		sprite.rotation = _right_base_rotation
 
 func _process(delta: float) -> void:
 	_t += delta

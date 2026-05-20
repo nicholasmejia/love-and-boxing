@@ -228,7 +228,6 @@ func _on_show_started(_steps: Array) -> void:
 func _on_step_blocked(index: int) -> void:
 	AudioBus.play_sfx("block")
 	var direction: int = _defense.current_sequence().steps()[index]
-	var side: int = PlayerGloves.Side.RIGHT if direction == SimonSequence.Direction.RIGHT else PlayerGloves.Side.LEFT
 	# Reset the input-window bar for the next keystroke. If this was the last
 	# step, sequence_completed fires immediately after and cancels it (synchronous,
 	# same frame — no flicker).
@@ -237,9 +236,9 @@ func _on_step_blocked(index: int) -> void:
 	# frame so the block reads as a single beat.
 	_prompts.flash_success(direction, _BLOCK_FLASH_SECONDS)
 	_swing_opponent_for(direction)
-	_gloves.set_state(side, PlayerGloves.State.BLOCK)
+	_gloves.set_state(PlayerGloves.State.BLOCK, direction)
 	await get_tree().create_timer(_BLOCK_FLASH_SECONDS).timeout
-	_gloves.set_state(side, PlayerGloves.State.IDLE)
+	_gloves.set_state(PlayerGloves.State.IDLE)
 	_opponent_idle()
 
 func _on_damage_taken(expected_direction: int) -> void:
@@ -326,8 +325,7 @@ func _show_next_prompt() -> void:
 func _snap_clear_simon_visuals() -> void:
 	_prompts.hide_all()
 	_input_bar.cancel()
-	_gloves.set_state(PlayerGloves.Side.LEFT, PlayerGloves.State.IDLE)
-	_gloves.set_state(PlayerGloves.Side.RIGHT, PlayerGloves.State.IDLE)
+	_gloves.set_state(PlayerGloves.State.IDLE)
 	_opponent.set_action(Opponent.Action.IDLE, Opponent.Direction.LEFT)
 
 func _refresh_combo_meter() -> void:
@@ -335,11 +333,6 @@ func _refresh_combo_meter() -> void:
 
 func _refresh_knockdown_meter() -> void:
 	_knockdown_meter.set_count(_knockdowns.count())
-
-func _glove_side_for(direction: int) -> int:
-	# D-hook lands with the right glove; everything else uses the left glove,
-	# matching the block-side convention in _on_step_blocked.
-	return PlayerGloves.Side.RIGHT if direction == SimonSequence.Direction.RIGHT else PlayerGloves.Side.LEFT
 
 func _trigger_attack_phase() -> void:
 	_in_attack = true
@@ -357,19 +350,18 @@ func _on_attack_repeat_started() -> void:
 func _on_attack_step_landed(index: int) -> void:
 	AudioBus.play_sfx("punch")
 	var direction: int = _attack.current_sequence().steps()[index]
-	var side: int = _glove_side_for(direction)
 	# Restart the input-window bar for the next attack keystroke. The final
 	# step's attack_succeeded handler cancels it synchronously (same frame —
 	# no flicker), matching the defense-side block flow.
 	_input_bar.start(_attack.input_window_seconds)
 	_prompts.flash_success(direction, _PUNCH_FLASH_SECONDS)
 	_hit_opponent_for(direction)
-	_gloves.set_state(side, PlayerGloves.State.PUNCH)
+	_gloves.set_state(PlayerGloves.State.PUNCH, direction)
 	# The 0.15s glove-IDLE reset can land during the Knock Down banner if this
 	# was the x3 finisher step — visually benign (the glove is going to IDLE
 	# regardless), but worth knowing the awaits overlap on that one frame.
 	await get_tree().create_timer(_PUNCH_FLASH_SECONDS).timeout
-	_gloves.set_state(side, PlayerGloves.State.IDLE)
+	_gloves.set_state(PlayerGloves.State.IDLE)
 	# Skip the GUARD_DOWN reset when attack has ended — _play_knockdown_sequence
 	# has set KNOCKED_DOWN, or _return_to_defense has set IDLE; both flip _in_attack.
 	if _in_attack:
