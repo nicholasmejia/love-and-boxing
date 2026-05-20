@@ -72,6 +72,7 @@ func set_action(action: int, direction: int = Direction.LEFT) -> void:
 	_kill_current_tween()
 	_reset_to_base()
 	_sprite.texture = _load_texture(action)
+	_anchor_sprite_bottom()
 	_sprite.flip_h = (direction == Direction.RIGHT)
 	if action == Action.IDLE:
 		_set_continuous_mode(ContinuousMode.IDLE_BOB)
@@ -162,6 +163,15 @@ func _reset_to_base() -> void:
 	_sprite.position = _base_position
 	_sprite.scale = _base_scale
 	_sprite.rotation = _base_rotation
+
+# Bottom-anchor the scale pivot: shift the texture up by half its height so the
+# sprite node's origin coincides with the texture's bottom-center. Without this,
+# lunge/recoil scale changes move the bottom edge up/down and expose blank space.
+# Must be called whenever `_sprite.texture` is reassigned (heights vary per action).
+func _anchor_sprite_bottom() -> void:
+	var tex := _sprite.texture
+	if tex != null:
+		_sprite.offset = Vector2(0, -tex.get_height() / 2.0)
 
 func _load_texture(action: int) -> Texture2D:
 	var safe_action: int = action if _ACTION_TOKEN.has(action) else Action.IDLE

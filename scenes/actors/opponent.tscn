@@ -7,5 +7,5 @@ position = Vector2(960, 400)
 script = ExtResource("1_opp")
 
 [node name="Body" type="Sprite2D" parent="." unique_id=339621946]
-position = Vector2(0, 230)
+position = Vector2(0, 820)
 scale = Vector2(0.85, 0.85)
