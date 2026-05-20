@@ -79,6 +79,8 @@ func set_action(action: int, direction: int = Direction.LEFT) -> void:
 		_set_continuous_mode(ContinuousMode.STILL)
 	if action == Action.SWING_HIGH or action == Action.SWING_MID or action == Action.SWING_LOW:
 		_play_attack_lunge(action, direction)
+	elif action == Action.HIT_HIGH or action == Action.HIT_BODY or action == Action.HIT_LOW:
+		_play_hit_recoil(action, direction)
 
 func _play_attack_lunge(action: int, direction: int) -> void:
 	var shift := Opponent.swing_shift(action, direction, _profile.attack_lunge_shift_x)
@@ -92,6 +94,20 @@ func _play_attack_lunge(action: int, direction: int) -> void:
 	t.parallel().tween_property(_sprite, "scale", target_scale, _profile.attack_lunge_out_duration).set_trans(_profile.attack_lunge_transition_out).set_ease(Tween.EASE_OUT)
 	t.tween_property(_sprite, "position", _base_position, _profile.attack_lunge_return_duration).set_trans(_profile.attack_lunge_transition_return).set_ease(Tween.EASE_IN)
 	t.parallel().tween_property(_sprite, "scale", _base_scale, _profile.attack_lunge_return_duration).set_trans(_profile.attack_lunge_transition_return).set_ease(Tween.EASE_IN)
+	_current_tween = t
+
+func _play_hit_recoil(action: int, direction: int) -> void:
+	var shift := Opponent.recoil_shift(action, direction, _profile.hit_recoil_shift_x)
+	var target_pos := _base_position + Vector2(shift, 0.0)
+	var target_scale := _base_scale * _profile.hit_recoil_scale_dip
+	_kill_current_tween()
+	# `parallel()` flags only the next tweener, so attach scale via `.parallel()`
+	# on the tweener that should share a step with the preceding position tween.
+	var t := create_tween()
+	t.tween_property(_sprite, "position", target_pos, _profile.hit_recoil_out_duration).set_trans(_profile.hit_recoil_transition_out).set_ease(Tween.EASE_OUT)
+	t.parallel().tween_property(_sprite, "scale", target_scale, _profile.hit_recoil_out_duration).set_trans(_profile.hit_recoil_transition_out).set_ease(Tween.EASE_OUT)
+	t.tween_property(_sprite, "position", _base_position, _profile.hit_recoil_return_duration).set_trans(_profile.hit_recoil_transition_return).set_ease(Tween.EASE_IN)
+	t.parallel().tween_property(_sprite, "scale", _base_scale, _profile.hit_recoil_return_duration).set_trans(_profile.hit_recoil_transition_return).set_ease(Tween.EASE_IN)
 	_current_tween = t
 
 func _process(delta: float) -> void:
@@ -124,6 +140,13 @@ static func swing_shift(action: int, direction: int, shift: float) -> float:
 		Action.SWING_HIGH: return +shift
 		Action.SWING_MID:  return -shift
 		Action.SWING_LOW:  return +shift if direction == Direction.LEFT else -shift
+	return 0.0
+
+static func recoil_shift(action: int, direction: int, shift: float) -> float:
+	match action:
+		Action.HIT_HIGH: return +shift
+		Action.HIT_BODY: return -shift
+		Action.HIT_LOW:  return +shift if direction == Direction.LEFT else -shift
 	return 0.0
 
 func _set_continuous_mode(mode: int) -> void:

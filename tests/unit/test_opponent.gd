@@ -49,3 +49,25 @@ func test_swing_shift_swing_low_right_is_negative():
 func test_swing_shift_non_swing_returns_zero():
 	var s := Opponent.swing_shift(Opponent.Action.IDLE, Opponent.Direction.LEFT, 40.0)
 	assert_almost_eq(s, 0.0, 0.001)
+
+# recoil_shift: HIT_HIGH→+, HIT_BODY→−, HIT_LOW left→+, HIT_LOW right→−, non-hit→0
+
+func test_recoil_shift_hit_high_is_positive():
+	var s := Opponent.recoil_shift(Opponent.Action.HIT_HIGH, Opponent.Direction.LEFT, 40.0)
+	assert_almost_eq(s, 40.0, 0.001)
+
+func test_recoil_shift_hit_body_is_negative():
+	var s := Opponent.recoil_shift(Opponent.Action.HIT_BODY, Opponent.Direction.LEFT, 40.0)
+	assert_almost_eq(s, -40.0, 0.001)
+
+func test_recoil_shift_hit_low_left_is_positive():
+	var s := Opponent.recoil_shift(Opponent.Action.HIT_LOW, Opponent.Direction.LEFT, 40.0)
+	assert_almost_eq(s, 40.0, 0.001)
+
+func test_recoil_shift_hit_low_right_is_negative():
+	var s := Opponent.recoil_shift(Opponent.Action.HIT_LOW, Opponent.Direction.RIGHT, 40.0)
+	assert_almost_eq(s, -40.0, 0.001)
+
+func test_recoil_shift_non_hit_returns_zero():
+	var s := Opponent.recoil_shift(Opponent.Action.IDLE, Opponent.Direction.LEFT, 40.0)
+	assert_almost_eq(s, 0.0, 0.001)
