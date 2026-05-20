@@ -32,6 +32,12 @@ var _transitioning: bool = false
 var _awaiting_continue: bool = false
 var _visibility: int = RiddleVisibility.FRESH_START_GAP
 var _gap_generation: int = 0
+# Per-step generation counters for the block/punch display awaits. Each
+# step_landed bumps its counter; a stale handler whose generation no longer
+# matches returns without resetting visuals, so a faster next-step input owns
+# cleanup instead of clobbering the in-flight tween.
+var _defense_step_generation: int = 0
+var _attack_step_generation: int = 0
 var _current_prompt: DialoguePrompt
 
 const _BLOCK_FLASH_SECONDS := 0.30
@@ -228,6 +234,8 @@ func _on_show_started(_steps: Array) -> void:
 func _on_step_blocked(index: int) -> void:
 	AudioBus.play_sfx("block")
 	var direction: int = _defense.current_sequence().steps()[index]
+	_defense_step_generation += 1
+	var my_generation := _defense_step_generation
 	# Reset the input-window bar for the next keystroke. If this was the last
 	# step, sequence_completed fires immediately after and cancels it (synchronous,
 	# same frame — no flicker).
@@ -238,6 +246,10 @@ func _on_step_blocked(index: int) -> void:
 	_swing_opponent_for(direction)
 	_gloves.set_state(PlayerGloves.State.BLOCK, direction)
 	await get_tree().create_timer(_BLOCK_FLASH_SECONDS).timeout
+	# If a faster next-step input bumped the generation while we awaited, that
+	# newer handler owns cleanup — bail before clobbering its in-flight pose.
+	if my_generation != _defense_step_generation:
+		return
 	_gloves.set_state(PlayerGloves.State.IDLE)
 	_opponent_idle()
 
@@ -350,6 +362,8 @@ func _on_attack_repeat_started() -> void:
 func _on_attack_step_landed(index: int) -> void:
 	AudioBus.play_sfx("punch")
 	var direction: int = _attack.current_sequence().steps()[index]
+	_attack_step_generation += 1
+	var my_generation := _attack_step_generation
 	# Restart the input-window bar for the next attack keystroke. The final
 	# step's attack_succeeded handler cancels it synchronously (same frame —
 	# no flicker), matching the defense-side block flow.
@@ -357,10 +371,14 @@ func _on_attack_step_landed(index: int) -> void:
 	_prompts.flash_success(direction, _PUNCH_FLASH_SECONDS)
 	_hit_opponent_for(direction)
 	_gloves.set_state(PlayerGloves.State.PUNCH, direction)
-	# The 0.15s glove-IDLE reset can land during the Knock Down banner if this
-	# was the x3 finisher step — visually benign (the glove is going to IDLE
-	# regardless), but worth knowing the awaits overlap on that one frame.
+	# Wait the full flash window before resetting. If the player inputs the
+	# next step faster than this await (a real risk at the x3 finisher pace),
+	# that step bumps _attack_step_generation and this handler bails below —
+	# otherwise we'd snap the next step's in-flight punch tween mid-pose and
+	# clobber its opponent HIT sprite.
 	await get_tree().create_timer(_PUNCH_FLASH_SECONDS).timeout
+	if my_generation != _attack_step_generation:
+		return
 	_gloves.set_state(PlayerGloves.State.IDLE)
 	# Skip the GUARD_DOWN reset when attack has ended — _play_knockdown_sequence
 	# has set KNOCKED_DOWN, or _return_to_defense has set IDLE; both flip _in_attack.
