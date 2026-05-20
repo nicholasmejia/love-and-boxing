@@ -118,7 +118,7 @@ func _play_hit_recoil(action: int, direction: int) -> void:
 func _process(delta: float) -> void:
 	# Timer is shared across continuous modes and resets on every mode transition
 	# (see `_set_continuous_mode`). Incrementing unconditionally is intentional —
-	# future modes (e.g. GUARD_BOUNCE in Task 4.2) read this same accumulator.
+	# IDLE_BOB and GUARD_BOUNCE both read this same accumulator.
 	_continuous_mode_t += delta
 	match _continuous_mode:
 		ContinuousMode.IDLE_BOB:
