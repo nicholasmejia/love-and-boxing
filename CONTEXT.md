@@ -55,6 +55,47 @@ This file is the canonical vocabulary for the project. When code, plans, or art 
 - **WASD Prompts** — Input indicators flashed during Simon Sequences. `W` over the opponent's head, `S` over the opponent's body center, `A` to the opponent's left, `D` to the opponent's right. Higher z-index than Riddle Box. Each direction has three variants (`prompt`, `success`, `fail`) — see Command Sprites in the asset manifest.
 - **Announcement Banner** — Full-screen overlay used for state transitions (Ready?, Fight!, Round Over!, Knock Down!, Knock Out!, You Win!, You Lose!, Draw!).
 
+## Visual Behavior
+
+Neither actor is a static sprite — each gameplay beat triggers a small animation. The terms below name those animations so plans, code, and commit messages can be specific. Numeric tuning lives in `OpponentAnimationProfile` (per opponent) and as constants in `player_gloves.gd` (player gloves are consistent across all matches).
+
+### Continuous loops (run while in their owning state)
+
+- **Idle Bob** — Opponent's footwork loop while in `Action.IDLE`. Horizontal sway with two lift-bumps per cycle (light on feet between plants, heavy at extremes).
+- **Glove Sway** — Both gloves drift in a small elliptical orbit (180° out of phase) while in `State.IDLE`. Reads as breathing/stance.
+- **Guard-Dropped Bounce** — Opponent hops vertically in place while in `Action.GUARD_DOWN_EXCITED` (i.e., after a right riddle answer, before the first player hit lands). Stops on the first hit for the remainder of the attack phase.
+
+### Transient one-shots (hard-cancel on next state change)
+
+- **Block Pose** — Both gloves tween to per-WASD-direction positions when defending. W = both up. S = both toward center. A = left small-right + right big-cross-left. D = mirror of A.
+- **Punch Throw** — One glove (A→left, D→right, S→left toward center, W→right toward head) tweens forward with shrink + rotation. Reads as committing into the punch.
+- **Attack Lunge** — Opponent shifts horizontally (per Shift Map) while growing then shrinking. Reads as stepping into the punch.
+- **Hit Recoil** — Opponent shifts horizontally (same Shift Map) while shrinking then growing. Reads as flinching back and stepping forward to recover.
+- **Knockdown Fall** — Multi-phase: sway-with-shrink → rotate + lower. Texture swaps to `KNOCKED_DOWN` at the start of the fall; sprite holds at lowered+tipped+small at the end.
+- **Knockdown Recover** — Non-KO only. The `KNOCKED_DOWN` sprite tweens back to base transform; final frame swaps to `IDLE` ("stand again"). KO leaves the opponent fallen through the win banners.
+
+### Shift Map (used by Attack Lunge and Hit Recoil)
+
+Both beats shift the opponent in the direction OPPOSITE the attack side:
+
+| Direction | Shift |
+|---|---|
+| A | screen right (+X) |
+| D | screen left (−X) |
+| W | screen right (treated like A) |
+| S | screen left (treated like D) |
+
+### Animation Profile
+
+Per-opponent timings (amplitudes, durations, transition curves) live in an `OpponentAnimationProfile` Resource at `data/opponent_animation/<opponent>.tres`, referenced from `DifficultyConfig.animation_profile_path`. Missing path falls back to Tofu's profile (same pattern as `dialogue_deck_path`). Player gloves have no profile — values are constants in `player_gloves.gd`.
+
+Personality intents (tuning targets, not code branches):
+- **Tofu** — wild: larger amplitudes, longer periods, bouncier transitions.
+- **Minty** — refined: moderate amplitudes, smooth (`TRANS_SINE`) transitions.
+- **Sebastian** — efficient: small amplitudes, sharp (`TRANS_QUART`) transitions.
+
+Initial ship: Tofu's profile is tuned; Minty and Sebastian fall back to Tofu's. Per-opponent tuning is a follow-up effort.
+
 ## Asset Naming Conventions
 
 All asset filenames are lowercase, underscore-separated, and follow these patterns:
@@ -74,14 +115,14 @@ Single sprite, swapped per action. Nine sprites per opponent (no per-arm variant
 | Sprite | Shown when |
 |---|---|
 | `opponent_<name>_body_idle.png` | Default stance; also serves as the guard pose (no separate guard sprite) |
-| `opponent_<name>_body_guard_down.png` | Both arms lowered, after the player gives a *right* riddle answer; opponent is exposed for the attack phase |
+| `opponent_<name>_body_guard_down.png` | Shared by `Action.GUARD_DOWN` (post-first-hit, no bounce) and `Action.GUARD_DOWN_EXCITED` (initial drop, with Guard-Dropped Bounce). Both arms lowered, after a *right* riddle answer; opponent is exposed for the attack phase |
 | `opponent_<name>_body_knocked_down.png` | Knockdown interlude |
 | `opponent_<name>_body_talking.png` | Optional overlay while dialogue is typing (the typewriter cue) |
 | `opponent_<name>_body_swing_high.png` | Opponent telegraphs a head punch (W defense step) |
 | `opponent_<name>_body_swing_mid.png` | Opponent telegraphs a body punch (S defense step) |
 | `opponent_<name>_body_swing_low.png` | Opponent telegraphs a hook punch (A or D defense step) |
 | `opponent_<name>_body_hit_high.png` | Player W-attack lands on the opponent's head |
-| `opponent_<name>_body_hit_low.png` | Player A / S / D attack lands on the opponent's body |
+| `opponent_<name>_body_hit_low.png` | Shared by `Action.HIT_LOW` (player A or D side attack) and `Action.HIT_BODY` (player S center attack). Player A / S / D attack lands on the opponent's body |
 
 **Note:** there is no separate `body_hurt` sprite; `hit_high` and `hit_low` are the only hurt poses, chosen by player attack direction.
 
@@ -103,6 +144,8 @@ Applies to:
 | Player S-attack (gorilla hit center) | `body_hit_low` | No |
 
 Only the **D** directions are mirrored. Idle, guard-down, knocked-down, talking, and the swing_high / swing_mid / hit_high sprites are inherently centered or symmetric and never need mirroring.
+
+`Action.HIT_BODY` and `Action.GUARD_DOWN_EXCITED` are animation-only disambiguations — they don't change which sprite loads or whether it mirrors. See "Visual Behavior" above.
 
 ### UI
 - Hearts: `heart_full.png`, `heart_empty.png`
