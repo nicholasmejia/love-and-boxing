@@ -8,4 +8,4 @@ opponent_slug = "tofu"
 tier = 1
 show_phase_step_seconds = 0.8
 repeat_phase_window_seconds = 3.0
-dialogue_deck_path = ""
+dialogue_deck_path = "res://data/dialogue/tofu/deck.tres"

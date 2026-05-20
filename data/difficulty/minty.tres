@@ -4,7 +4,7 @@
 
 [resource]
 script = ExtResource("1_diff")
-opponent_slug = "tofu"
+opponent_slug = "minty"
 tier = 2
 show_phase_step_seconds = 0.55
 repeat_phase_window_seconds = 2.5

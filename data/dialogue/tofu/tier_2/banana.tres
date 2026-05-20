@@ -1,0 +1,32 @@
+[gd_resource type="Resource" script_class="DialoguePrompt" load_steps=9 format=3]
+
+[ext_resource type="Script" path="res://scripts/game/dialogue_prompt.gd" id="1_prompt"]
+[ext_resource type="Script" path="res://scripts/game/dialogue_answer.gd" id="2_answer"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ui/tofu-riddles/banana.png" id="3_banana"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ui/tofu-riddles/palm_tree.png" id="4_palm"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ui/tofu-riddles/monkey.png" id="5_monkey"]
+[ext_resource type="Texture2D" path="res://assets/sprites/ui/tofu-riddles/car.png" id="6_car"]
+
+[sub_resource type="Resource" id="ans_right"]
+script = ExtResource("2_answer")
+text = ""
+image = ExtResource("4_palm")
+outcome = 2
+
+[sub_resource type="Resource" id="ans_neutral"]
+script = ExtResource("2_answer")
+text = ""
+image = ExtResource("5_monkey")
+outcome = 1
+
+[sub_resource type="Resource" id="ans_wrong"]
+script = ExtResource("2_answer")
+text = ""
+image = ExtResource("6_car")
+outcome = 0
+
+[resource]
+script = ExtResource("1_prompt")
+body_text = ""
+body_image = ExtResource("3_banana")
+answers = Array[Resource]([SubResource("ans_right"), SubResource("ans_neutral"), SubResource("ans_wrong")])

@@ -1,8 +1,11 @@
 class_name DialogueDeck
 extends RefCounted
 
-var _source: Array[DialoguePrompt] = []
-var _remaining: Array[DialoguePrompt] = []
+const TIER_COUNT := 3
+
+var _source: Array = [[], [], []]
+var _remaining: Array = [[], [], []]
+var _active_tier: int = 0
 var _rng := RandomNumberGenerator.new()
 
 func _init() -> void:
@@ -11,20 +14,30 @@ func _init() -> void:
 func seed_rng(seed_value: int) -> void:
 	_rng.seed = seed_value
 
-func load_prompts(prompts: Array[DialoguePrompt]) -> void:
-	_source = prompts.duplicate()
-	_refill()
+func load_tier(tier: int, prompts: Array[DialoguePrompt]) -> void:
+	var idx := _clamp_tier(tier)
+	_source[idx] = prompts.duplicate()
+	_remaining[idx] = prompts.duplicate()
+
+func set_active_tier(tier: int) -> void:
+	_active_tier = _clamp_tier(tier)
 
 func draw() -> DialoguePrompt:
-	if _remaining.is_empty():
-		_refill()
-	if _remaining.is_empty():
+	var pool: Array = _remaining[_active_tier]
+	if pool.is_empty():
+		_refill(_active_tier)
+		pool = _remaining[_active_tier]
+	if pool.is_empty():
 		return null
-	var idx := _rng.randi() % _remaining.size()
-	return _remaining.pop_at(idx)
+	var idx := _rng.randi() % pool.size()
+	return pool.pop_at(idx)
 
 func reset() -> void:
-	_refill()
+	for tier in range(TIER_COUNT):
+		_refill(tier)
 
-func _refill() -> void:
-	_remaining = _source.duplicate()
+func _refill(tier: int) -> void:
+	_remaining[tier] = (_source[tier] as Array).duplicate()
+
+func _clamp_tier(tier: int) -> int:
+	return clamp(tier, 0, TIER_COUNT - 1)
