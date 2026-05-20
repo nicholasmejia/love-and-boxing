@@ -107,14 +107,18 @@ func _set_glove_state(side: int, state: int) -> void:
 		sprite.texture = load(path)
 	else:
 		sprite.texture = _placeholder()
-	_kill_glove_tween(side)
+	# Tween ownership: `_tween_glove_to` kills the prior tween before creating a
+	# new one on the BLOCK/PUNCH paths. The only path that halts without starting
+	# a new tween is IDLE — kill there, then snap to base in the same step.
 	if side == Side.LEFT:
 		_left_state = state
 		if state == State.IDLE:
+			_kill_glove_tween(Side.LEFT)
 			_snap_glove_to_base(Side.LEFT)
 	else:
 		_right_state = state
 		if state == State.IDLE:
+			_kill_glove_tween(Side.RIGHT)
 			_snap_glove_to_base(Side.RIGHT)
 
 func _tween_glove_to(side: int, target_pos: Vector2, target_scale: Vector2, target_rotation: float, duration: float, transition: int, ease: int) -> void:
@@ -140,15 +144,14 @@ func _kill_glove_tween(side: int) -> void:
 		_right_tween = null
 
 func _snap_glove_to_base(side: int) -> void:
-	var sprite := _left if side == Side.LEFT else _right
 	if side == Side.LEFT:
-		sprite.position = _left_base_position
-		sprite.scale = _left_base_scale
-		sprite.rotation = _left_base_rotation
+		_left.position = _left_base_position
+		_left.scale = _left_base_scale
+		_left.rotation = _left_base_rotation
 	else:
-		sprite.position = _right_base_position
-		sprite.scale = _right_base_scale
-		sprite.rotation = _right_base_rotation
+		_right.position = _right_base_position
+		_right.scale = _right_base_scale
+		_right.rotation = _right_base_rotation
 
 func _process(delta: float) -> void:
 	_t += delta
