@@ -71,3 +71,30 @@ func test_recoil_shift_hit_low_right_is_negative():
 func test_recoil_shift_non_hit_returns_zero():
 	var s := Opponent.recoil_shift(Opponent.Action.IDLE, Opponent.Direction.LEFT, 40.0)
 	assert_almost_eq(s, 0.0, 0.001)
+
+# Guard bounce: y = -amp * (1 - cos(t * 2π / period)) / 2
+# Always ≤ 0 (above base in Godot Y-down). Range [-amp, 0].
+
+func test_guard_bounce_at_t_zero_is_planted():
+	var v := Opponent.guard_bounce_offset(0.0, 18.0, 0.45)
+	assert_almost_eq(v.x, 0.0, 0.001)
+	assert_almost_eq(v.y, 0.0, 0.001)
+
+func test_guard_bounce_at_half_period_is_peak():
+	# cos(π) = -1 → (1 - (-1)) / 2 = 1 → y = -18
+	var v := Opponent.guard_bounce_offset(0.225, 18.0, 0.45)
+	assert_almost_eq(v.x, 0.0, 0.001)
+	assert_almost_eq(v.y, -18.0, 0.01)
+
+func test_guard_bounce_at_full_period_back_to_planted():
+	# cos(2π) = 1 → (1 - 1) / 2 = 0
+	var v := Opponent.guard_bounce_offset(0.45, 18.0, 0.45)
+	assert_almost_eq(v.x, 0.0, 0.001)
+	assert_almost_eq(v.y, 0.0, 0.01)
+
+func test_guard_bounce_never_below_base():
+	# Sample many points; y_offset must always be ≤ 0
+	for i in range(100):
+		var t := float(i) / 100.0 * 0.45
+		var v := Opponent.guard_bounce_offset(t, 18.0, 0.45)
+		assert_true(v.y <= 0.0 + 0.001, "y_offset should be ≤ 0 at t=%f, got %f" % [t, v.y])

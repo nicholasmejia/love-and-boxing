@@ -6,7 +6,7 @@ const OpponentAnimationProfile = preload("res://scripts/data/opponent_animation_
 enum Action {
 	IDLE,           # default + guard stance
 	GUARD_DOWN,     # arms lowered after positive riddle (no bounce — post first hit)
-	GUARD_DOWN_EXCITED,  # arms lowered with pending bounce animation (Task 4.2)
+	GUARD_DOWN_EXCITED,  # arms lowered, excited — continuous bounce while awaiting first hit
 	KNOCKED_DOWN,   # KO'd / fallen
 	TALKING,        # optional dialogue overlay
 	SWING_HIGH,     # opponent telegraphs head punch (W defense)
@@ -78,6 +78,8 @@ func set_action(action: int, direction: int = Direction.LEFT) -> void:
 	_sprite.flip_h = (direction == Direction.RIGHT)
 	if action == Action.IDLE:
 		_set_continuous_mode(ContinuousMode.IDLE_BOB)
+	elif action == Action.GUARD_DOWN_EXCITED:
+		_set_continuous_mode(ContinuousMode.GUARD_BOUNCE)
 	else:
 		_set_continuous_mode(ContinuousMode.STILL)
 	if action == Action.SWING_HIGH or action == Action.SWING_MID or action == Action.SWING_LOW:
@@ -127,6 +129,13 @@ func _process(delta: float) -> void:
 				_profile.idle_bob_period,
 			)
 			_sprite.position = _base_position + offset
+		ContinuousMode.GUARD_BOUNCE:
+			var bounce := Opponent.guard_bounce_offset(
+				_continuous_mode_t,
+				_profile.guard_bounce_amplitude_y,
+				_profile.guard_bounce_period,
+			)
+			_sprite.position = _base_position + bounce
 		ContinuousMode.STILL, _:
 			pass
 
@@ -137,6 +146,11 @@ static func idle_bob_offset(t: float, amp_x: float, amp_y: float, period: float)
 	var c := cos(phase)
 	var y := -amp_y * c * c
 	return Vector2(x, y)
+
+static func guard_bounce_offset(t: float, amp: float, period: float) -> Vector2:
+	var phase := t * TAU / period
+	var y := -amp * (1.0 - cos(phase)) / 2.0
+	return Vector2(0.0, y)
 
 static func swing_shift(action: int, direction: int, shift: float) -> float:
 	match action:
