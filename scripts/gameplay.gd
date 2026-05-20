@@ -147,13 +147,14 @@ func _handle_round_end() -> void:
 	_gap_generation += 1  # invalidate any in-flight gap awaits
 	if _clock.current_round() >= MatchClock.TOTAL_ROUNDS:
 		await _banner.show_banner("round_over", MatchPacing.ROUND_OVER_BANNER)
+		await _banner.show_banner("draw", MatchPacing.DRAW_BANNER)
 		Globals.last_match_outcome = Globals.MatchOutcome.DRAW
 		SceneRouter.goto_match_results()
 		return
 	await _banner.show_banner("round_over", MatchPacing.ROUND_OVER_BANNER)
 	_banner.show_prompt("Press K to start Round %d" % (_clock.current_round() + 1))
 	await _wait_for_continue()
-	_banner.dismiss()
+	await _banner.dismiss()
 	_clock.advance_to_next_round()
 	_deck.reset()
 	_hearts.heal()
@@ -173,6 +174,9 @@ func _wait_for_continue() -> void:
 	await _continue_pressed
 
 func _play_ready_fight() -> void:
+	# Settle beat before the Ready slide-in so the player's eye lands on the
+	# empty match scene first instead of catching the banner already in motion.
+	await get_tree().create_timer(MatchPacing.PRE_READY_DELAY).timeout
 	await _banner.show_banner("ready", MatchPacing.READY_BANNER)
 	await _banner.show_banner("fight", MatchPacing.FIGHT_BANNER)
 
@@ -430,8 +434,11 @@ func _play_knockdown_sequence() -> void:
 	await _opponent.play_knockdown_fall()
 	await _banner.show_banner("knock_down", MatchPacing.KNOCK_DOWN_BANNER)
 	# KNOCKDOWN_PAUSE is the total clock-pause duration; the banner ate part of
-	# it, hold the remainder before resuming the clock.
-	var remainder := MatchPacing.KNOCKDOWN_PAUSE - MatchPacing.KNOCK_DOWN_BANNER
+	# it, hold the remainder before resuming the clock. The banner's wall-clock
+	# now includes its slide-in + hold + slide-out, so derive the remainder via
+	# AnnouncementBanner.total_duration_for() — the raw hold constant would
+	# under-count and shorten the post-knockdown pause.
+	var remainder := MatchPacing.KNOCKDOWN_PAUSE - AnnouncementBanner.total_duration_for(MatchPacing.KNOCK_DOWN_BANNER)
 	if remainder > 0.0:
 		await get_tree().create_timer(remainder).timeout
 	if _knockdowns.is_knockout():

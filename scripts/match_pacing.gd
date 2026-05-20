@@ -10,6 +10,7 @@ const BREATHER_GAP := 4.0
 const KNOCKDOWN_PAUSE := 5.0
 
 # Banner display durations, in seconds. AnnouncementBanner.show_message awaits these.
+const PRE_READY_DELAY := 0.5  # Settle beat between scene load (or round transition) and the Ready banner sliding in.
 const READY_BANNER := 1.0
 const FIGHT_BANNER := 1.0
 const ROUND_OVER_BANNER := 3.0
@@ -19,3 +20,4 @@ const TRY_AGAIN_BANNER := 1.5  # "Try again!" banner shown on NEUTRAL answer
 const KNOCK_DOWN_BANNER := 2.0
 const KNOCK_OUT_BANNER := 2.0
 const YOU_WIN_BANNER := 2.0
+const DRAW_BANNER := 2.0  # Shown after the final round_over banner when the match ends in a draw.
