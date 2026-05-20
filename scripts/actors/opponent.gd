@@ -36,7 +36,7 @@ const _ACTION_TOKEN := {
 	Action.SWING_MID: "swing_mid",
 	Action.SWING_LOW: "swing_low",
 	Action.HIT_HIGH: "hit_high",
-	Action.HIT_BODY: "hit_low",
+	Action.HIT_BODY: "hit_low",  # deliberate alias — shares texture with HIT_LOW; recoil direction diverges in Task 3.3
 	Action.HIT_LOW: "hit_low",
 }
 
