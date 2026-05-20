@@ -427,7 +427,7 @@ func _play_knockdown_sequence() -> void:
 	_snap_clear_simon_visuals()
 	_knockdowns.increment()
 	_refresh_knockdown_meter()
-	_opponent.set_action(Opponent.Action.KNOCKED_DOWN, Opponent.Direction.LEFT)
+	await _opponent.play_knockdown_fall()
 	await _banner.show_banner("knock_down", MatchPacing.KNOCK_DOWN_BANNER)
 	# KNOCKDOWN_PAUSE is the total clock-pause duration; the banner ate part of
 	# it, hold the remainder before resuming the clock.
@@ -443,7 +443,7 @@ func _play_knockdown_sequence() -> void:
 	_deck.set_active_tier(_knockdowns.count())
 	_combo.on_knockdown_completed()
 	_refresh_combo_meter()
-	_opponent_idle()
+	await _opponent.play_knockdown_recover()
 	_clock.resume()
 	# CONTEXT.md → Fresh-Start Gap is the post-knockdown entry, not Breather Gap.
 	# Defense restarts inside _begin_fresh_start_gap() after the 1s dead-air front.
