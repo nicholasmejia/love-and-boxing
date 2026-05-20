@@ -30,7 +30,7 @@ const PUNCH_TARGETS := {
 	SimonSequence.Direction.LEFT:  { "glove": Side.LEFT,  "pos": Vector2(700, 700),  "scale": 0.65, "rotation_deg": +15.0 },
 	SimonSequence.Direction.RIGHT: { "glove": Side.RIGHT, "pos": Vector2(1220, 700), "scale": 0.65, "rotation_deg": -15.0 },
 	SimonSequence.Direction.BODY:  { "glove": Side.LEFT,  "pos": Vector2(900, 780),  "scale": 0.70, "rotation_deg": +10.0 },
-	SimonSequence.Direction.HEAD:  { "glove": Side.RIGHT, "pos": Vector2(1500, 500), "scale": 0.55, "rotation_deg": -20.0 },
+	SimonSequence.Direction.HEAD:  { "glove": Side.RIGHT, "pos": Vector2(1020, 500), "scale": 0.55, "rotation_deg": -20.0 },
 }
 const PUNCH_OUT_DURATION := 0.20
 const PUNCH_RETURN_DURATION := 0.30
