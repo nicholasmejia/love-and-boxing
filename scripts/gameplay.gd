@@ -316,7 +316,7 @@ func _hit_opponent_for(direction: int) -> void:
 		SimonSequence.Direction.HEAD:
 			action = Opponent.Action.HIT_HIGH
 		SimonSequence.Direction.BODY:
-			action = Opponent.Action.HIT_LOW
+			action = Opponent.Action.HIT_BODY
 		SimonSequence.Direction.LEFT:
 			action = Opponent.Action.HIT_LOW
 		SimonSequence.Direction.RIGHT:

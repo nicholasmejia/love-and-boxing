@@ -12,6 +12,7 @@ enum Action {
 	SWING_MID,      # opponent telegraphs body punch (S defense)
 	SWING_LOW,      # opponent telegraphs hook punch (A or D defense)
 	HIT_HIGH,       # player W-attack lands
+	HIT_BODY,       # player S-attack lands (body)
 	HIT_LOW,        # player A or D side-attack lands
 }
 
@@ -35,6 +36,7 @@ const _ACTION_TOKEN := {
 	Action.SWING_MID: "swing_mid",
 	Action.SWING_LOW: "swing_low",
 	Action.HIT_HIGH: "hit_high",
+	Action.HIT_BODY: "hit_low",
 	Action.HIT_LOW: "hit_low",
 }
 
