@@ -41,6 +41,27 @@ const _BLOCK_FADE_OUT_SECONDS := 0.08
 # _BLOCK_SHAKE_DOMINANT_PX = 18; rescale proportionally if you tune that.
 const _BLOCK_SHAKE_STEP_DISPLACEMENTS_PX: Array = [18.0, -12.0, 8.0, -4.0, 0.0]
 
+# Damage Double-Pulse (defense FAIL). Two scale pulses (0 → overshoot → rest,
+# then rest → overshoot → rest) followed by a small shake tail along the
+# expected punch's impact axis, then fade out. Reads as "you missed the block
+# and got tagged" — distinguishable from Block Shake by the leading
+# double-pulse beat and a visibly smaller shake amplitude (~1/3).
+const _DAMAGE_PULSE1_OUT := 0.06
+const _DAMAGE_PULSE1_SETTLE := 0.03
+const _DAMAGE_PULSE1_TOTAL := 0.09  # opacity fade-in length; equals OUT + SETTLE
+const _DAMAGE_PULSE2_OUT := 0.05
+const _DAMAGE_PULSE2_SETTLE := 0.03
+const _DAMAGE_PULSE2_TOTAL := 0.08
+const _DAMAGE_SHAKE_TOTAL := 0.10
+const _DAMAGE_SHAKE_STEPS := 4
+const _DAMAGE_SHAKE_DOMINANT_PX := 6.0
+const _DAMAGE_SHAKE_PERPENDICULAR_PX := 2.0
+const _DAMAGE_FADE_OUT_SECONDS := 0.08
+# Damage shake displacement table (px on dominant axis). Last entry is 0 so
+# the prompt lands at _rest_position before the fade-out. ~1/3 the amplitude
+# of the Block Shake table by design.
+const _DAMAGE_SHAKE_STEP_DISPLACEMENTS_PX: Array = [6.0, -4.0, 3.0, 0.0]
+
 @onready var _label: Label = $Label
 @onready var _bg: ColorRect = $Background
 @onready var _image: TextureRect = $Image
@@ -80,6 +101,8 @@ func display(direction: int, variant: int, duration_seconds: float) -> void:
 			await _animate_prompt_pulse(duration_seconds)
 		Variant.SUCCESS:
 			await _animate_block_shake(direction)
+		Variant.FAIL:
+			await _animate_damage_double_pulse(direction)
 		_:
 			# SUCCESS / FAIL fallback path until Increments 3-6 land their proper
 			# variant animations. The fade-in (instead of a snap to opacity 1.0)
@@ -138,6 +161,41 @@ static func shake_axis_for(direction: int) -> Vector2:
 		SimonSequence.Direction.BODY: return Vector2(0.0, _BLOCK_SHAKE_DOMINANT_PX)
 		SimonSequence.Direction.RIGHT: return Vector2(_BLOCK_SHAKE_DOMINANT_PX, 0.0)
 	return Vector2.ZERO
+
+func _animate_damage_double_pulse(direction: int) -> void:
+	_reset_to_clean_state()
+	visible = true
+	var dominant_unit := shake_axis_for(direction).normalized()
+	var perp_unit := Vector2(1.0, 0.0) if absf(dominant_unit.y) > absf(dominant_unit.x) else Vector2(0.0, 1.0)
+	var overshoot := _rest_scale * _PROMPT_OVERSHOOT_SCALE
+	var step_duration := _DAMAGE_SHAKE_TOTAL / float(_DAMAGE_SHAKE_STEPS)
+	var pulses_end := _DAMAGE_PULSE1_TOTAL + _DAMAGE_PULSE2_TOTAL
+	var shake_end := pulses_end + _DAMAGE_SHAKE_TOTAL
+
+	_active_tween = create_tween()
+	_active_tween.set_parallel(true)
+	# Pulse 1: scale 0 → overshoot → rest, opacity 0 → 1.0 over the same window.
+	_active_tween.tween_property(self, "scale", overshoot, _DAMAGE_PULSE1_OUT)
+	_active_tween.tween_property(self, "scale", _rest_scale, _DAMAGE_PULSE1_SETTLE) \
+		.set_delay(_DAMAGE_PULSE1_OUT)
+	_active_tween.tween_property(self, "modulate:a", 1.0, _DAMAGE_PULSE1_TOTAL)
+	# Pulse 2: scale rest → overshoot → rest (opacity already at 1.0).
+	_active_tween.tween_property(self, "scale", overshoot, _DAMAGE_PULSE2_OUT) \
+		.set_delay(_DAMAGE_PULSE1_TOTAL)
+	_active_tween.tween_property(self, "scale", _rest_scale, _DAMAGE_PULSE2_SETTLE) \
+		.set_delay(_DAMAGE_PULSE1_TOTAL + _DAMAGE_PULSE2_OUT)
+	# Shake tail: 4 discrete linear position steps along the impact axis.
+	for i in _DAMAGE_SHAKE_STEPS:
+		var step_px := float(_DAMAGE_SHAKE_STEP_DISPLACEMENTS_PX[i])
+		var perp_jitter := randf_range(-_DAMAGE_SHAKE_PERPENDICULAR_PX, _DAMAGE_SHAKE_PERPENDICULAR_PX)
+		var target := _rest_position + dominant_unit * step_px + perp_unit * perp_jitter
+		_active_tween.tween_property(self, "position", target, step_duration) \
+			.set_delay(pulses_end + i * step_duration) \
+			.set_trans(Tween.TRANS_LINEAR)
+	# Fade out (position has already settled to rest via the last shake step).
+	_active_tween.tween_property(self, "modulate:a", 0.0, _DAMAGE_FADE_OUT_SECONDS) \
+		.set_delay(shake_end)
+	await _active_tween.finished
 
 func _animate_block_shake(direction: int) -> void:
 	_reset_to_clean_state()
