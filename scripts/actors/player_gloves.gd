@@ -18,12 +18,15 @@ const _STATE_TOKEN := {
 	State.PUNCH: "punch",
 }
 
-var _left_base_position: Vector2
-var _left_base_scale: Vector2
-var _left_base_rotation: float
-var _right_base_position: Vector2
-var _right_base_scale: Vector2
-var _right_base_rotation: float
+# Initialized at declaration so any pre-`_ready()` caller (tests, editor tools)
+# sees safe defaults. Scale fields are unused this task but reserved for the
+# block/punch tweens Task 2.1 lands.
+var _left_base_position: Vector2 = Vector2.ZERO
+var _left_base_scale: Vector2 = Vector2.ONE
+var _left_base_rotation: float = 0.0
+var _right_base_position: Vector2 = Vector2.ZERO
+var _right_base_scale: Vector2 = Vector2.ONE
+var _right_base_rotation: float = 0.0
 
 var _left_state: int = State.IDLE
 var _right_state: int = State.IDLE
