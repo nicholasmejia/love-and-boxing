@@ -34,9 +34,9 @@ var _visibility: int = RiddleVisibility.FRESH_START_GAP
 var _gap_generation: int = 0
 var _current_prompt: DialoguePrompt
 
-const _BLOCK_FLASH_SECONDS := 0.15
+const _BLOCK_FLASH_SECONDS := 0.30
 const _DAMAGE_HIT_SECONDS := 0.35
-const _PUNCH_FLASH_SECONDS := 0.15
+const _PUNCH_FLASH_SECONDS := 0.30
 const _MISS_FLASH_SECONDS := 0.35
 
 func _ready() -> void:

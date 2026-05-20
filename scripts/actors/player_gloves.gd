@@ -18,8 +18,8 @@ const BLOCK_TARGETS := {
 	SimonSequence.Direction.LEFT:  { "left": Vector2(240, 920),  "right": Vector2(1360, 920) },
 	SimonSequence.Direction.RIGHT: { "left": Vector2(560, 920),  "right": Vector2(1680, 920) },
 }
-const BLOCK_OUT_DURATION := 0.10
-const BLOCK_RETURN_DURATION := 0.15
+const BLOCK_OUT_DURATION := 0.20
+const BLOCK_RETURN_DURATION := 0.30
 const BLOCK_OUT_TRANSITION := Tween.TRANS_BACK
 const BLOCK_RETURN_TRANSITION := Tween.TRANS_QUAD
 
@@ -30,8 +30,8 @@ const PUNCH_TARGETS := {
 	SimonSequence.Direction.BODY:  { "glove": Side.LEFT,  "pos": Vector2(900, 780),  "scale": 0.70, "rotation_deg": -10.0 },
 	SimonSequence.Direction.HEAD:  { "glove": Side.RIGHT, "pos": Vector2(1500, 500), "scale": 0.55, "rotation_deg": +20.0 },
 }
-const PUNCH_OUT_DURATION := 0.10
-const PUNCH_RETURN_DURATION := 0.15
+const PUNCH_OUT_DURATION := 0.20
+const PUNCH_RETURN_DURATION := 0.30
 const PUNCH_OUT_TRANSITION := Tween.TRANS_BACK
 const PUNCH_RETURN_TRANSITION := Tween.TRANS_QUAD
 
