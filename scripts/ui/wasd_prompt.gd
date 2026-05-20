@@ -27,6 +27,20 @@ const _PROMPT_FADE_OUT_SECONDS := 0.08
 # animations in Increments 3-6.
 const _FALLBACK_FADE_IN_SECONDS := 0.06
 
+# Block Shake (defense SUCCESS). The prompt snaps to rest scale + opacity,
+# then jerks along the punch's impact axis in 5 discrete linear steps with
+# perpendicular jitter, settles, and fades out.
+const _BLOCK_SHAKE_TOTAL_SECONDS := 0.18
+const _BLOCK_SHAKE_STEPS := 5
+const _BLOCK_SHAKE_DOMINANT_PX := 18.0
+const _BLOCK_SHAKE_PERPENDICULAR_PX := 6.0
+const _BLOCK_SETTLE_HOLD_SECONDS := 0.04
+const _BLOCK_FADE_OUT_SECONDS := 0.08
+# Per-step displacement on the dominant axis, expressed in px. Step 5 is 0 so
+# the prompt settles at _rest_position before the fade-out. Calibrated for
+# _BLOCK_SHAKE_DOMINANT_PX = 18; rescale proportionally if you tune that.
+const _BLOCK_SHAKE_STEP_DISPLACEMENTS_PX: Array = [18.0, -12.0, 8.0, -4.0, 0.0]
+
 @onready var _label: Label = $Label
 @onready var _bg: ColorRect = $Background
 @onready var _image: TextureRect = $Image
@@ -64,6 +78,8 @@ func display(direction: int, variant: int, duration_seconds: float) -> void:
 	match variant:
 		Variant.PROMPT:
 			await _animate_prompt_pulse(duration_seconds)
+		Variant.SUCCESS:
+			await _animate_block_shake(direction)
 		_:
 			# SUCCESS / FAIL fallback path until Increments 3-6 land their proper
 			# variant animations. The fade-in (instead of a snap to opacity 1.0)
@@ -107,6 +123,40 @@ func _animate_prompt_pulse(duration_seconds: float) -> void:
 		.set_delay(_PROMPT_PULSE_OUT_SECONDS)
 	_active_tween.tween_property(self, "modulate:a", 0.0, _PROMPT_FADE_OUT_SECONDS) \
 		.set_delay(total_in + hold)
+	await _active_tween.finished
+
+# Dominant shake direction for a punch landing at `direction`. The prompt is
+# pushed the way the punch's force carries — W (top) and S (mid) shake
+# downward; A (left hook) shakes leftward from the prompt's POV; D shakes
+# rightward. The return vector's magnitude is _BLOCK_SHAKE_DOMINANT_PX; the
+# perpendicular axis (the zero component) carries the jitter, applied at the
+# tween use site.
+static func shake_axis_for(direction: int) -> Vector2:
+	match direction:
+		SimonSequence.Direction.HEAD: return Vector2(0.0, _BLOCK_SHAKE_DOMINANT_PX)
+		SimonSequence.Direction.LEFT: return Vector2(-_BLOCK_SHAKE_DOMINANT_PX, 0.0)
+		SimonSequence.Direction.BODY: return Vector2(0.0, _BLOCK_SHAKE_DOMINANT_PX)
+		SimonSequence.Direction.RIGHT: return Vector2(_BLOCK_SHAKE_DOMINANT_PX, 0.0)
+	return Vector2.ZERO
+
+func _animate_block_shake(direction: int) -> void:
+	_reset_to_clean_state()
+	scale = _rest_scale
+	modulate.a = 1.0
+	visible = true
+	var dominant := shake_axis_for(direction)
+	var dominant_unit := dominant.normalized()
+	# Perpendicular jitter lives on the axis the dominant shake doesn't use.
+	var perp_unit := Vector2(1.0, 0.0) if absf(dominant.y) > absf(dominant.x) else Vector2(0.0, 1.0)
+	var step_duration := _BLOCK_SHAKE_TOTAL_SECONDS / float(_BLOCK_SHAKE_STEPS)
+	_active_tween = create_tween()
+	for step_px in _BLOCK_SHAKE_STEP_DISPLACEMENTS_PX:
+		var perp_jitter := randf_range(-_BLOCK_SHAKE_PERPENDICULAR_PX, _BLOCK_SHAKE_PERPENDICULAR_PX)
+		var target := _rest_position + dominant_unit * float(step_px) + perp_unit * perp_jitter
+		_active_tween.tween_property(self, "position", target, step_duration) \
+			.set_trans(Tween.TRANS_LINEAR)
+	_active_tween.tween_interval(_BLOCK_SETTLE_HOLD_SECONDS)
+	_active_tween.tween_property(self, "modulate:a", 0.0, _BLOCK_FADE_OUT_SECONDS)
 	await _active_tween.finished
 
 func _set_sprite(direction: int, variant: int) -> void:

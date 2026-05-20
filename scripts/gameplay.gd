@@ -372,7 +372,7 @@ func _on_attack_step_landed(index: int) -> void:
 	# step's attack_succeeded handler cancels it synchronously (same frame —
 	# no flicker), matching the defense-side block flow.
 	_input_bar.start(_attack.input_window_seconds)
-	_prompts.flash_success(direction, _PUNCH_FLASH_SECONDS)
+	_prompts.flash_success(direction, _PUNCH_FLASH_SECONDS, true)
 	_hit_opponent_for(direction)
 	_gloves.set_state(PlayerGloves.State.PUNCH, direction)
 	# Wait the full flash window before resetting. If the player inputs the
@@ -409,7 +409,7 @@ func _on_attack_failed(expected_direction: int) -> void:
 	# defense. flash_fail shows the _fail.png variant at the EXPECTED direction
 	# so the wrong-key and timeout cases read identically.
 	_input_bar.cancel()
-	_prompts.flash_fail(expected_direction, _MISS_FLASH_SECONDS)
+	_prompts.flash_fail(expected_direction, _MISS_FLASH_SECONDS, true)
 	_return_to_defense()
 
 func _return_to_defense() -> void:
