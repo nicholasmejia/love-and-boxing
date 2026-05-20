@@ -1,5 +1,7 @@
 extends GutTest
 
+# GUT's custom-warnings load path doesn't pick up class_name registrations made
+# in the same branch as this test file. Preload explicitly so parse succeeds.
 const OpponentAnimationProfile = preload("res://scripts/data/opponent_animation_profile.gd")
 
 func test_default_values():
