@@ -6,7 +6,7 @@
 
 **Architecture:** Mixed `_process(dt)` math for continuous loops and `create_tween()` for transient one-shots. Each actor stores a base transform captured in `_ready()` and animates as deltas off it. Hard-cancel preemption: any state change kills the current tween, snaps back to base, then dispatches the new beat. Two new `Opponent.Action` enum values (`HIT_BODY`, `GUARD_DOWN_EXCITED`) disambiguate animation behavior — both share existing textures. The glove API changes from `set_state(side, state)` to `set_state(state, direction)` so block can position both gloves per WASD.
 
-**Tech Stack:** Godot 4.4 (GDScript, Resource subclasses, `.tres` text format, Tween API), GUT 9.x for unit tests of pure-math helpers.
+**Tech Stack:** Godot 4.6 (GDScript, Resource subclasses, `.tres` text format, Tween API), GUT 9.x for unit tests of pure-math helpers.
 
 **Reference spec:** `docs/superpowers/specs/2026-05-19-actor-animations-design.md`
 **Reference glossary:** `CONTEXT.md` § "Visual Behavior"
@@ -174,13 +174,13 @@ attack_lunge_shift_x = 40.0
 attack_lunge_scale_peak = 1.10
 attack_lunge_out_duration = 0.12
 attack_lunge_return_duration = 0.15
-attack_lunge_transition_out = 9
+attack_lunge_transition_out = 10
 attack_lunge_transition_return = 4
 hit_recoil_shift_x = 40.0
 hit_recoil_scale_dip = 0.92
 hit_recoil_out_duration = 0.10
 hit_recoil_return_duration = 0.15
-hit_recoil_transition_out = 9
+hit_recoil_transition_out = 10
 hit_recoil_transition_return = 4
 knockdown_fall_sway_amplitude = 30.0
 knockdown_fall_sway_cycles = 1.5
@@ -191,12 +191,12 @@ knockdown_fall_drop_y = 200.0
 knockdown_fall_drop_duration = 0.3
 knockdown_fall_drop_transition = 4
 knockdown_recover_duration = 0.3
-knockdown_recover_transition = 9
+knockdown_recover_transition = 10
 guard_bounce_amplitude_y = 18.0
 guard_bounce_period = 0.45
 ```
 
-Tween transition int values (per Godot 4.4 `Tween.TransitionType`): `TRANS_QUAD = 4`, `TRANS_BACK = 9`. The literal values are written explicitly in the `.tres` because Godot resource format does not resolve enum constants in text.
+Tween transition int values (per Godot 4.6 `Tween.TransitionType`): `TRANS_QUAD = 4`, `TRANS_BACK = 10`. The literal values are written explicitly in the `.tres` because Godot resource format does not resolve enum constants in text. (Godot 4.6 inserted `TRANS_SPRING = 9` between `TRANS_QUART` and `TRANS_BACK`, shifting BACK from its 4.4 value of 9 to 10.)
 
 - [ ] **Step 2: Write the unit test for resource loading**
 
@@ -1935,5 +1935,5 @@ The five increments are complete. Each commit on the branch represents one user-
 - `Opponent.play_knockdown_fall()` and `play_knockdown_recover()` — defined in Tasks 5.1/5.2, called in Task 5.3.
 - `PlayerGloves.set_state(state: int, direction: int = -1)` — defined in Task 2.1, called consistently in Task 2.1 steps 2/3/4 (gameplay.gd updates).
 - `PlayerGloves.sway_offset` — static method signature matches between Task 1.5 test and Task 1.5/2.1 implementation.
-- `Tween.TRANS_BACK = 9`, `Tween.TRANS_QUAD = 4` — magic numbers used only in the `.tres` literal (Task 1.2 Step 1); enum names used in code and tests.
+- `Tween.TRANS_BACK = 10`, `Tween.TRANS_QUAD = 4` (Godot 4.6 values) — magic numbers used only in the `.tres` literal (Task 1.2 Step 1); enum names used in code and tests.
 - `OpponentAnimationProfile` field names — defined in Task 1.1 Step 1, referenced unchanged in Tasks 3.2/3.3/4.2/5.1/5.2 and in `tofu.tres` (Task 1.2).
