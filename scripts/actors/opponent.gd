@@ -77,6 +77,22 @@ func set_action(action: int, direction: int = Direction.LEFT) -> void:
 		_set_continuous_mode(ContinuousMode.IDLE_BOB)
 	else:
 		_set_continuous_mode(ContinuousMode.STILL)
+	if action == Action.SWING_HIGH or action == Action.SWING_MID or action == Action.SWING_LOW:
+		_play_attack_lunge(action, direction)
+
+func _play_attack_lunge(action: int, direction: int) -> void:
+	var shift := Opponent.swing_shift(action, direction, _profile.attack_lunge_shift_x)
+	var target_pos := _base_position + Vector2(shift, 0.0)
+	var target_scale := _base_scale * _profile.attack_lunge_scale_peak
+	_kill_current_tween()
+	var t := create_tween()
+	var out_p := t.parallel()
+	out_p.tween_property(_sprite, "position", target_pos, _profile.attack_lunge_out_duration).set_trans(_profile.attack_lunge_transition_out).set_ease(Tween.EASE_OUT)
+	out_p.tween_property(_sprite, "scale", target_scale, _profile.attack_lunge_out_duration).set_trans(_profile.attack_lunge_transition_out).set_ease(Tween.EASE_OUT)
+	var ret_p := t.parallel()
+	ret_p.tween_property(_sprite, "position", _base_position, _profile.attack_lunge_return_duration).set_trans(_profile.attack_lunge_transition_return).set_ease(Tween.EASE_IN)
+	ret_p.tween_property(_sprite, "scale", _base_scale, _profile.attack_lunge_return_duration).set_trans(_profile.attack_lunge_transition_return).set_ease(Tween.EASE_IN)
+	_current_tween = t
 
 func _process(delta: float) -> void:
 	# Timer is shared across continuous modes and resets on every mode transition
@@ -102,6 +118,13 @@ static func idle_bob_offset(t: float, amp_x: float, amp_y: float, period: float)
 	var c := cos(phase)
 	var y := -amp_y * c * c
 	return Vector2(x, y)
+
+static func swing_shift(action: int, direction: int, shift: float) -> float:
+	match action:
+		Action.SWING_HIGH: return +shift
+		Action.SWING_MID:  return -shift
+		Action.SWING_LOW:  return +shift if direction == Direction.LEFT else -shift
+	return 0.0
 
 func _set_continuous_mode(mode: int) -> void:
 	_continuous_mode = mode
