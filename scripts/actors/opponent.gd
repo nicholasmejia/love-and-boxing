@@ -6,6 +6,7 @@ const OpponentAnimationProfile = preload("res://scripts/data/opponent_animation_
 enum Action {
 	IDLE,           # default + guard stance
 	GUARD_DOWN,     # arms lowered after positive riddle (no bounce — post first hit)
+	GUARD_DOWN_EXCITED,  # arms lowered with pending bounce animation (Task 4.2)
 	KNOCKED_DOWN,   # KO'd / fallen
 	TALKING,        # optional dialogue overlay
 	SWING_HIGH,     # opponent telegraphs head punch (W defense)
@@ -30,6 +31,7 @@ enum ContinuousMode {
 const _ACTION_TOKEN := {
 	Action.IDLE: "idle",
 	Action.GUARD_DOWN: "guard_down",
+	Action.GUARD_DOWN_EXCITED: "guard_down",
 	Action.KNOCKED_DOWN: "knocked_down",
 	Action.TALKING: "talking",
 	Action.SWING_HIGH: "swing_high",

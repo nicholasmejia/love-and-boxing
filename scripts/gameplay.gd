@@ -350,7 +350,7 @@ func _trigger_attack_phase() -> void:
 	_in_attack = true
 	_defense.stop()
 	_snap_clear_simon_visuals()
-	_opponent.set_action(Opponent.Action.GUARD_DOWN, Opponent.Direction.LEFT)
+	_opponent.set_action(Opponent.Action.GUARD_DOWN_EXCITED, Opponent.Direction.LEFT)
 	_attack.begin(_combo.input_count())
 
 func _on_attack_step_flashed(direction: int) -> void:
