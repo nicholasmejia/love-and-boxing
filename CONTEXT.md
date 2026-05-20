@@ -96,6 +96,31 @@ Personality intents (tuning targets, not code branches):
 
 Initial ship: Tofu's profile is tuned; Minty and Sebastian fall back to Tofu's. Per-opponent tuning is a follow-up effort.
 
+## UI Visual Behavior
+
+Banners and WASD prompts are no longer snap show / snap hide — each carries a per-event animation that punctuates the gameplay beat. Numeric tuning lives as constants in `announcement_banner.gd` (universal banner timing) and `wasd_prompt.gd` (per-variant prompt timing). UI animations are universal — they do not vary by opponent or difficulty.
+
+### Banner Slide
+
+The in/out animation for any `AnnouncementBanner` mode (`show_banner`, `show_message`, `show_prompt`):
+
+- **On show:** banner starts left of its rest position with opacity 0, slides right to rest with opacity 1.0.
+- **On dismiss/timeout:** slides further right past rest while opacity drops back to 0.
+
+Both transitions move rightward — the banner "passes through" its resting position. The 40% black backdrop fades with the same opacity envelope but does not slide.
+
+`AnnouncementBanner.dismiss()` is **awaitable** — callers must await it before the next banner / state change so consecutive banners do not overlap. The `MatchPacing` banner constants (`READY_BANNER`, `KNOCK_DOWN_BANNER`, etc.) define banner **hold** time only; total wall-clock is `IN_DURATION + hold + OUT_DURATION`. Code that subtracts a banner duration from a larger pause (e.g., the `KNOCKDOWN_PAUSE` remainder math) must use `AnnouncementBanner.total_duration_for(hold_seconds)`, not the raw constant.
+
+### WASD Prompt Animations (per variant)
+
+Every variant follows a universal envelope — slow opacity fade in (during the variant's entry beat), hold at rest, much quicker opacity fade out — with variant-specific behavior layered on top. Any new `display()` call hard-cancels the in-flight tween and resets modulate/scale/position to a clean state. `hide_all()` is snap-hide for round-end / match-loss / phase-transition snap-clears.
+
+- **Prompt Pulse** — The PROMPT variant's grow-in: scale 0 → overshoot (~1.15×) → rest (1.0×) with opacity 0→1.0, then hold at rest, then opacity fade-out. Used for show-phase telegraphs in both defense and attack.
+- **Block Shake** — The SUCCESS variant in defense. Prompt appears at rest scale/opacity (no pre-pulse), then shakes in discrete stuttered steps along the impact axis (dominant) with smaller perpendicular jitter, before fading out. Reads as "solid object absorbing the blow". Shake direction follows the opponent's punch direction.
+- **Damage Double-Pulse** — The FAIL variant in defense. Two consecutive Prompt Pulses with no gap, then a slight tail shake (~⅓ the amplitude of Block Shake) before fading out. Reads as "missed the block and got tagged". Shake direction follows the *expected* opponent punch direction (same direction the FAIL sprite is flashed at).
+- **Hit Toss** — The SUCCESS variant in attack. A quicker Prompt Pulse, then the prompt is "tossed" — translates along the punch's travel vector in a vertical arc (up then back down past rest), tapering in scale, while opacity fades to 0. Hooks (A/D) get a larger horizontal offset than jabs (W/S) to match the more horizontal swing. After the toss the prompt is gone for the rest of the beat.
+- **Miss Double-Pulse** — The FAIL variant in attack. Two consecutive Prompt Pulses, then hold, then fade out. No shake (the prompt was not physically hit) and no toss (the punch did not connect). Distinguishes the attack-miss case from the defense-damage case via the absence of shake.
+
 ## Asset Naming Conventions
 
 All asset filenames are lowercase, underscore-separated, and follow these patterns:
