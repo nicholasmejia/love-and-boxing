@@ -85,13 +85,13 @@ func _play_attack_lunge(action: int, direction: int) -> void:
 	var target_pos := _base_position + Vector2(shift, 0.0)
 	var target_scale := _base_scale * _profile.attack_lunge_scale_peak
 	_kill_current_tween()
+	# `parallel()` flags only the next tweener, so attach scale via `.parallel()`
+	# on the tweener that should share a step with the preceding position tween.
 	var t := create_tween()
-	var out_p := t.parallel()
-	out_p.tween_property(_sprite, "position", target_pos, _profile.attack_lunge_out_duration).set_trans(_profile.attack_lunge_transition_out).set_ease(Tween.EASE_OUT)
-	out_p.tween_property(_sprite, "scale", target_scale, _profile.attack_lunge_out_duration).set_trans(_profile.attack_lunge_transition_out).set_ease(Tween.EASE_OUT)
-	var ret_p := t.parallel()
-	ret_p.tween_property(_sprite, "position", _base_position, _profile.attack_lunge_return_duration).set_trans(_profile.attack_lunge_transition_return).set_ease(Tween.EASE_IN)
-	ret_p.tween_property(_sprite, "scale", _base_scale, _profile.attack_lunge_return_duration).set_trans(_profile.attack_lunge_transition_return).set_ease(Tween.EASE_IN)
+	t.tween_property(_sprite, "position", target_pos, _profile.attack_lunge_out_duration).set_trans(_profile.attack_lunge_transition_out).set_ease(Tween.EASE_OUT)
+	t.parallel().tween_property(_sprite, "scale", target_scale, _profile.attack_lunge_out_duration).set_trans(_profile.attack_lunge_transition_out).set_ease(Tween.EASE_OUT)
+	t.tween_property(_sprite, "position", _base_position, _profile.attack_lunge_return_duration).set_trans(_profile.attack_lunge_transition_return).set_ease(Tween.EASE_IN)
+	t.parallel().tween_property(_sprite, "scale", _base_scale, _profile.attack_lunge_return_duration).set_trans(_profile.attack_lunge_transition_return).set_ease(Tween.EASE_IN)
 	_current_tween = t
 
 func _process(delta: float) -> void:
