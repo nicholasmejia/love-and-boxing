@@ -43,9 +43,11 @@ const _ACTION_TOKEN := {
 var _slug: String = "tofu"
 var _profile: OpponentAnimationProfile = null
 
-var _base_position: Vector2
-var _base_scale: Vector2
-var _base_rotation: float
+# Initialized at declaration so `_reset_to_base()` is safe to call even
+# before `_ready()` has captured the scene's authored transform.
+var _base_position: Vector2 = Vector2.ZERO
+var _base_scale: Vector2 = Vector2.ONE
+var _base_rotation: float = 0.0
 
 var _continuous_mode: int = ContinuousMode.STILL
 var _continuous_mode_t: float = 0.0
@@ -75,6 +77,9 @@ func set_action(action: int, direction: int = Direction.LEFT) -> void:
 		_set_continuous_mode(ContinuousMode.STILL)
 
 func _process(delta: float) -> void:
+	# Timer is shared across continuous modes and resets on every mode transition
+	# (see `_set_continuous_mode`). Incrementing unconditionally is intentional —
+	# future modes (e.g. GUARD_BOUNCE in Task 4.2) read this same accumulator.
 	_continuous_mode_t += delta
 	match _continuous_mode:
 		ContinuousMode.IDLE_BOB:
