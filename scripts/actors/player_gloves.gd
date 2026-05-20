@@ -61,6 +61,13 @@ var _right_state: int = State.IDLE
 var _left_tween: Tween = null
 var _right_tween: Tween = null
 
+# Last applied (state, direction) pose. When a new pose matches this exactly
+# (e.g. two A-blocks in a row), the tween targets are identical to the current
+# rest, so the second call produces no visible motion — `_apply_*_pose` snaps
+# back to base first to force a fresh re-tween. Reset on IDLE.
+var _last_pose_state: int = State.IDLE
+var _last_pose_direction: int = -1
+
 var _t: float = 0.0
 
 func _ready() -> void:
@@ -75,6 +82,8 @@ func _ready() -> void:
 func set_state(state: int, direction: int = -1) -> void:
 	match state:
 		State.IDLE:
+			_last_pose_state = State.IDLE
+			_last_pose_direction = -1
 			_set_glove_state(Side.LEFT, State.IDLE)
 			_set_glove_state(Side.RIGHT, State.IDLE)
 		State.BLOCK:
@@ -85,6 +94,14 @@ func set_state(state: int, direction: int = -1) -> void:
 			_apply_punch_pose(direction)
 
 func _apply_block_pose(direction: int) -> void:
+	var is_repeat := _last_pose_state == State.BLOCK and _last_pose_direction == direction
+	_last_pose_state = State.BLOCK
+	_last_pose_direction = direction
+	if is_repeat:
+		_kill_glove_tween(Side.LEFT)
+		_kill_glove_tween(Side.RIGHT)
+		_snap_glove_to_base(Side.LEFT)
+		_snap_glove_to_base(Side.RIGHT)
 	var targets: Dictionary = BLOCK_TARGETS[direction]
 	_set_glove_state(Side.LEFT, State.BLOCK)
 	_set_glove_state(Side.RIGHT, State.BLOCK)
@@ -94,6 +111,12 @@ func _apply_block_pose(direction: int) -> void:
 func _apply_punch_pose(direction: int) -> void:
 	var spec: Dictionary = PUNCH_TARGETS[direction]
 	var side: int = spec["glove"]
+	var is_repeat := _last_pose_state == State.PUNCH and _last_pose_direction == direction
+	_last_pose_state = State.PUNCH
+	_last_pose_direction = direction
+	if is_repeat:
+		_kill_glove_tween(side)
+		_snap_glove_to_base(side)
 	_set_glove_state(side, State.PUNCH)
 	var base_scale: Vector2 = _left_base_scale if side == Side.LEFT else _right_base_scale
 	var target_scale: Vector2 = base_scale * spec["scale"]
