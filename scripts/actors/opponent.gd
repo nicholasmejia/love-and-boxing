@@ -147,6 +147,17 @@ func _apply_fall_sway(t_now: float) -> void:
 	var phase := t_now * TAU * cycles / dur
 	_sprite.position.x = _base_position.x + amp * sin(phase)
 
+func play_knockdown_recover() -> void:
+	_kill_current_tween()
+	var t := create_tween().set_parallel(true)
+	t.set_trans(_profile.knockdown_recover_transition).set_ease(Tween.EASE_OUT)
+	t.tween_property(_sprite, "position", _base_position, _profile.knockdown_recover_duration)
+	t.tween_property(_sprite, "rotation", _base_rotation, _profile.knockdown_recover_duration)
+	t.tween_property(_sprite, "scale", _base_scale, _profile.knockdown_recover_duration)
+	_current_tween = t
+	await t.finished
+	set_action(Action.IDLE, Direction.LEFT)
+
 func _process(delta: float) -> void:
 	# Timer is shared across continuous modes and resets on every mode transition
 	# (see `_set_continuous_mode`). Incrementing unconditionally is intentional —
