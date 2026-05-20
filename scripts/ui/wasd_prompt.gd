@@ -80,6 +80,19 @@ const _ATTACK_HIT_TOSS_END_Y_PX := 40.0       # end position, past rest below
 # the prompt reads as tumbling forward in the direction it's flying.
 const _ATTACK_HIT_TOSS_END_ROTATION_DEG := 10.0
 
+# Miss Double-Pulse (attack FAIL). Two scale pulses + hold + fade. No shake
+# (the punch didn't physically connect) and no toss (it missed). The pulse
+# shape mirrors Damage Double-Pulse so a missed attack reads as the same
+# "double-thump" beat, minus the impact-shake tail that follows getting hit.
+const _ATTACK_MISS_PULSE1_OUT := 0.06
+const _ATTACK_MISS_PULSE1_SETTLE := 0.03
+const _ATTACK_MISS_PULSE1_TOTAL := 0.09
+const _ATTACK_MISS_PULSE2_OUT := 0.05
+const _ATTACK_MISS_PULSE2_SETTLE := 0.03
+const _ATTACK_MISS_PULSE2_TOTAL := 0.08
+const _ATTACK_MISS_HOLD := 0.10
+const _ATTACK_MISS_FADE_OUT := 0.08
+
 @onready var _label: Label = $Label
 @onready var _bg: ColorRect = $Background
 @onready var _image: TextureRect = $Image
@@ -123,6 +136,8 @@ func display(direction: int, variant: int, duration_seconds: float) -> void:
 			await _animate_damage_double_pulse(direction)
 		Variant.SUCCESS_ATTACK:
 			await _animate_hit_toss(direction)
+		Variant.FAIL_ATTACK:
+			await _animate_miss_double_pulse()
 		_:
 			# SUCCESS / FAIL fallback path until Increments 3-6 land their proper
 			# variant animations. The fade-in (instead of a snap to opacity 1.0)
@@ -196,6 +211,32 @@ static func shake_axis_for(direction: int) -> Vector2:
 		SimonSequence.Direction.BODY: return Vector2(0.0, _BLOCK_SHAKE_DOMINANT_PX)
 		SimonSequence.Direction.RIGHT: return Vector2(_BLOCK_SHAKE_DOMINANT_PX, 0.0)
 	return Vector2.ZERO
+
+func _animate_miss_double_pulse() -> void:
+	# Direction-agnostic — Miss has no shake (the punch didn't land) and no
+	# toss (it didn't connect), so the prompt sits at rest the whole time.
+	_reset_to_clean_state()
+	visible = true
+	var overshoot := _rest_scale * _PROMPT_OVERSHOOT_SCALE
+	var pulses_end := _ATTACK_MISS_PULSE1_TOTAL + _ATTACK_MISS_PULSE2_TOTAL
+	var hold_end := pulses_end + _ATTACK_MISS_HOLD
+
+	_active_tween = create_tween()
+	_active_tween.set_parallel(true)
+	# Pulse 1: scale 0 → overshoot → rest, opacity 0 → 1.0 over the same window.
+	_active_tween.tween_property(self, "scale", overshoot, _ATTACK_MISS_PULSE1_OUT)
+	_active_tween.tween_property(self, "scale", _rest_scale, _ATTACK_MISS_PULSE1_SETTLE) \
+		.set_delay(_ATTACK_MISS_PULSE1_OUT)
+	_active_tween.tween_property(self, "modulate:a", 1.0, _ATTACK_MISS_PULSE1_TOTAL)
+	# Pulse 2: scale rest → overshoot → rest (opacity already at 1.0).
+	_active_tween.tween_property(self, "scale", overshoot, _ATTACK_MISS_PULSE2_OUT) \
+		.set_delay(_ATTACK_MISS_PULSE1_TOTAL)
+	_active_tween.tween_property(self, "scale", _rest_scale, _ATTACK_MISS_PULSE2_SETTLE) \
+		.set_delay(_ATTACK_MISS_PULSE1_TOTAL + _ATTACK_MISS_PULSE2_OUT)
+	# Hold + fade out.
+	_active_tween.tween_property(self, "modulate:a", 0.0, _ATTACK_MISS_FADE_OUT) \
+		.set_delay(hold_end)
+	await _active_tween.finished
 
 func _animate_hit_toss(direction: int) -> void:
 	_reset_to_clean_state()
