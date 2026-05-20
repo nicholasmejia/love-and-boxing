@@ -1,21 +1,29 @@
 class_name Opponent
 extends Node2D
 
+const OpponentAnimationProfile = preload("res://scripts/data/opponent_animation_profile.gd")
+
 enum Action {
 	IDLE,           # default + guard stance
-	GUARD_DOWN,     # arms lowered after positive riddle
-	KNOCKED_DOWN,   # KO'd
+	GUARD_DOWN,     # arms lowered after positive riddle (no bounce — post first hit)
+	KNOCKED_DOWN,   # KO'd / fallen
 	TALKING,        # optional dialogue overlay
 	SWING_HIGH,     # opponent telegraphs head punch (W defense)
 	SWING_MID,      # opponent telegraphs body punch (S defense)
 	SWING_LOW,      # opponent telegraphs hook punch (A or D defense)
 	HIT_HIGH,       # player W-attack lands
-	HIT_LOW,        # player A/S/D attack lands
+	HIT_LOW,        # player A or D side-attack lands
 }
 
 enum Direction {
-	LEFT,           # canonical sprite (designed for left-side action)
-	RIGHT,          # flip_h = true (used for D-direction inputs)
+	LEFT,
+	RIGHT,
+}
+
+enum ContinuousMode {
+	STILL,
+	IDLE_BOB,
+	GUARD_BOUNCE,
 }
 
 const _ACTION_TOKEN := {
@@ -33,14 +41,74 @@ const _ACTION_TOKEN := {
 @onready var _sprite: Sprite2D = $Body
 
 var _slug: String = "tofu"
+var _profile: OpponentAnimationProfile = null
 
-func configure(opponent_slug: String) -> void:
+var _base_position: Vector2
+var _base_scale: Vector2
+var _base_rotation: float
+
+var _continuous_mode: int = ContinuousMode.STILL
+var _continuous_mode_t: float = 0.0
+var _current_tween: Tween = null
+
+func _ready() -> void:
+	_base_position = _sprite.position
+	_base_scale = _sprite.scale
+	_base_rotation = _sprite.rotation
+
+func configure(opponent_slug: String, profile: OpponentAnimationProfile = null) -> void:
 	_slug = opponent_slug
+	if profile != null:
+		_profile = profile
+	elif _profile == null:
+		_profile = load("res://data/opponent_animation/tofu.tres") as OpponentAnimationProfile
 	set_action(Action.IDLE)
 
 func set_action(action: int, direction: int = Direction.LEFT) -> void:
+	_kill_current_tween()
+	_reset_to_base()
 	_sprite.texture = _load_texture(action)
 	_sprite.flip_h = (direction == Direction.RIGHT)
+	if action == Action.IDLE:
+		_set_continuous_mode(ContinuousMode.IDLE_BOB)
+	else:
+		_set_continuous_mode(ContinuousMode.STILL)
+
+func _process(delta: float) -> void:
+	_continuous_mode_t += delta
+	match _continuous_mode:
+		ContinuousMode.IDLE_BOB:
+			var offset := Opponent.idle_bob_offset(
+				_continuous_mode_t,
+				_profile.idle_bob_amplitude_x,
+				_profile.idle_bob_amplitude_y,
+				_profile.idle_bob_period,
+			)
+			_sprite.position = _base_position + offset
+		ContinuousMode.STILL, _:
+			pass
+
+# Pure math — testable without scene.
+static func idle_bob_offset(t: float, amp_x: float, amp_y: float, period: float) -> Vector2:
+	var phase := t * TAU / period
+	var x := amp_x * sin(phase)
+	var c := cos(phase)
+	var y := -amp_y * c * c
+	return Vector2(x, y)
+
+func _set_continuous_mode(mode: int) -> void:
+	_continuous_mode = mode
+	_continuous_mode_t = 0.0
+
+func _kill_current_tween() -> void:
+	if _current_tween != null and _current_tween.is_running():
+		_current_tween.kill()
+	_current_tween = null
+
+func _reset_to_base() -> void:
+	_sprite.position = _base_position
+	_sprite.scale = _base_scale
+	_sprite.rotation = _base_rotation
 
 func _load_texture(action: int) -> Texture2D:
 	var safe_action: int = action if _ACTION_TOKEN.has(action) else Action.IDLE

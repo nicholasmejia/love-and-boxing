@@ -46,7 +46,11 @@ func _ready() -> void:
 	var bg_path := "res://assets/sprites/background.png"
 	if ResourceLoader.exists(bg_path):
 		$Background.texture = load(bg_path)
-	_opponent.configure(config.opponent_slug)
+	var profile_path := config.animation_profile_path
+	if profile_path == "" or not ResourceLoader.exists(profile_path):
+		profile_path = "res://data/opponent_animation/tofu.tres"
+	var profile := load(profile_path) as OpponentAnimationProfile
+	_opponent.configure(config.opponent_slug, profile)
 	Globals.last_played_tier = config.tier
 	Globals.last_match_outcome = Globals.MatchOutcome.DRAW
 	$EndButton.pressed.connect(SceneRouter.goto_match_results)
