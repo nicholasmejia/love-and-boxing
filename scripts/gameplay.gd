@@ -32,11 +32,17 @@ var _transitioning: bool = false
 var _awaiting_continue: bool = false
 var _visibility: int = RiddleVisibility.FRESH_START_GAP
 var _gap_generation: int = 0
+# Per-step generation counters for the block/punch display awaits. Each
+# step_landed bumps its counter; a stale handler whose generation no longer
+# matches returns without resetting visuals, so a faster next-step input owns
+# cleanup instead of clobbering the in-flight tween.
+var _defense_step_generation: int = 0
+var _attack_step_generation: int = 0
 var _current_prompt: DialoguePrompt
 
-const _BLOCK_FLASH_SECONDS := 0.15
+const _BLOCK_FLASH_SECONDS := 0.30
 const _DAMAGE_HIT_SECONDS := 0.35
-const _PUNCH_FLASH_SECONDS := 0.15
+const _PUNCH_FLASH_SECONDS := 0.30
 const _MISS_FLASH_SECONDS := 0.35
 
 func _ready() -> void:
@@ -46,7 +52,11 @@ func _ready() -> void:
 	var bg_path := "res://assets/sprites/background.png"
 	if ResourceLoader.exists(bg_path):
 		$Background.texture = load(bg_path)
-	_opponent.configure(config.opponent_slug)
+	var profile_path := config.animation_profile_path
+	if profile_path == "" or not ResourceLoader.exists(profile_path):
+		profile_path = "res://data/opponent_animation/tofu.tres"
+	var profile := load(profile_path) as OpponentAnimationProfile
+	_opponent.configure(config.opponent_slug, profile)
 	Globals.last_played_tier = config.tier
 	Globals.last_match_outcome = Globals.MatchOutcome.DRAW
 	$EndButton.pressed.connect(SceneRouter.goto_match_results)
@@ -224,7 +234,8 @@ func _on_show_started(_steps: Array) -> void:
 func _on_step_blocked(index: int) -> void:
 	AudioBus.play_sfx("block")
 	var direction: int = _defense.current_sequence().steps()[index]
-	var side: int = PlayerGloves.Side.RIGHT if direction == SimonSequence.Direction.RIGHT else PlayerGloves.Side.LEFT
+	_defense_step_generation += 1
+	var my_generation := _defense_step_generation
 	# Reset the input-window bar for the next keystroke. If this was the last
 	# step, sequence_completed fires immediately after and cancels it (synchronous,
 	# same frame — no flicker).
@@ -233,9 +244,13 @@ func _on_step_blocked(index: int) -> void:
 	# frame so the block reads as a single beat.
 	_prompts.flash_success(direction, _BLOCK_FLASH_SECONDS)
 	_swing_opponent_for(direction)
-	_gloves.set_state(side, PlayerGloves.State.BLOCK)
+	_gloves.set_state(PlayerGloves.State.BLOCK, direction)
 	await get_tree().create_timer(_BLOCK_FLASH_SECONDS).timeout
-	_gloves.set_state(side, PlayerGloves.State.IDLE)
+	# If a faster next-step input bumped the generation while we awaited, that
+	# newer handler owns cleanup — bail before clobbering its in-flight pose.
+	if my_generation != _defense_step_generation:
+		return
+	_gloves.set_state(PlayerGloves.State.IDLE)
 	_opponent_idle()
 
 func _on_damage_taken(expected_direction: int) -> void:
@@ -301,7 +316,7 @@ func _hit_opponent_for(direction: int) -> void:
 		SimonSequence.Direction.HEAD:
 			action = Opponent.Action.HIT_HIGH
 		SimonSequence.Direction.BODY:
-			action = Opponent.Action.HIT_LOW
+			action = Opponent.Action.HIT_BODY
 		SimonSequence.Direction.LEFT:
 			action = Opponent.Action.HIT_LOW
 		SimonSequence.Direction.RIGHT:
@@ -322,8 +337,7 @@ func _show_next_prompt() -> void:
 func _snap_clear_simon_visuals() -> void:
 	_prompts.hide_all()
 	_input_bar.cancel()
-	_gloves.set_state(PlayerGloves.Side.LEFT, PlayerGloves.State.IDLE)
-	_gloves.set_state(PlayerGloves.Side.RIGHT, PlayerGloves.State.IDLE)
+	_gloves.set_state(PlayerGloves.State.IDLE)
 	_opponent.set_action(Opponent.Action.IDLE, Opponent.Direction.LEFT)
 
 func _refresh_combo_meter() -> void:
@@ -332,16 +346,11 @@ func _refresh_combo_meter() -> void:
 func _refresh_knockdown_meter() -> void:
 	_knockdown_meter.set_count(_knockdowns.count())
 
-func _glove_side_for(direction: int) -> int:
-	# D-hook lands with the right glove; everything else uses the left glove,
-	# matching the block-side convention in _on_step_blocked.
-	return PlayerGloves.Side.RIGHT if direction == SimonSequence.Direction.RIGHT else PlayerGloves.Side.LEFT
-
 func _trigger_attack_phase() -> void:
 	_in_attack = true
 	_defense.stop()
 	_snap_clear_simon_visuals()
-	_opponent.set_action(Opponent.Action.GUARD_DOWN, Opponent.Direction.LEFT)
+	_opponent.set_action(Opponent.Action.GUARD_DOWN_EXCITED, Opponent.Direction.LEFT)
 	_attack.begin(_combo.input_count())
 
 func _on_attack_step_flashed(direction: int) -> void:
@@ -353,21 +362,26 @@ func _on_attack_repeat_started() -> void:
 func _on_attack_step_landed(index: int) -> void:
 	AudioBus.play_sfx("punch")
 	var direction: int = _attack.current_sequence().steps()[index]
-	var side: int = _glove_side_for(direction)
+	_attack_step_generation += 1
+	var my_generation := _attack_step_generation
 	# Restart the input-window bar for the next attack keystroke. The final
 	# step's attack_succeeded handler cancels it synchronously (same frame —
 	# no flicker), matching the defense-side block flow.
 	_input_bar.start(_attack.input_window_seconds)
 	_prompts.flash_success(direction, _PUNCH_FLASH_SECONDS)
 	_hit_opponent_for(direction)
-	_gloves.set_state(side, PlayerGloves.State.PUNCH)
-	# The 0.15s glove-IDLE reset can land during the Knock Down banner if this
-	# was the x3 finisher step — visually benign (the glove is going to IDLE
-	# regardless), but worth knowing the awaits overlap on that one frame.
+	_gloves.set_state(PlayerGloves.State.PUNCH, direction)
+	# Wait the full flash window before resetting. If the player inputs the
+	# next step faster than this await (a real risk at the x3 finisher pace),
+	# that step bumps _attack_step_generation and this handler bails below —
+	# otherwise we'd snap the next step's in-flight punch tween mid-pose and
+	# clobber its opponent HIT sprite.
 	await get_tree().create_timer(_PUNCH_FLASH_SECONDS).timeout
-	_gloves.set_state(side, PlayerGloves.State.IDLE)
+	if my_generation != _attack_step_generation:
+		return
+	_gloves.set_state(PlayerGloves.State.IDLE)
 	# Skip the GUARD_DOWN reset when attack has ended — _play_knockdown_sequence
-	# has set KNOCKED_DOWN, or _return_to_defense has set IDLE; both flip _in_attack.
+	# is mid-fall/recover, or _return_to_defense has set IDLE; both flip _in_attack.
 	if _in_attack:
 		_opponent.set_action(Opponent.Action.GUARD_DOWN, Opponent.Direction.LEFT)
 
@@ -413,7 +427,7 @@ func _play_knockdown_sequence() -> void:
 	_snap_clear_simon_visuals()
 	_knockdowns.increment()
 	_refresh_knockdown_meter()
-	_opponent.set_action(Opponent.Action.KNOCKED_DOWN, Opponent.Direction.LEFT)
+	await _opponent.play_knockdown_fall()
 	await _banner.show_banner("knock_down", MatchPacing.KNOCK_DOWN_BANNER)
 	# KNOCKDOWN_PAUSE is the total clock-pause duration; the banner ate part of
 	# it, hold the remainder before resuming the clock.
@@ -429,7 +443,7 @@ func _play_knockdown_sequence() -> void:
 	_deck.set_active_tier(_knockdowns.count())
 	_combo.on_knockdown_completed()
 	_refresh_combo_meter()
-	_opponent_idle()
+	await _opponent.play_knockdown_recover()
 	_clock.resume()
 	# CONTEXT.md → Fresh-Start Gap is the post-knockdown entry, not Breather Gap.
 	# Defense restarts inside _begin_fresh_start_gap() after the 1s dead-air front.

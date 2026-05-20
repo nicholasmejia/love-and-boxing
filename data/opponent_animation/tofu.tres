@@ -1,0 +1,33 @@
+[gd_resource type="Resource" script_class="OpponentAnimationProfile" load_steps=2 format=3 uid="uid://c1animtofu"]
+
+[ext_resource type="Script" path="res://scripts/data/opponent_animation_profile.gd" id="1_profile"]
+
+[resource]
+script = ExtResource("1_profile")
+idle_bob_amplitude_x = 22.0
+idle_bob_amplitude_y = 10.0
+idle_bob_period = 1.1
+attack_lunge_shift_x = 40.0
+attack_lunge_scale_peak = 1.10
+attack_lunge_out_duration = 0.12
+attack_lunge_return_duration = 0.15
+attack_lunge_transition_out = 10
+attack_lunge_transition_return = 4
+hit_recoil_shift_x = 40.0
+hit_recoil_scale_dip = 0.92
+hit_recoil_out_duration = 0.10
+hit_recoil_return_duration = 0.15
+hit_recoil_transition_out = 10
+hit_recoil_transition_return = 4
+knockdown_fall_sway_amplitude = 30.0
+knockdown_fall_sway_cycles = 1.5
+knockdown_fall_sway_duration = 1.2
+knockdown_fall_end_scale = 0.7
+knockdown_fall_rotation_degrees = -40.0
+knockdown_fall_drop_y = 200.0
+knockdown_fall_drop_duration = 0.45
+knockdown_fall_drop_transition = 4
+knockdown_recover_duration = 0.45
+knockdown_recover_transition = 10
+guard_bounce_amplitude_y = 18.0
+guard_bounce_period = 0.45
