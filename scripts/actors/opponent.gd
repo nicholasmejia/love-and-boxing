@@ -115,6 +115,38 @@ func _play_hit_recoil(action: int, direction: int) -> void:
 	t.parallel().tween_property(_sprite, "scale", _base_scale, _profile.hit_recoil_return_duration).set_trans(_profile.hit_recoil_transition_return).set_ease(Tween.EASE_IN)
 	_current_tween = t
 
+func play_knockdown_fall() -> void:
+	_kill_current_tween()
+	_reset_to_base()
+	_sprite.texture = _load_texture(Action.KNOCKED_DOWN)
+	_anchor_sprite_bottom()
+	_sprite.flip_h = false
+	_set_continuous_mode(ContinuousMode.STILL)
+
+	var t := create_tween()
+	# Phase 1: sway_method drives position.x, scale shrinks in parallel.
+	t.tween_method(
+		_apply_fall_sway,
+		0.0,
+		_profile.knockdown_fall_sway_duration,
+		_profile.knockdown_fall_sway_duration,
+	)
+	t.parallel().tween_property(_sprite, "scale", _base_scale * _profile.knockdown_fall_end_scale, _profile.knockdown_fall_sway_duration)
+	# Phase 2 (sequentially chained after Phase 1): rotation + position drop in parallel.
+	t.tween_property(_sprite, "rotation", _base_rotation + deg_to_rad(_profile.knockdown_fall_rotation_degrees), _profile.knockdown_fall_drop_duration).set_trans(_profile.knockdown_fall_drop_transition).set_ease(Tween.EASE_IN)
+	t.parallel().tween_property(_sprite, "position", _base_position + Vector2(0.0, _profile.knockdown_fall_drop_y), _profile.knockdown_fall_drop_duration).set_trans(_profile.knockdown_fall_drop_transition).set_ease(Tween.EASE_IN)
+	_current_tween = t
+	await t.finished
+
+func _apply_fall_sway(t_now: float) -> void:
+	var amp := _profile.knockdown_fall_sway_amplitude
+	var cycles := _profile.knockdown_fall_sway_cycles
+	var dur := _profile.knockdown_fall_sway_duration
+	if dur <= 0.0:
+		return
+	var phase := t_now * TAU * cycles / dur
+	_sprite.position.x = _base_position.x + amp * sin(phase)
+
 func _process(delta: float) -> void:
 	# Timer is shared across continuous modes and resets on every mode transition
 	# (see `_set_continuous_mode`). Incrementing unconditionally is intentional —
