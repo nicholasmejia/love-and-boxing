@@ -62,6 +62,24 @@ const _DAMAGE_FADE_OUT_SECONDS := 0.08
 # of the Block Shake table by design.
 const _DAMAGE_SHAKE_STEP_DISPLACEMENTS_PX: Array = [6.0, -4.0, 3.0, 0.0]
 
+# Hit Toss (attack SUCCESS). Quick pulse-in (scale 0 → 1.15× → 1.0× with
+# opacity 0 → 1.0), then the prompt is "tossed" — translates along the
+# punch's travel vector in a vertical arc (up then back down past rest) while
+# tapering in scale and fading opacity to 0. Hooks (A / D) get a larger
+# horizontal offset than jabs (W / S) to match the more horizontal swing.
+const _ATTACK_HIT_PULSE_OUT := 0.05
+const _ATTACK_HIT_PULSE_SETTLE := 0.03
+const _ATTACK_HIT_TOSS_SECONDS := 0.22
+const _ATTACK_HIT_TOSS_END_SCALE := 0.95
+const _ATTACK_HIT_TOSS_HORIZ_HOOK_PX := 80.0  # A / D
+const _ATTACK_HIT_TOSS_HORIZ_JAB_PX := 40.0   # W / S
+const _ATTACK_HIT_TOSS_APEX_Y_PX := -80.0     # peak up
+const _ATTACK_HIT_TOSS_END_Y_PX := 40.0       # end position, past rest below
+# Tumble rotation applied over the toss window. Sign follows the toss
+# horizontal direction (rightward toss rotates clockwise, leftward CCW) so
+# the prompt reads as tumbling forward in the direction it's flying.
+const _ATTACK_HIT_TOSS_END_ROTATION_DEG := 10.0
+
 @onready var _label: Label = $Label
 @onready var _bg: ColorRect = $Background
 @onready var _image: TextureRect = $Image
@@ -103,6 +121,8 @@ func display(direction: int, variant: int, duration_seconds: float) -> void:
 			await _animate_block_shake(direction)
 		Variant.FAIL:
 			await _animate_damage_double_pulse(direction)
+		Variant.SUCCESS_ATTACK:
+			await _animate_hit_toss(direction)
 		_:
 			# SUCCESS / FAIL fallback path until Increments 3-6 land their proper
 			# variant animations. The fade-in (instead of a snap to opacity 1.0)
@@ -148,6 +168,21 @@ func _animate_prompt_pulse(duration_seconds: float) -> void:
 		.set_delay(total_in + hold)
 	await _active_tween.finished
 
+# Horizontal toss offset for a successfully-landed attack at `direction`.
+# Sign convention is "the prompt flies the way the punch was traveling":
+# - W (head, right glove going up-left)  → -x (left), jab magnitude
+# - A (left hook going up-right)         → +x (right), hook magnitude
+# - S (body, left glove going up-right)  → +x (right), jab magnitude
+# - D (right hook going up-left)         → -x (left), hook magnitude
+# Vertical arc is uniform across all four directions.
+static func toss_horizontal_for(direction: int) -> float:
+	match direction:
+		SimonSequence.Direction.HEAD: return -_ATTACK_HIT_TOSS_HORIZ_JAB_PX
+		SimonSequence.Direction.LEFT: return _ATTACK_HIT_TOSS_HORIZ_HOOK_PX
+		SimonSequence.Direction.BODY: return _ATTACK_HIT_TOSS_HORIZ_JAB_PX
+		SimonSequence.Direction.RIGHT: return -_ATTACK_HIT_TOSS_HORIZ_HOOK_PX
+	return 0.0
+
 # Dominant shake direction for a punch landing at `direction`. The prompt is
 # pushed the way the punch's force carries — W (top) and S (mid) shake
 # downward; A (left hook) shakes leftward from the prompt's POV; D shakes
@@ -161,6 +196,41 @@ static func shake_axis_for(direction: int) -> Vector2:
 		SimonSequence.Direction.BODY: return Vector2(0.0, _BLOCK_SHAKE_DOMINANT_PX)
 		SimonSequence.Direction.RIGHT: return Vector2(_BLOCK_SHAKE_DOMINANT_PX, 0.0)
 	return Vector2.ZERO
+
+func _animate_hit_toss(direction: int) -> void:
+	_reset_to_clean_state()
+	visible = true
+	var horiz := toss_horizontal_for(direction)
+	var overshoot := _rest_scale * _PROMPT_OVERSHOOT_SCALE
+	var end_scale := _rest_scale * _ATTACK_HIT_TOSS_END_SCALE
+	var pulse_total := _ATTACK_HIT_PULSE_OUT + _ATTACK_HIT_PULSE_SETTLE
+	var half_toss := _ATTACK_HIT_TOSS_SECONDS * 0.5
+
+	_active_tween = create_tween()
+	_active_tween.set_parallel(true)
+	# Pulse-in: scale 0 → overshoot → rest, opacity 0 → 1.0 over the same window.
+	_active_tween.tween_property(self, "scale", overshoot, _ATTACK_HIT_PULSE_OUT)
+	_active_tween.tween_property(self, "scale", _rest_scale, _ATTACK_HIT_PULSE_SETTLE) \
+		.set_delay(_ATTACK_HIT_PULSE_OUT)
+	_active_tween.tween_property(self, "modulate:a", 1.0, pulse_total)
+	# Toss phase: horizontal glide, vertical up-then-down arc, scale taper,
+	# opacity fade out — all running in parallel for the toss window.
+	_active_tween.tween_property(self, "position:x", _rest_position.x + horiz, _ATTACK_HIT_TOSS_SECONDS) \
+		.set_delay(pulse_total)
+	_active_tween.tween_property(self, "position:y", _rest_position.y + _ATTACK_HIT_TOSS_APEX_Y_PX, half_toss) \
+		.set_delay(pulse_total) \
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	_active_tween.tween_property(self, "position:y", _rest_position.y + _ATTACK_HIT_TOSS_END_Y_PX, half_toss) \
+		.set_delay(pulse_total + half_toss) \
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	_active_tween.tween_property(self, "scale", end_scale, _ATTACK_HIT_TOSS_SECONDS) \
+		.set_delay(pulse_total)
+	_active_tween.tween_property(self, "modulate:a", 0.0, _ATTACK_HIT_TOSS_SECONDS) \
+		.set_delay(pulse_total)
+	var end_rotation := signf(horiz) * deg_to_rad(_ATTACK_HIT_TOSS_END_ROTATION_DEG)
+	_active_tween.tween_property(self, "rotation", end_rotation, _ATTACK_HIT_TOSS_SECONDS) \
+		.set_delay(pulse_total)
+	await _active_tween.finished
 
 func _animate_damage_double_pulse(direction: int) -> void:
 	_reset_to_clean_state()
@@ -236,6 +306,7 @@ func _set_sprite(direction: int, variant: int) -> void:
 func _reset_to_clean_state() -> void:
 	position = _rest_position
 	scale = Vector2.ZERO
+	rotation = 0.0
 	modulate.a = 0.0
 
 func _kill_active_tween() -> void:

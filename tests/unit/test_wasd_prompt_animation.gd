@@ -21,3 +21,12 @@ func test_shake_axis_for_directions():
 	assert_eq(WP.shake_axis_for(SimonSequence.Direction.LEFT), Vector2(-WP._BLOCK_SHAKE_DOMINANT_PX, 0.0), "A shakes leftward")
 	assert_eq(WP.shake_axis_for(SimonSequence.Direction.BODY), Vector2(0.0, WP._BLOCK_SHAKE_DOMINANT_PX), "S shakes downward")
 	assert_eq(WP.shake_axis_for(SimonSequence.Direction.RIGHT), Vector2(WP._BLOCK_SHAKE_DOMINANT_PX, 0.0), "D shakes rightward")
+
+func test_toss_horizontal_for_directions():
+	# Attack SUCCESS (Hit Toss) horizontal offset per direction. Hooks (A, D)
+	# carry larger magnitudes than jabs (W, S); signs follow the punch's
+	# travel vector (left hook flies +x, right hook -x; head jab -x, body +x).
+	assert_eq(WP.toss_horizontal_for(SimonSequence.Direction.LEFT), WP._ATTACK_HIT_TOSS_HORIZ_HOOK_PX, "A → +80 (left hook flies right)")
+	assert_eq(WP.toss_horizontal_for(SimonSequence.Direction.RIGHT), -WP._ATTACK_HIT_TOSS_HORIZ_HOOK_PX, "D → -80 (right hook flies left)")
+	assert_eq(WP.toss_horizontal_for(SimonSequence.Direction.HEAD), -WP._ATTACK_HIT_TOSS_HORIZ_JAB_PX, "W → -40 (head jab flies left)")
+	assert_eq(WP.toss_horizontal_for(SimonSequence.Direction.BODY), WP._ATTACK_HIT_TOSS_HORIZ_JAB_PX, "S → +40 (body jab flies right)")
