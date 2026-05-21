@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="DialogueDeckResource" load_steps=11 format=3 uid="uid://c1mintydeck"]
+
+[ext_resource type="Script" path="res://scripts/game/dialogue_deck_resource.gd" id="1_deck"]
+[ext_resource type="Resource" path="res://data/dialogue/minty/tier_0/flex_feint.tres" id="t0_flex"]
+[ext_resource type="Resource" path="res://data/dialogue/minty/tier_0/dog_distraction.tres" id="t0_dog"]
+[ext_resource type="Resource" path="res://data/dialogue/minty/tier_0/hungry_footwork.tres" id="t0_hungry"]
+[ext_resource type="Resource" path="res://data/dialogue/minty/tier_1/bug_in_the_ring.tres" id="t1_bug"]
+[ext_resource type="Resource" path="res://data/dialogue/minty/tier_1/pink_gloves.tres" id="t1_gloves"]
+[ext_resource type="Resource" path="res://data/dialogue/minty/tier_1/sparring_date.tres" id="t1_date"]
+[ext_resource type="Resource" path="res://data/dialogue/minty/tier_2/bruise_compliment.tres" id="t2_bruise"]
+[ext_resource type="Resource" path="res://data/dialogue/minty/tier_2/dog_trap.tres" id="t2_dog"]
+[ext_resource type="Resource" path="res://data/dialogue/minty/tier_2/strength_test.tres" id="t2_strength"]
+
+[resource]
+script = ExtResource("1_deck")
+tier_0 = Array[Resource]([ExtResource("t0_flex"), ExtResource("t0_dog"), ExtResource("t0_hungry")])
+tier_1 = Array[Resource]([ExtResource("t1_bug"), ExtResource("t1_gloves"), ExtResource("t1_date")])
+tier_2 = Array[Resource]([ExtResource("t2_bruise"), ExtResource("t2_dog"), ExtResource("t2_strength")])

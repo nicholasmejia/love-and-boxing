@@ -35,7 +35,7 @@ func test_minty_resource_loads_with_expected_values():
 	assert_eq(d.tier, 2)
 	assert_almost_eq(d.show_phase_step_seconds, 0.55, 0.001)
 	assert_almost_eq(d.repeat_phase_window_seconds, 2.5, 0.001)
-	assert_eq(d.dialogue_deck_path, "")
+	assert_eq(d.dialogue_deck_path, "res://data/dialogue/minty/deck.tres")
 	assert_eq(d.animation_profile_path, "")
 
 func test_sebastian_resource_loads_with_expected_values():

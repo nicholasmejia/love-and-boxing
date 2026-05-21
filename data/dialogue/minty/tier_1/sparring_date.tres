@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="DialoguePrompt" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/game/dialogue_prompt.gd" id="1_prompt"]
+[ext_resource type="Script" path="res://scripts/game/dialogue_answer.gd" id="2_answer"]
+
+[sub_resource type="Resource" id="ans_right"]
+script = ExtResource("2_answer")
+text = "Then I'll block what I can, compliment the hair honestly, and earn the dinner later."
+outcome = 2
+reaction_text = "Earn the dinner later?! Dangerous answer. Emotionally dangerous!"
+
+[sub_resource type="Resource" id="ans_neutral"]
+script = ExtResource("2_answer")
+text = "Your hair does look nice."
+outcome = 1
+reaction_text = "Good, yes, correct, but you are still being punched."
+
+[sub_resource type="Resource" id="ans_wrong"]
+script = ExtResource("2_answer")
+text = "I'd lose on purpose if it made the date go better."
+outcome = 0
+reaction_text = "Lose on purpose? That is not romance, that is fraud with gloves!"
+
+[resource]
+script = ExtResource("1_prompt")
+body_text = "Minty grins and tightens her guard. \"Some girls like candlelit dinners. I like seeing if someone can survive three rounds and still compliment my hair.\""
+answers = Array[Resource]([SubResource("ans_right"), SubResource("ans_neutral"), SubResource("ans_wrong")])

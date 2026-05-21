@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="DialoguePrompt" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/game/dialogue_prompt.gd" id="1_prompt"]
+[ext_resource type="Script" path="res://scripts/game/dialogue_answer.gd" id="2_answer"]
+
+[sub_resource type="Resource" id="ans_right"]
+script = ExtResource("2_answer")
+text = "A happy little mutt with a stupid smile. Extremely pettable. Possibly your soulmate."
+outcome = 2
+reaction_text = "A stupid smile mutt?! My weakness! I'm compromised!"
+
+[sub_resource type="Resource" id="ans_neutral"]
+script = ExtResource("2_answer")
+text = "A dog is a dog. Dogs are good."
+outcome = 1
+reaction_text = "Correct category, weak poetry!"
+
+[sub_resource type="Resource" id="ans_wrong"]
+script = ExtResource("2_answer")
+text = "A bloodhound. Big droopy face, red eyes, lots of mysterious swamp energy."
+outcome = 0
+reaction_text = "Bloodhound?! Why would you put that image in my heart?!"
+
+[resource]
+script = ExtResource("1_prompt")
+body_text = "Minty starts a spinning kick, then gasps at something behind you. \"A dog! No, focus! No, wait, what kind? This matters emotionally!\""
+answers = Array[Resource]([SubResource("ans_right"), SubResource("ans_neutral"), SubResource("ans_wrong")])

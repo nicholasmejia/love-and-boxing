@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="DialoguePrompt" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/game/dialogue_prompt.gd" id="1_prompt"]
+[ext_resource type="Script" path="res://scripts/game/dialogue_answer.gd" id="2_answer"]
+
+[sub_resource type="Resource" id="ans_right"]
+script = ExtResource("2_answer")
+text = "Both. You look like you could crush a villain and still expect flowers after."
+outcome = 2
+reaction_text = "Flowers after violence…? Wait, that's cute. Stop being cute. Guard down! I mean—guard up!"
+
+[sub_resource type="Resource" id="ans_neutral"]
+script = ExtResource("2_answer")
+text = "They say you train really hard."
+outcome = 1
+reaction_text = "Accurate! Boring, but accurate!"
+
+[sub_resource type="Resource" id="ans_wrong"]
+script = ExtResource("2_answer")
+text = "Mostly final boss, honestly."
+outcome = 0
+reaction_text = "Final boss?! I'm at least a secret romantic mini-boss!"
+
+[resource]
+script = ExtResource("1_prompt")
+body_text = "Minty hops in place, then throws a jab-cross-knee combo. \"Be honest! Do these arms say 'romantic heroine,' or do they say 'final boss who drinks protein out of a vase'?\""
+answers = Array[Resource]([SubResource("ans_right"), SubResource("ans_neutral"), SubResource("ans_wrong")])
