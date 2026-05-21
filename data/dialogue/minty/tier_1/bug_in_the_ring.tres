@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="DialoguePrompt" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/game/dialogue_prompt.gd" id="1_prompt"]
+[ext_resource type="Script" path="res://scripts/game/dialogue_answer.gd" id="2_answer"]
+
+[sub_resource type="Resource" id="ans_right"]
+script = ExtResource("2_answer")
+text = "I'll relocate the tiny criminal with a cup. You keep being brave from six feet away."
+outcome = 2
+reaction_text = "Tiny criminal! Yes! Humane justice! Oh no, that was charming!"
+
+[sub_resource type="Resource" id="ans_neutral"]
+script = ExtResource("2_answer")
+text = "I'll move it so you don't have to look at it."
+outcome = 1
+reaction_text = "Helpful. Not romantic. But helpful."
+
+[sub_resource type="Resource" id="ans_wrong"]
+script = ExtResource("2_answer")
+text = "I'll end its reign of terror permanently."
+outcome = 0
+reaction_text = "No murder! He's disgusting, not evil!"
+
+[resource]
+script = ExtResource("1_prompt")
+body_text = "A beetle crawls near the edge of the mat. Minty shrieks, then immediately throws a brutal elbow. \"Don't step on it! But also if it touches me, I will become a ghost!\""
+answers = Array[Resource]([SubResource("ans_right"), SubResource("ans_neutral"), SubResource("ans_wrong")])
