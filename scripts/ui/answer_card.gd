@@ -14,7 +14,7 @@ func display(answer: DialogueAnswer) -> void:
 		_image.visible = true
 		_text.visible = false
 	else:
-		_text.text = answer.text
+		_text.text = "[center]%s[/center]" % answer.text
 		_text.visible = true
 		_image.visible = false
 

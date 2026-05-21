@@ -69,9 +69,13 @@ func show_reaction(picked_index: int) -> void:
 func _start_typewriter(text: String) -> void:
 	_typewriter_generation += 1
 	var my_generation := _typewriter_generation
-	_body_text.text = text
+	# Wrap in [center] so each line auto-centers horizontally. visible_characters
+	# counts displayed glyphs (BBCode tags excluded), so use
+	# get_total_character_count() instead of source-string length — otherwise the
+	# loop would over-shoot the cap and spin forever.
+	_body_text.text = "[center]%s[/center]" % text
 	_body_text.visible_characters = 0
-	var total := text.length()
+	var total := _body_text.get_total_character_count()
 	while _body_text.visible_characters < total:
 		if my_generation != _typewriter_generation:
 			return
