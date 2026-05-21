@@ -9,7 +9,8 @@ const BREATHER_GAP := 4.0
 # Knockdown pause, in seconds. See CONTEXT.md → "Match" + "Knockdown".
 const KNOCKDOWN_PAUSE := 5.0
 
-# Banner display durations, in seconds. AnnouncementBanner.show_message awaits these.
+# Banner display durations, in seconds. AnnouncementBanner.show_banner awaits these.
+# (TRY_AGAIN_BANNER no longer drives a banner — it's the NEUTRAL reaction-state hold.)
 const PRE_READY_DELAY := 0.5  # Settle beat between scene load (or round transition) and the Ready banner sliding in.
 const READY_BANNER := 1.0
 const FIGHT_BANNER := 1.0

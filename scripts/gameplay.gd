@@ -87,6 +87,7 @@ func _ready() -> void:
 	_attack.step_landed.connect(_on_attack_step_landed)
 	_attack.attack_succeeded.connect(_on_attack_succeeded)
 	_attack.attack_failed.connect(_on_attack_failed)
+	_attack.first_input_received.connect(_on_attack_first_input)
 	var deck_path := config.dialogue_deck_path
 	if deck_path == "" or not ResourceLoader.exists(deck_path):
 		deck_path = "res://data/dialogue/tofu/deck.tres"
@@ -436,6 +437,12 @@ func _on_attack_succeeded() -> void:
 		_refresh_combo_meter()
 		_return_to_defense()
 
+func _on_attack_first_input() -> void:
+	# Reaction-state riddle visible from the RIGHT-answer beat is now interrupted —
+	# the player has committed to the attack phase. Hide it for the rest of the
+	# phase; the next _show_next_prompt() will rebuild in NORMAL.
+	_riddle.hide()
+
 func _on_attack_failed(expected_direction: int) -> void:
 	# CONTEXT.md → "Combo": failed attack inputs do not reset combo. We just
 	# flash the missed key (mirrors the defense-fail flash) and return to
@@ -513,14 +520,13 @@ func _play_knockdown_sequence() -> void:
 func _on_answer_submitted(outcome: int) -> void:
 	if _visibility != RiddleVisibility.ENCOUNTER:
 		return
-	# Snap the riddle hidden and flip visibility out of ENCOUNTER immediately so
-	# any re-entrant K-press during the awaited banner below hits the gate above
-	# and bails. _begin_breather_gap() will set this again (and bump
-	# _gap_generation) — doing it here is just an early gate, not a behavior
-	# change. RiddleBox._unhandled_input doesn't self-check `visible`, so without
-	# this prelude a mashed K can re-enter this handler mid-banner.
+	# Flip out of ENCOUNTER immediately so re-entrant K-presses bail at the
+	# gate above. RiddleBox has already entered REACTION state synchronously
+	# from its confirm branch (and ignores menu input there); this is the
+	# belt-and-suspenders layer for the gameplay-side flow. The riddle node
+	# itself stays visible — RiddleBox owns its own visibility through the
+	# REACTION state and its fallback hide() for empty-reaction (tofu) prompts.
 	_visibility = RiddleVisibility.BREATHER_GAP
-	_riddle.visible = false
 	match outcome:
 		Outcome.Type.WRONG:
 			# Snap-clear first so leftover Simon visuals don't co-exist with the
@@ -556,21 +562,22 @@ func _on_answer_submitted(outcome: int) -> void:
 			await get_tree().create_timer(_DAMAGE_HIT_SECONDS).timeout
 			_opponent_idle()
 		Outcome.Type.NEUTRAL:
-			# "Try again!" hint: snap-clear leftover Simon visuals, stop the
-			# current chain, show the banner, then re-display the SAME prompt
-			# (cards reshuffle on display) and replay the chain at its current
-			# length from step 0.
+			# Reaction-state replaces the old "Try again!" banner: the box already
+			# entered REACTION synchronously from confirm, displaying the picked
+			# answer's reaction line. Hold for TRY_AGAIN_BANNER seconds (same
+			# pacing as before) so the reaction lands, then re-display the SAME
+			# prompt — cards reshuffle, RiddleBox returns to NORMAL — and replay
+			# the Simon chain at its current length from step 0.
 			AudioBus.play_sfx("riddle_neutral")
 			_snap_clear_simon_visuals()
 			_defense.stop()
 
 			var my_gen := _gap_generation
-			await _banner.show_message("Try again!", MatchPacing.TRY_AGAIN_BANNER)
+			await get_tree().create_timer(MatchPacing.TRY_AGAIN_BANNER).timeout
 			if my_gen != _gap_generation:
 				return  # round end / match loss invalidated this flow
 
 			_riddle.display(_current_prompt)
-			_riddle.visible = true
 			_visibility = RiddleVisibility.ENCOUNTER
 			_defense.replay()
 		Outcome.Type.RIGHT:

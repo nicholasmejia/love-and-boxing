@@ -74,14 +74,6 @@ func _await_first(sig_a: Signal, sig_b: Signal) -> void:
 	if sig_b.is_connected(on_fire):
 		sig_b.disconnect(on_fire)
 
-func show_message(message: String, duration_seconds: float) -> void:
-	_image.visible = false
-	_label.text = message
-	_label.visible = true
-	await _animate_in()
-	await get_tree().create_timer(duration_seconds).timeout
-	await _animate_out()
-
 func show_prompt(message: String) -> void:
 	_image.visible = false
 	_label.text = message
