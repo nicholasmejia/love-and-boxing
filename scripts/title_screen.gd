@@ -13,6 +13,7 @@ var _focus_index: int = 0
 func _ready() -> void:
 	_coming_soon.visible = false
 	_update_focus()
+	AudioBus.play_music("menu")
 	$VBoxContainer/StartButton.pressed.connect(SceneRouter.goto_level_select)
 	$VBoxContainer/OptionsButton.pressed.connect(_show_coming_soon)
 	$VBoxContainer/CreditsButton.pressed.connect(_show_coming_soon)

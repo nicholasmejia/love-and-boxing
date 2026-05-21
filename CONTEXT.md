@@ -203,5 +203,13 @@ Per-direction WASD sprites with three variants. The Simon show phase displays th
 
 - **Base Resolution** — 1920×1080, 16:9. Stretch mode `canvas_items`, aspect `keep` (letterbox on non-16:9).
 - **Window Default** — 1280×720 windowed, resizable.
-- **Audio** — Routed through an `AudioBus` autoload that exposes `play_sfx(name)`. No audio files in first pass; calls are stubbed.
+- **Audio** — Routed through an `AudioBus` autoload. Music and sound effects are routed through two named child buses of `Master`:
+  - **Music Bus** — Carries every BGM track. Volume controls and ducking attach here.
+  - **SFX Bus** — Carries every short sound effect. Volume controls attach here.
+
+  `AudioBus` exposes a single music entry point that takes either a track name (looked up in an internal name → stream table for menu/stinger tracks) or an `AudioStream` resource (for per-opponent BGM authored on `DifficultyConfig`). Music calls are **idempotent on Track ID**: asking for the track that is already playing is a no-op, so scene-to-scene continuity does not restart the loop. SFX calls remain stubbed and out of scope until the SFX milestone.
+
+- **BGM** — A long-form music track tied to a screen, match, or outcome. Each BGM file is one of two shapes: a **seamless loop** (authored so end → start has no audible seam — `menu`, `tofu`, `minty`, `sebastian`, `title_main_loop`) or a **stinger** (one-shot that plays once and decays into silence — `title_intro`, `victory`, `defeat`). The loop flag is set per-file in the `.import` file, never at runtime.
+- **Stinger** — A non-looping BGM one-shot used to punctuate a state transition (currently `victory.ogg` and `defeat.ogg` on the results screen, and eventually `title_intro.ogg` leading into the attract loop). Stingers play to completion or are pre-empted by a cross-fade into the next track; they are never looped or re-bedded under other music.
+- **Track ID** — The string used to identify the currently-playing BGM for idempotency checks. For named tracks it is the lookup key (e.g. `"menu"`, `"victory"`). For per-opponent streams played from a resource it is the opponent slug (e.g. `"tofu"`). Two consecutive `play_music` calls with the same Track ID do not restart the stream.
 - **Testing** — GUT 9.x (Godot 4 branch). Pure-logic classes are unit-tested; scene composition and animation are validated manually per milestone.

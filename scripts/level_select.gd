@@ -21,6 +21,7 @@ func _ready() -> void:
 	_cards[1].pressed.connect(func(): _select_tier(2))
 	_cards[2].pressed.connect(func(): _select_tier(3))
 	_update_focus()
+	AudioBus.play_music("menu")
 
 func _apply_lock_states() -> void:
 	if _card_labels.is_empty():
