@@ -7,7 +7,7 @@
 script = ExtResource("2_answer")
 text = "Both. You look like you could crush a villain and still expect flowers after."
 outcome = 2
-reaction_text = "Flowers after violence...? Wait, that's cute. Stop being cute. Guard down! I mean--guard up!"
+reaction_text = "Flowers after violence…? Wait, that's cute. Stop being cute. Guard down! I mean—guard up!"
 
 [sub_resource type="Resource" id="ans_neutral"]
 script = ExtResource("2_answer")

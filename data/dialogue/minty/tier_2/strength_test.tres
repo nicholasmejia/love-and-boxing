@@ -7,7 +7,7 @@
 script = ExtResource("2_answer")
 text = "I get up, ask for pointers, and pretend my dignity didn't leave through the emergency exit."
 outcome = 2
-reaction_text = "Dignity emergency exit?! Hehe--wait, no, I laughed! Opening!"
+reaction_text = "Dignity emergency exit?! Hehe—wait, no, I laughed! Opening!"
 
 [sub_resource type="Resource" id="ans_neutral"]
 script = ExtResource("2_answer")
