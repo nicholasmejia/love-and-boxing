@@ -14,7 +14,7 @@ enum State { NORMAL, REACTION }
 ]
 
 var _highlight_index: int = 1  # I = middle by default
-var _typewriter_speed: float = 30.0
+var _typewriter_speed: float = 60.0
 var _typewriter_generation: int = 0
 var _state: int = State.NORMAL
 # Mirror of the picked answer per display, captured at confirm time so
