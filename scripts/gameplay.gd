@@ -285,6 +285,9 @@ func _on_damage_taken(expected_direction: int) -> void:
 	_refresh_combo_meter()
 	_damage_effect.play()
 	if _hearts.is_empty():
+		# Begin the opponent-BGM fade the moment the killing blow lands so the
+		# track is mostly out by the time the you_lose banner + stinger fire.
+		AudioBus.stop_music(_BGM_END_FADE_SECONDS)
 		_end_match_loss()
 		return
 	_begin_breather_gap()
@@ -304,8 +307,10 @@ func _end_match_loss() -> void:
 	_prompts.hide_all()
 	_riddle.visible = false
 	_gap_generation += 1  # invalidate any in-flight gap awaits
-	AudioBus.stop_music(_BGM_END_FADE_SECONDS)
-	await _banner.show_banner("you_lose", MatchPacing.ROUND_OVER_BANNER)
+	AudioBus.play_music("defeat")
+	_awaiting_continue = true
+	await _banner.show_banner_skippable("you_lose", MatchPacing.YOU_LOSE_BANNER, _continue_pressed)
+	_awaiting_continue = false
 	Globals.last_match_outcome = Globals.MatchOutcome.LOSE
 	SceneRouter.goto_match_results()
 
@@ -444,6 +449,11 @@ func _play_knockdown_sequence() -> void:
 	_snap_clear_simon_visuals()
 	_knockdowns.increment()
 	_refresh_knockdown_meter()
+	if _knockdowns.is_knockout():
+		# Begin the opponent-BGM fade the instant the KO knockdown lands so the
+		# track is fully out under the knock_down + knock_out banners ahead of
+		# the you_win stinger.
+		AudioBus.stop_music(_BGM_END_FADE_SECONDS)
 	await _opponent.play_knockdown_fall()
 	await _banner.show_banner("knock_down", MatchPacing.KNOCK_DOWN_BANNER)
 	# KNOCKDOWN_PAUSE is the total clock-pause duration; the banner ate part of
@@ -455,9 +465,11 @@ func _play_knockdown_sequence() -> void:
 	if remainder > 0.0:
 		await get_tree().create_timer(remainder).timeout
 	if _knockdowns.is_knockout():
-		AudioBus.stop_music(_BGM_END_FADE_SECONDS)
 		await _banner.show_banner("knock_out", MatchPacing.KNOCK_OUT_BANNER)
-		await _banner.show_banner("you_win", MatchPacing.YOU_WIN_BANNER)
+		AudioBus.play_music("victory")
+		_awaiting_continue = true
+		await _banner.show_banner_skippable("you_win", MatchPacing.YOU_WIN_BANNER, _continue_pressed)
+		_awaiting_continue = false
 		Globals.last_match_outcome = Globals.MatchOutcome.WIN
 		SceneRouter.goto_match_results()
 		return
