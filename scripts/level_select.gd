@@ -43,12 +43,15 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("menu_left"):
 		_focus_index = (_focus_index - 1 + _cards.size()) % _cards.size()
 		_update_focus()
+		AudioBus.play_sfx("menu_change_item")
 	elif event.is_action_pressed("menu_right"):
 		_focus_index = (_focus_index + 1) % _cards.size()
 		_update_focus()
+		AudioBus.play_sfx("menu_change_item")
 	elif event.is_action_pressed("menu_confirm"):
 		var tier := _focus_index + 1
 		if tier <= SaveData.unlocked_tier():
+			AudioBus.play_sfx("menu_option_select")
 			_cards[_focus_index].pressed.emit()
 	elif event is InputEventKey and event.pressed and event.keycode == KEY_F12:
 		_wipe_progress()

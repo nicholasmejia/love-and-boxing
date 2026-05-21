@@ -8,11 +8,23 @@ const MUSIC_TRACKS := {
 
 const SILENT_DB := -80.0
 
+const SFX_DIR := "res://assets/audio/sfx/"
+# 16 voices: a worst-case 3-hit combo layers 3 × (combo_success_N + opponent_punch_body
+# + swing) = 9, plus a concurrent player_block_or_hit + input_failure + combo_reset.
+const SFX_POLYPHONY := 16
+
 var _players: Array[AudioStreamPlayer] = []
 var _active_index: int = 0
 var _current_track_id: String = ""
 var _fade_in_tween: Tween = null
 var _fade_out_tween: Tween = null
+
+var _sfx_pool: Array[AudioStreamPlayer] = []
+var _sfx_next_index: int = 0
+# Base key (e.g. "opponent_punch_body") -> Array of AudioStreams. Single-file keys
+# (e.g. "combo_reset") get a one-entry Array; variant pools (filenames ending in
+# "_NN") collapse to the same key and play_sfx picks one at random.
+var _sfx_streams: Dictionary = {}
 
 func _ready() -> void:
 	for i in 2:
@@ -20,6 +32,8 @@ func _ready() -> void:
 		p.bus = "Music"
 		add_child(p)
 		_players.append(p)
+	_init_sfx_pool()
+	_build_sfx_index()
 
 func play_music(name: String, crossfade_seconds: float = 0.0) -> void:
 	if not MUSIC_TRACKS.has(name):
@@ -47,8 +61,16 @@ func stop_music(fade_seconds: float = 0.0) -> void:
 	_fade_out_tween.tween_callback(active.stop)
 
 func play_sfx(name: String) -> void:
-	# Stubbed — SFX wiring is a follow-up branch.
-	print("[AudioBus] play_sfx: %s" % name)
+	if not _sfx_streams.has(name):
+		push_warning("[AudioBus] Unknown SFX key: %s" % name)
+		return
+	var pool: Array = _sfx_streams[name]
+	var stream: AudioStream = pool.pick_random()
+	var player: AudioStreamPlayer = _sfx_pool[_sfx_next_index]
+	_sfx_next_index = (_sfx_next_index + 1) % _sfx_pool.size()
+	player.stop()
+	player.stream = stream
+	player.play()
 
 func _play_stream(stream: AudioStream, id: String, crossfade_seconds: float) -> void:
 	if id == _current_track_id and _players[_active_index].playing:
@@ -78,3 +100,37 @@ func _kill_tweens() -> void:
 		_fade_in_tween.kill()
 	if _fade_out_tween != null and _fade_out_tween.is_valid():
 		_fade_out_tween.kill()
+
+func _init_sfx_pool() -> void:
+	for i in SFX_POLYPHONY:
+		var p := AudioStreamPlayer.new()
+		p.bus = "SFX"
+		add_child(p)
+		_sfx_pool.append(p)
+
+func _build_sfx_index() -> void:
+	var dir := DirAccess.open(SFX_DIR)
+	if dir == null:
+		push_warning("[AudioBus] SFX directory missing: %s" % SFX_DIR)
+		return
+	dir.list_dir_begin()
+	var fname := dir.get_next()
+	while fname != "":
+		if not dir.current_is_dir() and fname.ends_with(".wav"):
+			var key := _sfx_key_from_filename(fname.get_basename())
+			var stream := load(SFX_DIR.path_join(fname)) as AudioStream
+			if stream != null:
+				if not _sfx_streams.has(key):
+					_sfx_streams[key] = []
+				_sfx_streams[key].append(stream)
+		fname = dir.get_next()
+	dir.list_dir_end()
+
+func _sfx_key_from_filename(stem: String) -> String:
+	# Collapse "<key>_NN" variant pools onto the bare key. Filenames that don't
+	# end in "_<digits>" (e.g. "combo_success_1_hit") pass through unchanged.
+	var rx := RegEx.create_from_string("^(.*)_\\d+$")
+	var m := rx.search(stem)
+	if m != null:
+		return m.get_string(1)
+	return stem

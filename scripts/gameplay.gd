@@ -154,11 +154,13 @@ func _handle_round_end() -> void:
 	_gap_generation += 1  # invalidate any in-flight gap awaits
 	if _clock.current_round() >= MatchClock.TOTAL_ROUNDS:
 		AudioBus.stop_music(_BGM_END_FADE_SECONDS)
+		AudioBus.play_sfx("round_end")
 		await _banner.show_banner("round_over", MatchPacing.ROUND_OVER_BANNER)
 		await _banner.show_banner("draw", MatchPacing.DRAW_BANNER)
 		Globals.last_match_outcome = Globals.MatchOutcome.DRAW
 		SceneRouter.goto_match_results()
 		return
+	AudioBus.play_sfx("round_end")
 	await _banner.show_banner("round_over", MatchPacing.ROUND_OVER_BANNER)
 	_banner.show_prompt("Press K to start Round %d" % (_clock.current_round() + 1))
 	await _wait_for_continue()
@@ -190,6 +192,7 @@ func _play_ready_fight() -> void:
 	# against the Track ID that's already playing from Round 1.
 	if _bgm_stream != null:
 		AudioBus.play_music_stream(_bgm_stream, _bgm_track_id)
+	AudioBus.play_sfx("round_start")
 	await _banner.show_banner("fight", MatchPacing.FIGHT_BANNER)
 
 # Fresh-Start Gap (CONTEXT.md → Riddle Gap):
@@ -248,7 +251,7 @@ func _on_show_started(_steps: Array) -> void:
 	_input_bar.cancel()
 
 func _on_step_blocked(index: int) -> void:
-	AudioBus.play_sfx("block")
+	AudioBus.play_sfx("player_block_or_hit")
 	var direction: int = _defense.current_sequence().steps()[index]
 	_defense_step_generation += 1
 	var my_generation := _defense_step_generation
@@ -279,7 +282,10 @@ func _on_damage_taken(expected_direction: int) -> void:
 	# Punch lands at the direction the player failed to block; gloves stay idle.
 	_swing_opponent_for(expected_direction)
 	_hearts.take_damage()
-	AudioBus.play_sfx("hurt")
+	AudioBus.play_sfx("player_block_or_hit")
+	AudioBus.play_sfx("input_failure")
+	if _combo.level() > 1:
+		AudioBus.play_sfx("combo_reset")
 	_refresh_heart_row()
 	_combo.on_damage_taken()
 	_refresh_combo_meter()
@@ -308,6 +314,7 @@ func _end_match_loss() -> void:
 	_riddle.visible = false
 	_gap_generation += 1  # invalidate any in-flight gap awaits
 	AudioBus.play_music("defeat")
+	AudioBus.play_sfx("round_knockout")
 	_awaiting_continue = true
 	await _banner.show_banner_skippable("you_lose", MatchPacing.YOU_LOSE_BANNER, _continue_pressed)
 	_awaiting_continue = false
@@ -315,6 +322,9 @@ func _end_match_loss() -> void:
 	SceneRouter.goto_match_results()
 
 func _swing_opponent_for(direction: int) -> void:
+	# Opponent swings layer here for every block/hurt path that routes through this
+	# helper. Player attack swings fire in _on_attack_step_landed.
+	AudioBus.play_sfx("swing")
 	var action_dir := Opponent.Direction.LEFT
 	var action: int
 	match direction:
@@ -382,7 +392,12 @@ func _on_attack_repeat_started() -> void:
 	_input_bar.start(_attack.input_window_seconds)
 
 func _on_attack_step_landed(index: int) -> void:
-	AudioBus.play_sfx("punch")
+	# Layered punch beat: player swing + body impact + the combo-position cue.
+	# Index 0/1/2 within the attack sequence maps to the 1st/2nd/3rd combo_success
+	# file, so a 3-hit finisher escalates audibly across its three keystrokes.
+	AudioBus.play_sfx("swing")
+	AudioBus.play_sfx("opponent_punch_body")
+	AudioBus.play_sfx("combo_success_%d_hit" % (index + 1))
 	var direction: int = _attack.current_sequence().steps()[index]
 	_attack_step_generation += 1
 	var my_generation := _attack_step_generation
@@ -426,6 +441,12 @@ func _on_attack_failed(expected_direction: int) -> void:
 	# flash the missed key (mirrors the defense-fail flash) and return to
 	# defense. flash_fail shows the _fail.png variant at the EXPECTED direction
 	# so the wrong-key and timeout cases read identically.
+	# combo_reset audio fires here even though combo state is preserved — the
+	# SFX is a "you lost your running combo" cue, paired with input_failure.
+	# Skip when already at 1× since there's no combo to lose.
+	AudioBus.play_sfx("input_failure")
+	if _combo.level() > 1:
+		AudioBus.play_sfx("combo_reset")
 	_input_bar.cancel()
 	_prompts.flash_fail(expected_direction, _MISS_FLASH_SECONDS, true)
 	_return_to_defense()
@@ -465,6 +486,7 @@ func _play_knockdown_sequence() -> void:
 	if remainder > 0.0:
 		await get_tree().create_timer(remainder).timeout
 	if _knockdowns.is_knockout():
+		AudioBus.play_sfx("round_knockout")
 		await _banner.show_banner("knock_out", MatchPacing.KNOCK_OUT_BANNER)
 		AudioBus.play_music("victory")
 		_awaiting_continue = true
@@ -505,11 +527,14 @@ func _on_answer_submitted(outcome: int) -> void:
 			# new opponent swing pose.
 			_snap_clear_simon_visuals()
 
+			AudioBus.play_sfx("riddle_wrong")
 			assert(_defense.current_sequence().length() > 0, "WRONG submitted with empty Simon chain")
 			var hit_direction: int = _defense.current_sequence().steps()[0]
 			_swing_opponent_for(hit_direction)
 			_hearts.take_damage()
-			AudioBus.play_sfx("hurt")
+			AudioBus.play_sfx("player_block_or_hit")
+			if _combo.level() > 1:
+				AudioBus.play_sfx("combo_reset")
 			_refresh_heart_row()
 			_combo.on_damage_taken()
 			_refresh_combo_meter()
@@ -535,6 +560,7 @@ func _on_answer_submitted(outcome: int) -> void:
 			# current chain, show the banner, then re-display the SAME prompt
 			# (cards reshuffle on display) and replay the chain at its current
 			# length from step 0.
+			AudioBus.play_sfx("riddle_neutral")
 			_snap_clear_simon_visuals()
 			_defense.stop()
 
@@ -548,4 +574,5 @@ func _on_answer_submitted(outcome: int) -> void:
 			_visibility = RiddleVisibility.ENCOUNTER
 			_defense.replay()
 		Outcome.Type.RIGHT:
+			AudioBus.play_sfx("riddle_correct")
 			_trigger_attack_phase()
