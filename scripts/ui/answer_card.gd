@@ -1,7 +1,7 @@
 class_name AnswerCard
 extends Control
 
-@onready var _text: RichTextLabel = $Stack/Text
+@onready var _text: Label = $Stack/Text
 @onready var _image: TextureRect = $Stack/Image
 @onready var _highlight: ColorRect = $Highlight
 
@@ -14,7 +14,7 @@ func display(answer: DialogueAnswer) -> void:
 		_image.visible = true
 		_text.visible = false
 	else:
-		_text.text = "[center]%s[/center]" % answer.text
+		_text.text = answer.text
 		_text.visible = true
 		_image.visible = false
 
