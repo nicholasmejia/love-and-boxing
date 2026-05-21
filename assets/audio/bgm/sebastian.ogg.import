@@ -12,7 +12,7 @@ dest_files=["res://.godot/imported/sebastian.ogg-3a86824fb445e53732683143415d82d
 
 [params]
 
-loop=false
+loop=true
 loop_offset=0
 bpm=0
 beat_count=0

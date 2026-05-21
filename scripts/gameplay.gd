@@ -39,6 +39,8 @@ var _gap_generation: int = 0
 var _defense_step_generation: int = 0
 var _attack_step_generation: int = 0
 var _current_prompt: DialoguePrompt
+var _bgm_stream: AudioStream = null
+var _bgm_track_id: String = ""
 
 const _BLOCK_FLASH_SECONDS := 0.30
 const _DAMAGE_HIT_SECONDS := 0.35
@@ -46,9 +48,13 @@ const _PUNCH_FLASH_SECONDS := 0.30
 const _MISS_FLASH_SECONDS := 0.35
 
 func _ready() -> void:
+	AudioBus.stop_music()
 	var config: DifficultyConfig = Globals.selected_difficulty
 	if config == null:
 		config = load("res://data/difficulty/tofu.tres") as DifficultyConfig
+	if config.bgm_track_path != "" and ResourceLoader.exists(config.bgm_track_path):
+		_bgm_stream = load(config.bgm_track_path) as AudioStream
+		_bgm_track_id = config.opponent_slug
 	var bg_path := "res://assets/sprites/background.png"
 	if ResourceLoader.exists(bg_path):
 		$Background.texture = load(bg_path)
@@ -178,6 +184,10 @@ func _play_ready_fight() -> void:
 	# empty match scene first instead of catching the banner already in motion.
 	await get_tree().create_timer(MatchPacing.PRE_READY_DELAY).timeout
 	await _banner.show_banner("ready", MatchPacing.READY_BANNER)
+	# Opponent BGM starts in sync with the Fight banner. Round 2's call no-ops
+	# against the Track ID that's already playing from Round 1.
+	if _bgm_stream != null:
+		AudioBus.play_music_stream(_bgm_stream, _bgm_track_id)
 	await _banner.show_banner("fight", MatchPacing.FIGHT_BANNER)
 
 # Fresh-Start Gap (CONTEXT.md → Riddle Gap):
