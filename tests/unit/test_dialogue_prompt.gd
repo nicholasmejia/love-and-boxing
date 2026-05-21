@@ -26,3 +26,13 @@ func test_prompt_with_image_body():
 	p.body_image = PlaceholderTexture2D.new()
 	assert_true(p.has_image_body())
 	assert_false(p.has_text_body())
+
+func test_answer_reaction_text_defaults_empty():
+	var a := DialogueAnswer.new()
+	assert_eq(a.reaction_text, "")
+	assert_false(a.has_reaction())
+
+func test_answer_has_reaction_when_set():
+	var a := DialogueAnswer.new()
+	a.reaction_text = "I knew it!"
+	assert_true(a.has_reaction())
