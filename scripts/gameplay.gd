@@ -39,16 +39,23 @@ var _gap_generation: int = 0
 var _defense_step_generation: int = 0
 var _attack_step_generation: int = 0
 var _current_prompt: DialoguePrompt
+var _bgm_stream: AudioStream = null
+var _bgm_track_id: String = ""
 
 const _BLOCK_FLASH_SECONDS := 0.30
 const _DAMAGE_HIT_SECONDS := 0.35
 const _PUNCH_FLASH_SECONDS := 0.30
 const _MISS_FLASH_SECONDS := 0.35
+const _BGM_END_FADE_SECONDS := 1.5
 
 func _ready() -> void:
+	AudioBus.stop_music()
 	var config: DifficultyConfig = Globals.selected_difficulty
 	if config == null:
 		config = load("res://data/difficulty/tofu.tres") as DifficultyConfig
+	if config.bgm_track_path != "" and ResourceLoader.exists(config.bgm_track_path):
+		_bgm_stream = load(config.bgm_track_path) as AudioStream
+		_bgm_track_id = config.opponent_slug
 	var bg_path := "res://assets/sprites/background.png"
 	if ResourceLoader.exists(bg_path):
 		$Background.texture = load(bg_path)
@@ -146,6 +153,7 @@ func _handle_round_end() -> void:
 	_visibility = RiddleVisibility.FRESH_START_GAP
 	_gap_generation += 1  # invalidate any in-flight gap awaits
 	if _clock.current_round() >= MatchClock.TOTAL_ROUNDS:
+		AudioBus.stop_music(_BGM_END_FADE_SECONDS)
 		await _banner.show_banner("round_over", MatchPacing.ROUND_OVER_BANNER)
 		await _banner.show_banner("draw", MatchPacing.DRAW_BANNER)
 		Globals.last_match_outcome = Globals.MatchOutcome.DRAW
@@ -178,6 +186,10 @@ func _play_ready_fight() -> void:
 	# empty match scene first instead of catching the banner already in motion.
 	await get_tree().create_timer(MatchPacing.PRE_READY_DELAY).timeout
 	await _banner.show_banner("ready", MatchPacing.READY_BANNER)
+	# Opponent BGM starts in sync with the Fight banner. Round 2's call no-ops
+	# against the Track ID that's already playing from Round 1.
+	if _bgm_stream != null:
+		AudioBus.play_music_stream(_bgm_stream, _bgm_track_id)
 	await _banner.show_banner("fight", MatchPacing.FIGHT_BANNER)
 
 # Fresh-Start Gap (CONTEXT.md → Riddle Gap):
@@ -273,6 +285,9 @@ func _on_damage_taken(expected_direction: int) -> void:
 	_refresh_combo_meter()
 	_damage_effect.play()
 	if _hearts.is_empty():
+		# Begin the opponent-BGM fade the moment the killing blow lands so the
+		# track is mostly out by the time the you_lose banner + stinger fire.
+		AudioBus.stop_music(_BGM_END_FADE_SECONDS)
 		_end_match_loss()
 		return
 	_begin_breather_gap()
@@ -292,7 +307,10 @@ func _end_match_loss() -> void:
 	_prompts.hide_all()
 	_riddle.visible = false
 	_gap_generation += 1  # invalidate any in-flight gap awaits
-	await _banner.show_banner("you_lose", MatchPacing.ROUND_OVER_BANNER)
+	AudioBus.play_music("defeat")
+	_awaiting_continue = true
+	await _banner.show_banner_skippable("you_lose", MatchPacing.YOU_LOSE_BANNER, _continue_pressed)
+	_awaiting_continue = false
 	Globals.last_match_outcome = Globals.MatchOutcome.LOSE
 	SceneRouter.goto_match_results()
 
@@ -431,6 +449,11 @@ func _play_knockdown_sequence() -> void:
 	_snap_clear_simon_visuals()
 	_knockdowns.increment()
 	_refresh_knockdown_meter()
+	if _knockdowns.is_knockout():
+		# Begin the opponent-BGM fade the instant the KO knockdown lands so the
+		# track is fully out under the knock_down + knock_out banners ahead of
+		# the you_win stinger.
+		AudioBus.stop_music(_BGM_END_FADE_SECONDS)
 	await _opponent.play_knockdown_fall()
 	await _banner.show_banner("knock_down", MatchPacing.KNOCK_DOWN_BANNER)
 	# KNOCKDOWN_PAUSE is the total clock-pause duration; the banner ate part of
@@ -443,7 +466,10 @@ func _play_knockdown_sequence() -> void:
 		await get_tree().create_timer(remainder).timeout
 	if _knockdowns.is_knockout():
 		await _banner.show_banner("knock_out", MatchPacing.KNOCK_OUT_BANNER)
-		await _banner.show_banner("you_win", MatchPacing.YOU_WIN_BANNER)
+		AudioBus.play_music("victory")
+		_awaiting_continue = true
+		await _banner.show_banner_skippable("you_win", MatchPacing.YOU_WIN_BANNER, _continue_pressed)
+		_awaiting_continue = false
 		Globals.last_match_outcome = Globals.MatchOutcome.WIN
 		SceneRouter.goto_match_results()
 		return

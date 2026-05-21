@@ -10,3 +10,4 @@ show_phase_step_seconds = 0.8
 repeat_phase_window_seconds = 3.0
 dialogue_deck_path = "res://data/dialogue/tofu/deck.tres"
 animation_profile_path = "res://data/opponent_animation/tofu.tres"
+bgm_track_path = "res://assets/audio/bgm/tofu.ogg"

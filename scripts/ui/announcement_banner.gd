@@ -34,6 +34,22 @@ static func total_duration_for(hold_seconds: float) -> float:
 	return _IN_DURATION + hold_seconds + _OUT_DURATION
 
 func show_banner(banner_name: String, duration_seconds: float) -> void:
+	_apply_banner_image(banner_name)
+	await _animate_in()
+	await get_tree().create_timer(duration_seconds).timeout
+	await _animate_out()
+
+# Same as show_banner, but the hold races a skip Signal — whichever fires
+# first wins, then the slide-out plays. Used for the YOU_WIN / YOU_LOSE
+# banners so the player can press K to bail before the (long) stinger
+# track finishes.
+func show_banner_skippable(banner_name: String, max_seconds: float, skipper: Signal) -> void:
+	_apply_banner_image(banner_name)
+	await _animate_in()
+	await _await_first(get_tree().create_timer(max_seconds).timeout, skipper)
+	await _animate_out()
+
+func _apply_banner_image(banner_name: String) -> void:
 	var path := "%sbanner_%s.png" % [_BANNERS_DIR, banner_name]
 	if ResourceLoader.exists(path):
 		_image.texture = load(path)
@@ -44,9 +60,19 @@ func show_banner(banner_name: String, duration_seconds: float) -> void:
 		_image.visible = false
 		_label.text = banner_name
 		_label.visible = true
-	await _animate_in()
-	await get_tree().create_timer(duration_seconds).timeout
-	await _animate_out()
+
+func _await_first(sig_a: Signal, sig_b: Signal) -> void:
+	var done := [false]
+	var on_fire := func():
+		done[0] = true
+	sig_a.connect(on_fire, CONNECT_ONE_SHOT)
+	sig_b.connect(on_fire, CONNECT_ONE_SHOT)
+	while not done[0]:
+		await get_tree().process_frame
+	if sig_a.is_connected(on_fire):
+		sig_a.disconnect(on_fire)
+	if sig_b.is_connected(on_fire):
+		sig_b.disconnect(on_fire)
 
 func show_message(message: String, duration_seconds: float) -> void:
 	_image.visible = false
