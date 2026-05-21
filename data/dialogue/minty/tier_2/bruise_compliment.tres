@@ -7,7 +7,7 @@
 script = ExtResource("2_answer")
 text = "Princesses can have battle damage. Yours just comes with better footwork."
 outcome = 2
-reaction_text = "Battle princess with footwork…? Oh no. That got through."
+reaction_text = "Battle princess with footwork...? Oh no. That got through."
 
 [sub_resource type="Resource" id="ans_neutral"]
 script = ExtResource("2_answer")

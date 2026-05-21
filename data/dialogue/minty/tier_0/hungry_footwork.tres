@@ -7,7 +7,7 @@
 script = ExtResource("2_answer")
 text = "That wasn't a growl. That was your inner champion demanding noodles."
 outcome = 2
-reaction_text = "My inner champion does want noodles… wait, how did you know?!"
+reaction_text = "My inner champion does want noodles... wait, how did you know?!"
 
 [sub_resource type="Resource" id="ans_neutral"]
 script = ExtResource("2_answer")
