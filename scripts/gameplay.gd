@@ -46,6 +46,7 @@ const _BLOCK_FLASH_SECONDS := 0.30
 const _DAMAGE_HIT_SECONDS := 0.35
 const _PUNCH_FLASH_SECONDS := 0.30
 const _MISS_FLASH_SECONDS := 0.35
+const _BGM_END_FADE_SECONDS := 1.5
 
 func _ready() -> void:
 	AudioBus.stop_music()
@@ -152,6 +153,7 @@ func _handle_round_end() -> void:
 	_visibility = RiddleVisibility.FRESH_START_GAP
 	_gap_generation += 1  # invalidate any in-flight gap awaits
 	if _clock.current_round() >= MatchClock.TOTAL_ROUNDS:
+		AudioBus.stop_music(_BGM_END_FADE_SECONDS)
 		await _banner.show_banner("round_over", MatchPacing.ROUND_OVER_BANNER)
 		await _banner.show_banner("draw", MatchPacing.DRAW_BANNER)
 		Globals.last_match_outcome = Globals.MatchOutcome.DRAW
@@ -302,6 +304,7 @@ func _end_match_loss() -> void:
 	_prompts.hide_all()
 	_riddle.visible = false
 	_gap_generation += 1  # invalidate any in-flight gap awaits
+	AudioBus.stop_music(_BGM_END_FADE_SECONDS)
 	await _banner.show_banner("you_lose", MatchPacing.ROUND_OVER_BANNER)
 	Globals.last_match_outcome = Globals.MatchOutcome.LOSE
 	SceneRouter.goto_match_results()
@@ -452,6 +455,7 @@ func _play_knockdown_sequence() -> void:
 	if remainder > 0.0:
 		await get_tree().create_timer(remainder).timeout
 	if _knockdowns.is_knockout():
+		AudioBus.stop_music(_BGM_END_FADE_SECONDS)
 		await _banner.show_banner("knock_out", MatchPacing.KNOCK_OUT_BANNER)
 		await _banner.show_banner("you_win", MatchPacing.YOU_WIN_BANNER)
 		Globals.last_match_outcome = Globals.MatchOutcome.WIN
