@@ -44,21 +44,26 @@ func _start_typewriter(text: String) -> void:
 		if my_generation != _typewriter_generation:
 			return
 		_body_text.visible_characters += 1
-		AudioBus.play_sfx("babble")
 		await get_tree().create_timer(1.0 / _typewriter_speed).timeout
 
 func _unhandled_input(event: InputEvent) -> void:
+	# menu_change_item fires only when highlight actually moves. Confirm carries
+	# no SFX — the riddle outcome SFX (riddle_correct/_neutral/_wrong) is the
+	# feedback for picking an answer.
+	var new_index: int = _highlight_index
 	if event.is_action_pressed("menu_left"):
-		_highlight_index = 0
-		_refresh_highlight()
+		new_index = 0
 	elif event.is_action_pressed("menu_up"):
-		_highlight_index = 1
-		_refresh_highlight()
+		new_index = 1
 	elif event.is_action_pressed("menu_right"):
-		_highlight_index = 2
-		_refresh_highlight()
+		new_index = 2
 	elif event.is_action_pressed("menu_confirm"):
 		answer_submitted.emit(_cards[_highlight_index].outcome())
+		return
+	if new_index != _highlight_index:
+		_highlight_index = new_index
+		_refresh_highlight()
+		AudioBus.play_sfx("menu_change_item")
 
 func _refresh_highlight() -> void:
 	for i in _cards.size():
