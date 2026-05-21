@@ -15,7 +15,7 @@ const PRE_READY_DELAY := 0.5  # Settle beat between scene load (or round transit
 const READY_BANNER := 1.0
 const FIGHT_BANNER := 1.0
 const ROUND_OVER_BANNER := 3.0
-const TRY_AGAIN_BANNER := 1.5  # "Try again!" banner shown on NEUTRAL answer
+const TRY_AGAIN_BANNER := 1.5  # NEUTRAL reaction-state hold duration
 
 # Attack phase and knockdown timings, in seconds. See CONTEXT.md → "Attack Phase" + "Knockdown".
 const KNOCK_DOWN_BANNER := 2.0

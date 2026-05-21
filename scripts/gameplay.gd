@@ -205,7 +205,11 @@ func _begin_fresh_start_gap() -> void:
 	_visibility = RiddleVisibility.FRESH_START_GAP
 	_gap_generation += 1
 	var my_generation := _gap_generation
-	_riddle.visible = false
+	# Preserve REACTION-state riddle (RIGHT-timeout path can route here via
+	# _return_to_defense). Empty-reaction prompts (tofu) and pre-prompt
+	# entries are already hidden by RiddleBox itself.
+	if _riddle.get_state() != RiddleBox.State.REACTION:
+		_riddle.visible = false
 	_prompts.hide_all()
 	_opponent.set_action(Opponent.Action.IDLE, Opponent.Direction.LEFT)
 	# Dead-air front segment: defense paused, opponent idle.
@@ -231,7 +235,11 @@ func _begin_breather_gap() -> void:
 	_visibility = RiddleVisibility.BREATHER_GAP
 	_gap_generation += 1
 	var my_generation := _gap_generation
-	_riddle.visible = false
+	# Preserve REACTION-state riddle (WRONG-path reaction line lives in the box
+	# through the breather; RIGHT-timeout path likewise). Empty-reaction prompts
+	# (tofu) and pre-prompt entries are already hidden by RiddleBox itself.
+	if _riddle.get_state() != RiddleBox.State.REACTION:
+		_riddle.visible = false
 	await get_tree().create_timer(MatchPacing.BREATHER_GAP).timeout
 	if my_generation != _gap_generation:
 		return
