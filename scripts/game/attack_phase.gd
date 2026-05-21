@@ -7,6 +7,10 @@ signal repeat_started
 signal step_landed(index: int)
 signal attack_succeeded
 signal attack_failed(expected_direction: int)
+# Fires exactly once per begin() — on the first input that registers in the
+# repeat phase. Gameplay uses this to hide the reaction-state riddle box on
+# the RIGHT path. Show-phase keypresses and timeouts do NOT fire this signal.
+signal first_input_received
 
 @export var step_seconds: float = 0.8
 @export var gap_seconds: float = 0.25
@@ -23,6 +27,7 @@ var _expected_count: int = 1
 # (see commit b89de48) — closes the same stop()+begin() race where an old
 # show loop's pending awaits would resolve on top of a fresh chain.
 var _generation: int = 0
+var _first_input_emitted: bool = false
 
 func _ready() -> void:
 	_timeout_timer = Timer.new()
@@ -35,6 +40,7 @@ func begin(input_count: int) -> void:
 	_sequence.reset()
 	for i in input_count:
 		_sequence.extend()
+	_first_input_emitted = false
 	_generation += 1
 	_show()
 
@@ -75,6 +81,9 @@ func _begin_repeat() -> void:
 func player_input(direction: int) -> void:
 	if not _repeat_active:
 		return
+	if not _first_input_emitted:
+		_first_input_emitted = true
+		first_input_received.emit()
 	if _sequence.validate_at(_expected_index, direction):
 		step_landed.emit(_expected_index)
 		_expected_index += 1

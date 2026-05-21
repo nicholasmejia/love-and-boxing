@@ -89,3 +89,71 @@ func test_timeout_emits_failure():
 	await get_tree().create_timer(0.2).timeout
 	assert_true(failed["emitted"], "attack_failed must fire when the input window expires with no input")
 	assert_eq(failed["direction"], a.current_sequence().steps()[0], "timeout fail carries the expected direction at _expected_index")
+
+func test_first_input_received_emits_on_first_repeat_press():
+	var a := AttackPhase.new()
+	a.step_seconds = 0.001
+	a.gap_seconds = 0.001
+	a.interlude_seconds = 0.01
+	a.input_window_seconds = 10.0
+	add_child_autoqfree(a)
+	var fired := {"count": 0}
+	a.first_input_received.connect(func(): fired["count"] += 1)
+	a._sequence.seed_rng(1)
+	a.begin(2)
+	await get_tree().create_timer(0.1).timeout
+	a.player_input(a._sequence.steps()[0])
+	a.player_input(a._sequence.steps()[1])
+	assert_eq(fired["count"], 1, "first_input_received must fire exactly once")
+
+func test_first_input_received_fires_on_wrong_direction_too():
+	var a := AttackPhase.new()
+	a.step_seconds = 0.001
+	a.gap_seconds = 0.001
+	a.interlude_seconds = 0.01
+	a.input_window_seconds = 10.0
+	add_child_autoqfree(a)
+	var fired := {"emitted": false}
+	a.first_input_received.connect(func(): fired["emitted"] = true)
+	a._sequence.seed_rng(1)
+	a.begin(1)
+	await get_tree().create_timer(0.1).timeout
+	# Send a deliberately wrong direction: the opposite of step[0].
+	# Directions enum is in SimonSequence (UP=0,DOWN=1,LEFT=2,RIGHT=3 — read from
+	# scripts/game/simon_sequence.gd). Sending step+1 mod 4 guarantees mismatch.
+	var wrong: int = (a._sequence.steps()[0] + 1) % 4
+	a.player_input(wrong)
+	assert_true(fired["emitted"], "wrong-direction input must still fire first_input_received")
+
+func test_first_input_received_does_not_fire_before_repeat_phase():
+	var a := AttackPhase.new()
+	a.step_seconds = 10.0  # long show phase, never reaches repeat
+	a.gap_seconds = 0.01
+	a.interlude_seconds = 0.01
+	a.input_window_seconds = 10.0
+	add_child_autoqfree(a)
+	var fired := {"emitted": false}
+	a.first_input_received.connect(func(): fired["emitted"] = true)
+	a._sequence.seed_rng(1)
+	a.begin(1)
+	await get_tree().create_timer(0.05).timeout
+	a.player_input(a._sequence.steps()[0])  # show phase still running; _repeat_active is false
+	assert_false(fired["emitted"], "show-phase input must NOT fire first_input_received")
+
+func test_first_input_received_resets_per_begin():
+	var a := AttackPhase.new()
+	a.step_seconds = 0.001
+	a.gap_seconds = 0.001
+	a.interlude_seconds = 0.01
+	a.input_window_seconds = 10.0
+	add_child_autoqfree(a)
+	var fired := {"count": 0}
+	a.first_input_received.connect(func(): fired["count"] += 1)
+	a._sequence.seed_rng(1)
+	a.begin(1)
+	await get_tree().create_timer(0.1).timeout
+	a.player_input(a._sequence.steps()[0])
+	a.begin(1)
+	await get_tree().create_timer(0.1).timeout
+	a.player_input(a._sequence.steps()[0])
+	assert_eq(fired["count"], 2, "first_input_received must fire once per begin()")
