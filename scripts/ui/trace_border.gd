@@ -66,3 +66,18 @@ func _advance(delta: float) -> void:
 	if _progress >= 1.0:
 		_progress = 1.0
 		_active = false
+
+# Draws _SEGMENT_COUNT short line segments behind the head, each spanning
+# (_TAIL_FRACTION / _SEGMENT_COUNT) of the perimeter. Color is sampled per
+# segment so the head reads as opaque white and the tail end as transparent
+# violet.
+func _draw() -> void:
+	if not _active:
+		return
+	var seg_span := _TAIL_FRACTION / float(_SEGMENT_COUNT)
+	for i in _SEGMENT_COUNT:
+		var t_start := _progress - float(i) * seg_span
+		var t_end := _progress - float(i + 1) * seg_span
+		var a := _perimeter_point(t_start)
+		var b := _perimeter_point(t_end)
+		draw_line(a, b, _trail_color(i), _LINE_THICKNESS)
