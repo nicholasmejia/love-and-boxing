@@ -4,6 +4,8 @@ const MUSIC_TRACKS := {
 	"menu": preload("res://assets/audio/bgm/menu.ogg"),
 	"victory": preload("res://assets/audio/bgm/victory.ogg"),
 	"defeat": preload("res://assets/audio/bgm/defeat.ogg"),
+	"title_intro": preload("res://assets/audio/bgm/title_intro.ogg"),
+	"title_main_loop": preload("res://assets/audio/bgm/title_main_loop.ogg"),
 }
 
 const SILENT_DB := -80.0
