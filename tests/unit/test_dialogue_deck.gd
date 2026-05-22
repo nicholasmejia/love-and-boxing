@@ -91,12 +91,12 @@ func test_reset_reshuffles_all_tiers():
 	tier_1.sort()
 	assert_eq(tier_1, ["b0", "b1", "b2"], "Reset restores tier 1 in full")
 
-func test_minty_deck_loads_with_three_prompts_per_tier_and_reactions():
+func test_minty_deck_loads_with_six_prompts_per_tier_and_reactions():
 	var deck := load("res://data/dialogue/minty/deck.tres") as DialogueDeckResource
 	assert_not_null(deck, "minty deck failed to load")
-	assert_eq(deck.tier_0.size(), 3)
-	assert_eq(deck.tier_1.size(), 3)
-	assert_eq(deck.tier_2.size(), 3)
+	assert_eq(deck.tier_0.size(), 6)
+	assert_eq(deck.tier_1.size(), 6)
+	assert_eq(deck.tier_2.size(), 6)
 	for tier in [deck.tier_0, deck.tier_1, deck.tier_2]:
 		for prompt in tier:
 			assert_eq(prompt.answers.size(), 3)

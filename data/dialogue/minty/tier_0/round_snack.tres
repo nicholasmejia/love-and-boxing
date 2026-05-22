@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="DialoguePrompt" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/game/dialogue_prompt.gd" id="1_prompt"]
+[ext_resource type="Script" path="res://scripts/game/dialogue_answer.gd" id="2_answer"]
+
+[sub_resource type="Resource" id="ans_right"]
+script = ExtResource("2_answer")
+text = "I am slightly impressed."
+outcome = 2
+reaction_text = "SLIGHTLY?! Sir we are committed to FULLY impressed in MY ring!"
+
+[sub_resource type="Resource" id="ans_neutral"]
+script = ExtResource("2_answer")
+text = "That seems like a normal pre-workout snack."
+outcome = 1
+reaction_text = "It’s NOT pre-workout. It’s mid-workout. You missed the whole gimmick!"
+
+[sub_resource type="Resource" id="ans_wrong"]
+script = ExtResource("2_answer")
+text = "You should be eating protein, not sugar."
+outcome = 0
+reaction_text = "Don’t gym-bro me during a kickboxing match!"
+
+[resource]
+script = ExtResource("1_prompt")
+body_text = "Between feints, Minty pulls a tiny candy from somewhere in her outfit, eats it, then resumes. “Don’t judge me. Champions are powered by gummies and pure spite.”"
+answers = Array[Resource]([SubResource("ans_right"), SubResource("ans_neutral"), SubResource("ans_wrong")])

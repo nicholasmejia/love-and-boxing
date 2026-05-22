@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="DialoguePrompt" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/game/dialogue_prompt.gd" id="1_prompt"]
+[ext_resource type="Script" path="res://scripts/game/dialogue_answer.gd" id="2_answer"]
+
+[sub_resource type="Resource" id="ans_right"]
+script = ExtResource("2_answer")
+text = "You look like someone who likes to scream about exes"
+outcome = 2
+reaction_text = "I do have exes! And screaming! How are you reading my workout playlist?!"
+
+[sub_resource type="Resource" id="ans_neutral"]
+script = ExtResource("2_answer")
+text = "Something upbeat."
+outcome = 1
+reaction_text = "‘Upbeat’? You couldn’t even commit to a genre?!"
+
+[sub_resource type="Resource" id="ans_wrong"]
+script = ExtResource("2_answer")
+text = "A romantic slow ballad."
+outcome = 0
+reaction_text = "I am DOING CARDIO. Not weeping into a candle!"
+
+[resource]
+script = ExtResource("1_prompt")
+body_text = "Minty bobs to a phantom beat between jabs. “Important question — what song do I look like I’d warm up to? Don’t say something embarrassing!”"
+answers = Array[Resource]([SubResource("ans_right"), SubResource("ans_neutral"), SubResource("ans_wrong")])

@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="DialoguePrompt" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/game/dialogue_prompt.gd" id="1_prompt"]
+[ext_resource type="Script" path="res://scripts/game/dialogue_answer.gd" id="2_answer"]
+
+[sub_resource type="Resource" id="ans_right"]
+script = ExtResource("2_answer")
+text = "You’d be picking fights champ or no champ."
+outcome = 2
+reaction_text = "You called me appealing AND ferocious! Wait, why am I losing the fight?!"
+
+[sub_resource type="Resource" id="ans_neutral"]
+script = ExtResource("2_answer")
+text = "Sure, you’d still be interesting."
+outcome = 1
+reaction_text = "INTERESTING? Like a documentary? Sir."
+
+[sub_resource type="Resource" id="ans_wrong"]
+script = ExtResource("2_answer")
+text = "Of course! The title doesn’t matter."
+outcome = 0
+reaction_text = "Doesn’t MATTER?! I bled for that title! Do NOT minimize my belt!"
+
+[resource]
+script = ExtResource("1_prompt")
+body_text = "Minty’s voice quiets between strikes, almost serious. “Scary question. If I wasn’t the champ — just some girl who liked to throw hands — would you still be standing across from me?”"
+answers = Array[Resource]([SubResource("ans_right"), SubResource("ans_neutral"), SubResource("ans_wrong")])

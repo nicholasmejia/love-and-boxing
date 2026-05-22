@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="DialoguePrompt" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/game/dialogue_prompt.gd" id="1_prompt"]
+[ext_resource type="Script" path="res://scripts/game/dialogue_answer.gd" id="2_answer"]
+
+[sub_resource type="Resource" id="ans_right"]
+script = ExtResource("2_answer")
+text = "Let them boo, most of them probably aren't ghosts."
+outcome = 2
+reaction_text = "So you also understand that ghosts aren't real?  You seem almost too good to be real too!"
+
+[sub_resource type="Resource" id="ans_neutral"]
+script = ExtResource("2_answer")
+text = "Crowds are weird, ignore them."
+outcome = 1
+reaction_text = "Spoken like someone who has never been adored by strangers."
+
+[sub_resource type="Resource" id="ans_wrong"]
+script = ExtResource("2_answer")
+text = "They are probably right, I suck!"
+outcome = 0
+reaction_text = "Excuse me?! Agreeing with a fake crowd?! Get a SPINE!"
+
+[resource]
+script = ExtResource("1_prompt")
+body_text = "The phantom crowd boos. Minty’s eye twitches. “They’re booing YOU. Which is rude. But also fair. But also rude. How are we handling this?”"
+answers = Array[Resource]([SubResource("ans_right"), SubResource("ans_neutral"), SubResource("ans_wrong")])
