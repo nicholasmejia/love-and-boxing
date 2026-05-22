@@ -5,23 +5,23 @@
 
 [sub_resource type="Resource" id="ans_right"]
 script = ExtResource("2_answer")
-text = "You can’t threaten me with a good time."
+text = "You look like someone who likes to scream about exes"
 outcome = 2
-reaction_text = "Masochist! I could maso-kiss you!"
+reaction_text = "I do have exes! And screaming! How are you reading my workout playlist?!"
 
 [sub_resource type="Resource" id="ans_neutral"]
 script = ExtResource("2_answer")
-text = "I’d be impressed you hit that hard."
+text = "Something upbeat."
 outcome = 1
-reaction_text = "Obviously I hit hard! Compliment received, connection pending!"
+reaction_text = "‘Upbeat’? You couldn’t even commit to a genre?!"
 
 [sub_resource type="Resource" id="ans_wrong"]
 script = ExtResource("2_answer")
-text = "I’d tell you to go easy, since this is basically a date."
+text = "A romantic slow ballad."
 outcome = 0
-reaction_text = "Wrong! Date violence is still honest violence!"
+reaction_text = "I am DOING CARDIO. Not weeping into a candle!"
 
 [resource]
 script = ExtResource("1_prompt")
-body_text = "Minty steps in close, guard high, cheeks pink from exertion. “People say they like strong girls, but then they get weird when the strong girl is actually strong. So what happens if I knock you flat?”"
+body_text = "Minty bobs to a phantom beat between jabs. “Important question — what song do I look like I’d warm up to? Don’t say something embarrassing!”"
 answers = Array[Resource]([SubResource("ans_right"), SubResource("ans_neutral"), SubResource("ans_wrong")])

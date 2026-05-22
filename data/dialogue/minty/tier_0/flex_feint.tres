@@ -5,9 +5,9 @@
 
 [sub_resource type="Resource" id="ans_right"]
 script = ExtResource("2_answer")
-text = "Both. You look like you could crush a villain and still expect flowers after."
+text = "Like they could break my heart AND my jaw"
 outcome = 2
-reaction_text = "Flowers after violence…? Wait, that's cute. Stop being cute. Guard down! I mean—guard up!"
+reaction_text = "Ooh!  That could be arranged, tough guy *wink wink*"
 
 [sub_resource type="Resource" id="ans_neutral"]
 script = ExtResource("2_answer")
@@ -19,9 +19,9 @@ reaction_text = "Accurate! Boring, but accurate!"
 script = ExtResource("2_answer")
 text = "Mostly final boss, honestly."
 outcome = 0
-reaction_text = "Final boss?! I'm at least a secret romantic mini-boss!"
+reaction_text = "Final boss?! I’m at least a secret romantic mini-boss!"
 
 [resource]
 script = ExtResource("1_prompt")
-body_text = "Minty hops in place, then throws a jab-cross-knee combo. \"Be honest! Do these arms say 'romantic heroine,' or do they say 'final boss who drinks protein out of a vase'?\""
+body_text = "Minty hops in place, then throws a jab-cross-knee combo. “Be honest! Do these arms say ‘romantic heroine,’ or do they say ‘final boss who drinks protein out of a vase’?”"
 answers = Array[Resource]([SubResource("ans_right"), SubResource("ans_neutral"), SubResource("ans_wrong")])

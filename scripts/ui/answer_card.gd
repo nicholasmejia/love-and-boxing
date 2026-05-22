@@ -1,7 +1,7 @@
 class_name AnswerCard
 extends Control
 
-@onready var _text: RichTextLabel = $Stack/Text
+@onready var _text: Label = $Stack/Text
 @onready var _image: TextureRect = $Stack/Image
 @onready var _highlight: ColorRect = $Highlight
 

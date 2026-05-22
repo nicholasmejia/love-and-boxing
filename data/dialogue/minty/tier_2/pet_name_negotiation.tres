@@ -5,23 +5,23 @@
 
 [sub_resource type="Resource" id="ans_right"]
 script = ExtResource("2_answer")
-text = "You can’t threaten me with a good time."
+text = "Big Boss"
 outcome = 2
-reaction_text = "Masochist! I could maso-kiss you!"
+reaction_text = "You're pretty good!"
 
 [sub_resource type="Resource" id="ans_neutral"]
 script = ExtResource("2_answer")
-text = "I’d be impressed you hit that hard."
+text = "Mein Fuhrer."
 outcome = 1
-reaction_text = "Obviously I hit hard! Compliment received, connection pending!"
+reaction_text = "Thats....what?"
 
 [sub_resource type="Resource" id="ans_wrong"]
 script = ExtResource("2_answer")
-text = "I’d tell you to go easy, since this is basically a date."
+text = "Princess?"
 outcome = 0
-reaction_text = "Wrong! Date violence is still honest violence!"
+reaction_text = "PRINCESS? After everything you’ve SEEN today? Read the ROOM."
 
 [resource]
 script = ExtResource("1_prompt")
-body_text = "Minty steps in close, guard high, cheeks pink from exertion. “People say they like strong girls, but then they get weird when the strong girl is actually strong. So what happens if I knock you flat?”"
+body_text = "Minty leans in, voice low between strikes. “If I let you have ONE pet name for me — and only one — what is it? Choose carefully. I’ll judge you for years.”"
 answers = Array[Resource]([SubResource("ans_right"), SubResource("ans_neutral"), SubResource("ans_wrong")])

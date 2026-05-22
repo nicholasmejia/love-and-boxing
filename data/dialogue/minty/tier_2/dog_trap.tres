@@ -5,23 +5,23 @@
 
 [sub_resource type="Resource" id="ans_right"]
 script = ExtResource("2_answer")
-text = "A cheerful rescue mutt with one floppy ear and absolutely no haunted bloodhound energy."
+text = "Something with similar protein requirements"
 outcome = 2
-reaction_text = "No haunted bloodhound energy! You listened to my soul!"
+reaction_text = "I love a pragmatic man!"
 
 [sub_resource type="Resource" id="ans_neutral"]
 script = ExtResource("2_answer")
-text = "Any dog you like."
+text = "Something buff, like you."
 outcome = 1
-reaction_text = "Sweet, but dangerously vague. What if someone brings a droopy swamp detective?"
+reaction_text = "Flattery usually works, but this is the third round - try harder, you dingus."
 
 [sub_resource type="Resource" id="ans_wrong"]
 script = ExtResource("2_answer")
-text = "A loyal bloodhound. Big soulful eyes, dramatic droopy face, very romantic."
+text = "Something floppy, like a flat tire."
 outcome = 0
 reaction_text = "Why are you trying to curse our imaginary home?!"
 
 [resource]
 script = ExtResource("1_prompt")
-body_text = "Minty wipes sweat from her brow. \"Okay, important compatibility test. If we got a dog, what kind are we emotionally prepared to co-parent?\""
+body_text = "Minty wipes sweat from her brow. “Okay, important compatibility test. If we got a dog, what kind are we emotionally prepared to co-parent?”"
 answers = Array[Resource]([SubResource("ans_right"), SubResource("ans_neutral"), SubResource("ans_wrong")])

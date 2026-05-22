@@ -5,23 +5,23 @@
 
 [sub_resource type="Resource" id="ans_right"]
 script = ExtResource("2_answer")
-text = "You can’t threaten me with a good time."
+text = "Champ. Just Champ."
 outcome = 2
-reaction_text = "Masochist! I could maso-kiss you!"
+reaction_text = "No adjective?! That’s so confident! I should be insulted but I’m BLUSHING!"
 
 [sub_resource type="Resource" id="ans_neutral"]
 script = ExtResource("2_answer")
-text = "I’d be impressed you hit that hard."
+text = "I’ll think of one after the fight."
 outcome = 1
-reaction_text = "Obviously I hit hard! Compliment received, connection pending!"
+reaction_text = "Bold of you to assume there’ll BE an after for you."
 
 [sub_resource type="Resource" id="ans_wrong"]
 script = ExtResource("2_answer")
-text = "I’d tell you to go easy, since this is basically a date."
+text = "Minty the Marvelous."
 outcome = 0
-reaction_text = "Wrong! Date violence is still honest violence!"
+reaction_text = "Why do you and my coach both insist on alliteration?!"
 
 [resource]
 script = ExtResource("1_prompt")
-body_text = "Minty steps in close, guard high, cheeks pink from exertion. “People say they like strong girls, but then they get weird when the strong girl is actually strong. So what happens if I knock you flat?”"
+body_text = "Minty winces mid-cross. “Ugh — my coach used to call me ‘Minty Mauler.’ I made him stop. What would YOU call me?”"
 answers = Array[Resource]([SubResource("ans_right"), SubResource("ans_neutral"), SubResource("ans_wrong")])

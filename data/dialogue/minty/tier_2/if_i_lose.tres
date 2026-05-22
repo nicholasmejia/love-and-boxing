@@ -5,23 +5,23 @@
 
 [sub_resource type="Resource" id="ans_right"]
 script = ExtResource("2_answer")
-text = "You can’t threaten me with a good time."
+text = "Strategically resting. Plotting the comeback."
 outcome = 2
-reaction_text = "Masochist! I could maso-kiss you!"
+reaction_text = "STRATEGIC RESTING! YES! That’s the official line! You’re hired as my PR!"
 
 [sub_resource type="Resource" id="ans_neutral"]
 script = ExtResource("2_answer")
-text = "I’d be impressed you hit that hard."
+text = "Just a tough opponent who lost a round."
 outcome = 1
-reaction_text = "Obviously I hit hard! Compliment received, connection pending!"
+reaction_text = "Diplomatic. Wasted on me. I wanted DRAMA."
 
 [sub_resource type="Resource" id="ans_wrong"]
 script = ExtResource("2_answer")
-text = "I’d tell you to go easy, since this is basically a date."
+text = "Sad ex-champion vibes, definitely."
 outcome = 0
-reaction_text = "Wrong! Date violence is still honest violence!"
+reaction_text = "OH WE ARE GOING TO HAVE A PROBLEM. Guard UP. Defensive! Insulted!"
 
 [resource]
 script = ExtResource("1_prompt")
-body_text = "Minty steps in close, guard high, cheeks pink from exertion. “People say they like strong girls, but then they get weird when the strong girl is actually strong. So what happens if I knock you flat?”"
+body_text = "Minty wipes sweat from her temple, calmer than usual. “Real talk — if you take me down, what do I look like? Sad ex-champion? Or just resting?”"
 answers = Array[Resource]([SubResource("ans_right"), SubResource("ans_neutral"), SubResource("ans_wrong")])

@@ -5,23 +5,23 @@
 
 [sub_resource type="Resource" id="ans_right"]
 script = ExtResource("2_answer")
-text = "You can’t threaten me with a good time."
+text = "I’ll trust the glove kiss but not the punch."
 outcome = 2
-reaction_text = "Masochist! I could maso-kiss you!"
+reaction_text = "Smart! Trust the cute! Distrust the violence! Wait — that IS the strategy!"
 
 [sub_resource type="Resource" id="ans_neutral"]
 script = ExtResource("2_answer")
-text = "I’d be impressed you hit that hard."
+text = "That’s a nice ritual."
 outcome = 1
-reaction_text = "Obviously I hit hard! Compliment received, connection pending!"
+reaction_text = "Polite. Acceptable. Defensive guard maintained."
 
 [sub_resource type="Resource" id="ans_wrong"]
 script = ExtResource("2_answer")
-text = "I’d tell you to go easy, since this is basically a date."
+text = "Maybe I should kiss the gloves before they hit me."
 outcome = 0
-reaction_text = "Wrong! Date violence is still honest violence!"
+reaction_text = "Oh PLEASE. The gloves do not consent to that."
 
 [resource]
 script = ExtResource("1_prompt")
-body_text = "Minty steps in close, guard high, cheeks pink from exertion. “People say they like strong girls, but then they get weird when the strong girl is actually strong. So what happens if I knock you flat?”"
+body_text = "Minty pauses to kiss her glove, then immediately throws it. “Don’t read into that. It’s a ritual. Every champion has one. Mine just happens to be cute.”"
 answers = Array[Resource]([SubResource("ans_right"), SubResource("ans_neutral"), SubResource("ans_wrong")])

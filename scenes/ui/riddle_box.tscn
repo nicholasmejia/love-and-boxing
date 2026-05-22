@@ -45,6 +45,7 @@ bbcode_enabled = true
 fit_content = true
 scroll_active = false
 autowrap_mode = 3
+visible_characters_behavior = 1
 
 [node name="Image" type="TextureRect" parent="Layout/Body"]
 visible = false
