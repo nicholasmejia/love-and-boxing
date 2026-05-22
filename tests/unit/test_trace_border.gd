@@ -9,9 +9,9 @@ func _make_trace(w: float, h: float) -> Node:
 
 const _EPS := 0.001
 
-# Box (188, 188) → center (94, 94), radius = sqrt(2*94^2) ≈ 132.936.
+# Box (188, 188) → center (94, 94), inscribed radius = min(188, 188) / 2 = 94.
 const _CENTER := Vector2(94.0, 94.0)
-const _RADIUS := 132.93584524388
+const _RADIUS := 94.0
 
 
 func _assert_point_almost_eq(actual: Vector2, expected: Vector2) -> void:
@@ -48,13 +48,13 @@ func test_circle_wraps_when_t_negative():
 	# -0.25 % 1.0 = 0.75 → left of center
 	_assert_point_almost_eq(tb._circle_point(-0.25), _CENTER + Vector2(-_RADIUS, 0.0))
 
-func test_trail_color_head_is_opaque_white():
+func test_trail_color_head_is_red_opaque():
 	var tb = _make_trace(188.0, 188.0)
-	assert_eq(tb._trail_color(0), TB._HEAD_COLOR)
+	assert_eq(tb._trail_color(0), Color.from_hsv(TB._RAINBOW_HUE_START, 1.0, 1.0, 1.0))
 
-func test_trail_color_tail_end_is_transparent_violet():
+func test_trail_color_tail_end_is_violet_transparent():
 	var tb = _make_trace(188.0, 188.0)
-	assert_eq(tb._trail_color(TB._SEGMENT_COUNT - 1), TB._TAIL_COLOR)
+	assert_eq(tb._trail_color(TB._SEGMENT_COUNT - 1), Color.from_hsv(TB._RAINBOW_HUE_END, 1.0, 1.0, 0.0))
 
 func test_trail_color_midpoint_alpha_between_zero_and_one():
 	var tb = _make_trace(188.0, 188.0)

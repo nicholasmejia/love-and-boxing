@@ -6,30 +6,30 @@ const _LAP_SECONDS := 0.20
 const _TAIL_FRACTION := 1.0 / 3.0
 const _SEGMENT_COUNT := 24
 const _LINE_THICKNESS := 12.0
-const _HEAD_COLOR := Color(1.0, 1.0, 1.0, 1.0)
-const _MID_COLOR := Color(1.0, 0.15, 0.75, 1.0)
-const _TAIL_COLOR := Color(0.55, 0.10, 0.85, 0.0)
+# Trail hue sweeps red (0.0) → violet (~0.83) across its length. Stops short of
+# 1.0 so the tail end doesn't wrap back to red and clash with the opaque head.
+const _RAINBOW_HUE_START := 0.0
+const _RAINBOW_HUE_END := 0.83
 
-# Returns the (x, y) point on a circle circumscribed around the box for
-# normalized t ∈ [0, 1). Circle is centered on the box, radius = box_diagonal/2
-# so the trace touches the bounding-box corners and floats just outside at the
-# cardinal directions — reads as a halo around starburst-shaped sprites whose
-# spikes reach the corners. t=0 starts at 12 o'clock, advances clockwise.
-# t wraps via fposmod, so negative or > 1.0 inputs map back into [0, 1).
+# Returns the (x, y) point on a circle inscribed in the box for normalized
+# t ∈ [0, 1). Circle is centered on the box, radius = min(width, height) / 2
+# so the trace orbits at the cardinal edges of the bounding box — hugs the
+# sprite outline more closely than a circumscribed circle does. t=0 starts at
+# 12 o'clock, advances clockwise. t wraps via fposmod for out-of-range inputs.
 func _circle_point(t: float) -> Vector2:
 	var center := size * 0.5
-	var radius := size.length() * 0.5
+	var radius := minf(size.x, size.y) * 0.5
 	var angle := fposmod(t, 1.0) * TAU - PI * 0.5
 	return center + Vector2(cos(angle), sin(angle)) * radius
 
 # Returns the color for trail segment i ∈ [0, _SEGMENT_COUNT).
-# i = 0 is the head, i = _SEGMENT_COUNT - 1 is the tail end.
-# Linear interp head → mid (first half), then mid → tail (second half).
+# Hue sweeps red → violet across the trail (i = 0 → i = _SEGMENT_COUNT - 1);
+# alpha fades opaque → transparent in lockstep so the tail end disappears.
 func _trail_color(i: int) -> Color:
 	var u := float(i) / float(_SEGMENT_COUNT - 1)
-	if u < 0.5:
-		return _HEAD_COLOR.lerp(_MID_COLOR, u * 2.0)
-	return _MID_COLOR.lerp(_TAIL_COLOR, (u - 0.5) * 2.0)
+	var hue := lerpf(_RAINBOW_HUE_START, _RAINBOW_HUE_END, u)
+	var alpha := 1.0 - u
+	return Color.from_hsv(hue, 1.0, 1.0, alpha)
 
 var _active: bool = false
 var _progress: float = 0.0
