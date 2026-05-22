@@ -149,6 +149,11 @@ func _prepare_camera_pan_offscreen() -> void:
 	_title_tofu.position.y = _tofu_rest_y + fg_rise
 	_title_minty.position.y = _minty_rest_y + fg_rise
 	_title_sebastian.position.y = _sebastian_rest_y + fg_rise
+	# Foreground stand-ups stay invisible until the camera pan reveals them.
+	_title_ring.modulate.a = 0.0
+	_title_tofu.modulate.a = 0.0
+	_title_minty.modulate.a = 0.0
+	_title_sebastian.modulate.a = 0.0
 
 var _pennant_rest_positions := {}
 
@@ -177,16 +182,18 @@ func _slide_pennant(pennant: TextureRect) -> void:
 
 func _prepare_attract_punch() -> void:
 	_attract_punch.scale = PUNCH_REST_SCALE
-	_attract_punch.modulate.a = 1.0
+	# Hidden until the wind-up grow ramps it to visible.
+	_attract_punch.modulate.a = 0.0
 	_attract_punch.pivot_offset = _attract_punch.size * 0.5
 	for pennant in [_pennant_tofu, _pennant_minty, _pennant_sebastian]:
 		pennant.pivot_offset = pennant.size * 0.5
 
 func _play_attract_punch() -> void:
 	_phase = Phase.ATTRACT_PUNCH
-	# Wind-up: punch grows from behind the pennant composite.
-	var grow_tween := create_tween()
+	# Wind-up: punch grows AND fades in from behind the pennant composite.
+	var grow_tween := create_tween().set_parallel(true)
 	grow_tween.tween_property(_attract_punch, "scale", PUNCH_PEAK_SCALE, PUNCH_GROW_DURATION).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	grow_tween.tween_property(_attract_punch, "modulate:a", 1.0, PUNCH_GROW_DURATION).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	await grow_tween.finished
 	AudioBus.play_sfx(SFX_PUNCH_IMPACT)
 	AudioBus.play_sfx(SFX_PENNANT_FLYOFF)
@@ -213,9 +220,13 @@ func _play_camera_pan() -> void:
 	pan_tween.tween_property(_title_background, "position:y", _bg_rest_y, PAN_DURATION).set_trans(PAN_TRANS).set_ease(PAN_EASE)
 	pan_tween.tween_property(_title_background, "modulate:a", 1.0, PAN_DURATION).set_trans(PAN_TRANS).set_ease(PAN_EASE)
 	pan_tween.tween_property(_title_ring, "position:y", _ring_rest_y, PAN_DURATION).set_trans(PAN_TRANS).set_ease(PAN_EASE)
+	pan_tween.tween_property(_title_ring, "modulate:a", 1.0, PAN_DURATION).set_trans(PAN_TRANS).set_ease(PAN_EASE)
 	pan_tween.tween_property(_title_tofu, "position:y", _tofu_rest_y, PAN_DURATION).set_trans(PAN_TRANS).set_ease(PAN_EASE)
+	pan_tween.tween_property(_title_tofu, "modulate:a", 1.0, PAN_DURATION).set_trans(PAN_TRANS).set_ease(PAN_EASE)
 	pan_tween.tween_property(_title_minty, "position:y", _minty_rest_y, PAN_DURATION).set_trans(PAN_TRANS).set_ease(PAN_EASE)
+	pan_tween.tween_property(_title_minty, "modulate:a", 1.0, PAN_DURATION).set_trans(PAN_TRANS).set_ease(PAN_EASE)
 	pan_tween.tween_property(_title_sebastian, "position:y", _sebastian_rest_y, PAN_DURATION).set_trans(PAN_TRANS).set_ease(PAN_EASE)
+	pan_tween.tween_property(_title_sebastian, "modulate:a", 1.0, PAN_DURATION).set_trans(PAN_TRANS).set_ease(PAN_EASE)
 	await pan_tween.finished
 
 func _play_title_slam() -> void:
@@ -275,6 +286,10 @@ func _skip_to_rest() -> void:
 	_title_tofu.position.y = _tofu_rest_y
 	_title_minty.position.y = _minty_rest_y
 	_title_sebastian.position.y = _sebastian_rest_y
+	_title_ring.modulate.a = 1.0
+	_title_tofu.modulate.a = 1.0
+	_title_minty.modulate.a = 1.0
+	_title_sebastian.modulate.a = 1.0
 	# Title slam endpoint.
 	_title_text.position.y = _title_text_rest_y
 	_title_text.scale = Vector2.ONE
