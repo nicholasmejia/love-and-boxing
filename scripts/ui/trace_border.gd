@@ -5,26 +5,22 @@ extends Control
 const _LAP_SECONDS := 0.20
 const _TAIL_FRACTION := 1.0 / 3.0
 const _SEGMENT_COUNT := 24
-const _LINE_THICKNESS := 5.0
+const _LINE_THICKNESS := 12.0
 const _HEAD_COLOR := Color(1.0, 1.0, 1.0, 1.0)
 const _MID_COLOR := Color(1.0, 0.15, 0.75, 1.0)
 const _TAIL_COLOR := Color(0.55, 0.10, 0.85, 0.0)
 
-# Returns the (x, y) point on the box perimeter for normalized t ∈ [0, 1).
-# Clockwise from top-left: top edge → right edge → bottom edge → left edge.
+# Returns the (x, y) point on a circle circumscribed around the box for
+# normalized t ∈ [0, 1). Circle is centered on the box, radius = box_diagonal/2
+# so the trace touches the bounding-box corners and floats just outside at the
+# cardinal directions — reads as a halo around starburst-shaped sprites whose
+# spikes reach the corners. t=0 starts at 12 o'clock, advances clockwise.
 # t wraps via fposmod, so negative or > 1.0 inputs map back into [0, 1).
-func _perimeter_point(t: float) -> Vector2:
-	var w := size.x
-	var h := size.y
-	var perimeter := 2.0 * (w + h)
-	var u := fposmod(t, 1.0) * perimeter
-	if u < w:
-		return Vector2(u, 0.0)
-	if u < w + h:
-		return Vector2(w, u - w)
-	if u < 2.0 * w + h:
-		return Vector2(w - (u - w - h), h)
-	return Vector2(0.0, h - (u - 2.0 * w - h))
+func _circle_point(t: float) -> Vector2:
+	var center := size * 0.5
+	var radius := size.length() * 0.5
+	var angle := fposmod(t, 1.0) * TAU - PI * 0.5
+	return center + Vector2(cos(angle), sin(angle)) * radius
 
 # Returns the color for trail segment i ∈ [0, _SEGMENT_COUNT).
 # i = 0 is the head, i = _SEGMENT_COUNT - 1 is the tail end.
@@ -67,9 +63,9 @@ func _advance(delta: float) -> void:
 		_progress = 1.0
 		_active = false
 
-# Draws _SEGMENT_COUNT short line segments behind the head, each spanning
-# (_TAIL_FRACTION / _SEGMENT_COUNT) of the perimeter. Color is sampled per
-# segment so the head reads as opaque white and the tail end as transparent
+# Draws _SEGMENT_COUNT short chord segments behind the head along the circle,
+# each spanning (_TAIL_FRACTION / _SEGMENT_COUNT) of the lap. Color is sampled
+# per segment so the head reads as opaque white and the tail end as transparent
 # violet.
 func _draw() -> void:
 	if not _active:
@@ -78,6 +74,6 @@ func _draw() -> void:
 	for i in _SEGMENT_COUNT:
 		var t_start := _progress - float(i) * seg_span
 		var t_end := _progress - float(i + 1) * seg_span
-		var a := _perimeter_point(t_start)
-		var b := _perimeter_point(t_end)
+		var a := _circle_point(t_start)
+		var b := _circle_point(t_end)
 		draw_line(a, b, _trail_color(i), _LINE_THICKNESS)

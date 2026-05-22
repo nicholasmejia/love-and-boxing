@@ -7,34 +7,46 @@ func _make_trace(w: float, h: float) -> Node:
 	tb.size = Vector2(w, h)
 	return tb
 
-func test_perimeter_zero_is_origin():
-	var tb = _make_trace(188.0, 188.0)
-	assert_eq(tb._perimeter_point(0.0), Vector2(0.0, 0.0))
+const _EPS := 0.001
 
-func test_perimeter_quarter_is_top_right():
-	var tb = _make_trace(188.0, 188.0)
-	assert_eq(tb._perimeter_point(0.25), Vector2(188.0, 0.0))
+# Box (188, 188) → center (94, 94), radius = sqrt(2*94^2) ≈ 132.936.
+const _CENTER := Vector2(94.0, 94.0)
+const _RADIUS := 132.93584524388
 
-func test_perimeter_half_is_bottom_right():
-	var tb = _make_trace(188.0, 188.0)
-	assert_eq(tb._perimeter_point(0.5), Vector2(188.0, 188.0))
 
-func test_perimeter_three_quarters_is_bottom_left():
-	var tb = _make_trace(188.0, 188.0)
-	assert_eq(tb._perimeter_point(0.75), Vector2(0.0, 188.0))
+func _assert_point_almost_eq(actual: Vector2, expected: Vector2) -> void:
+	assert_almost_eq(actual.x, expected.x, _EPS)
+	assert_almost_eq(actual.y, expected.y, _EPS)
 
-func test_perimeter_one_wraps_to_origin():
-	var tb = _make_trace(188.0, 188.0)
-	assert_eq(tb._perimeter_point(1.0), Vector2(0.0, 0.0))
 
-func test_perimeter_wraps_when_t_exceeds_one():
+func test_circle_zero_is_top():
 	var tb = _make_trace(188.0, 188.0)
-	assert_eq(tb._perimeter_point(1.5), tb._perimeter_point(0.5))
+	_assert_point_almost_eq(tb._circle_point(0.0), _CENTER + Vector2(0.0, -_RADIUS))
 
-func test_perimeter_wraps_when_t_negative():
+func test_circle_quarter_is_right():
 	var tb = _make_trace(188.0, 188.0)
-	# -0.25 % 1.0 = 0.75 → bottom-left
-	assert_eq(tb._perimeter_point(-0.25), Vector2(0.0, 188.0))
+	_assert_point_almost_eq(tb._circle_point(0.25), _CENTER + Vector2(_RADIUS, 0.0))
+
+func test_circle_half_is_bottom():
+	var tb = _make_trace(188.0, 188.0)
+	_assert_point_almost_eq(tb._circle_point(0.5), _CENTER + Vector2(0.0, _RADIUS))
+
+func test_circle_three_quarters_is_left():
+	var tb = _make_trace(188.0, 188.0)
+	_assert_point_almost_eq(tb._circle_point(0.75), _CENTER + Vector2(-_RADIUS, 0.0))
+
+func test_circle_one_wraps_to_top():
+	var tb = _make_trace(188.0, 188.0)
+	_assert_point_almost_eq(tb._circle_point(1.0), tb._circle_point(0.0))
+
+func test_circle_wraps_when_t_exceeds_one():
+	var tb = _make_trace(188.0, 188.0)
+	_assert_point_almost_eq(tb._circle_point(1.5), tb._circle_point(0.5))
+
+func test_circle_wraps_when_t_negative():
+	var tb = _make_trace(188.0, 188.0)
+	# -0.25 % 1.0 = 0.75 → left of center
+	_assert_point_almost_eq(tb._circle_point(-0.25), _CENTER + Vector2(-_RADIUS, 0.0))
 
 func test_trail_color_head_is_opaque_white():
 	var tb = _make_trace(188.0, 188.0)
