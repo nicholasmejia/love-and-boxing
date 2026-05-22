@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="DialoguePrompt" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/game/dialogue_prompt.gd" id="1_prompt"]
+[ext_resource type="Script" path="res://scripts/game/dialogue_answer.gd" id="2_answer"]
+
+[sub_resource type="Resource" id="ans_right"]
+script = ExtResource("2_answer")
+text = "Cardio is for the weak."
+outcome = 2
+reaction_text = "*exhales*. Finally. A confidant."
+
+[sub_resource type="Resource" id="ans_neutral"]
+script = ExtResource("2_answer")
+text = "A necessary evil"
+outcome = 1
+reaction_text = "Diplomatic. Cowardly. Acceptable."
+
+[sub_resource type="Resource" id="ans_wrong"]
+script = ExtResource("2_answer")
+text = "I will outlast you on the track and in years."
+outcome = 0
+reaction_text = "Then we cannot be friends."
+
+[resource]
+script = ExtResource("1_prompt")
+body_text = "Sebastian lowers his voice. The arena seems to feel empty. “I am going to ask you something. You will not repeat it. How do you feel… about cardio.”"
+answers = Array[Resource]([SubResource("ans_right"), SubResource("ans_neutral"), SubResource("ans_wrong")])

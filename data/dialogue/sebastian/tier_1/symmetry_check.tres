@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="DialoguePrompt" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/game/dialogue_prompt.gd" id="1_prompt"]
+[ext_resource type="Script" path="res://scripts/game/dialogue_answer.gd" id="2_answer"]
+
+[sub_resource type="Resource" id="ans_right"]
+script = ExtResource("2_answer")
+text = "Left. I’m adding three sets."
+outcome = 2
+reaction_text = "Honesty. The first rep of repair."
+
+[sub_resource type="Resource" id="ans_neutral"]
+script = ExtResource("2_answer")
+text = "Both sides hit the same."
+outcome = 1
+reaction_text = "Then your eyes lie to you."
+
+[sub_resource type="Resource" id="ans_wrong"]
+script = ExtResource("2_answer")
+text = "You cannot deny my symmetry."
+outcome = 0
+reaction_text = "PERFECT MEN DO NOT EXIST. STOP LYING."
+
+[resource]
+script = ExtResource("1_prompt")
+body_text = "Sebastian circles, eyes narrowing. “Your left lat. Smaller. I see it. Confess the weak side.”"
+answers = Array[Resource]([SubResource("ans_right"), SubResource("ans_neutral"), SubResource("ans_wrong")])

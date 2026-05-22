@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="DialoguePrompt" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/game/dialogue_prompt.gd" id="1_prompt"]
+[ext_resource type="Script" path="res://scripts/game/dialogue_answer.gd" id="2_answer"]
+
+[sub_resource type="Resource" id="ans_right"]
+script = ExtResource("2_answer")
+text = "0500. Iron. Then steel."
+outcome = 2
+reaction_text = "Confirmed. You may live."
+
+[sub_resource type="Resource" id="ans_neutral"]
+script = ExtResource("2_answer")
+text = "I have routines."
+outcome = 1
+reaction_text = "Vague. But not disqualifying."
+
+[sub_resource type="Resource" id="ans_wrong"]
+script = ExtResource("2_answer")
+text = "I improvise."
+outcome = 0
+reaction_text = "Then you are a leaf. I am a column."
+
+[resource]
+script = ExtResource("1_prompt")
+body_text = "Sebastian glances at the watch under his glove. “0613 hours. Routine maintained. Confirm you also operate on a schedule.”"
+answers = Array[Resource]([SubResource("ans_right"), SubResource("ans_neutral"), SubResource("ans_wrong")])

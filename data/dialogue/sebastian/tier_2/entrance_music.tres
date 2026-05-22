@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="DialoguePrompt" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/game/dialogue_prompt.gd" id="1_prompt"]
+[ext_resource type="Script" path="res://scripts/game/dialogue_answer.gd" id="2_answer"]
+
+[sub_resource type="Resource" id="ans_right"]
+script = ExtResource("2_answer")
+text = "Play it. Loud."
+outcome = 2
+reaction_text = "It is opera. You are crying. Good."
+
+[sub_resource type="Resource" id="ans_neutral"]
+script = ExtResource("2_answer")
+text = "What is it?"
+outcome = 1
+reaction_text = "Asking is acceptance. Acceptance is growth."
+
+[sub_resource type="Resource" id="ans_wrong"]
+script = ExtResource("2_answer")
+text = "I’ll pick my own."
+outcome = 0
+reaction_text = "TOO LATE. THE SONG IS YOU."
+
+[resource]
+script = ExtResource("1_prompt")
+body_text = "Sebastian taps a tablet. “I have selected your entrance music. Without consent. It is now part of your identity. React.”"
+answers = Array[Resource]([SubResource("ans_right"), SubResource("ans_neutral"), SubResource("ans_wrong")])

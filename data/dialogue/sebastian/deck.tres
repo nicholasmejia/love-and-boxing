@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="DialogueDeckResource" load_steps=20 format=3 uid="uid://c1sebdeck"]
+
+[ext_resource type="Script" path="res://scripts/game/dialogue_deck_resource.gd" id="1_deck"]
+[ext_resource type="Resource" path="res://data/dialogue/sebastian/tier_0/handshake_audit.tres" id="t0_handshake"]
+[ext_resource type="Resource" path="res://data/dialogue/sebastian/tier_0/schedule_check.tres" id="t0_schedule"]
+[ext_resource type="Resource" path="res://data/dialogue/sebastian/tier_0/flex_match.tres" id="t0_flex"]
+[ext_resource type="Resource" path="res://data/dialogue/sebastian/tier_0/posing_trunks.tres" id="t0_trunks"]
+[ext_resource type="Resource" path="res://data/dialogue/sebastian/tier_0/ring_mirror.tres" id="t0_mirror"]
+[ext_resource type="Resource" path="res://data/dialogue/sebastian/tier_0/pro_tan_audit.tres" id="t0_protan"]
+[ext_resource type="Resource" path="res://data/dialogue/sebastian/tier_1/bird_intruder.tres" id="t1_bird"]
+[ext_resource type="Resource" path="res://data/dialogue/sebastian/tier_1/moustache_mirror.tres" id="t1_moustache"]
+[ext_resource type="Resource" path="res://data/dialogue/sebastian/tier_1/spotter_test.tres" id="t1_spotter"]
+[ext_resource type="Resource" path="res://data/dialogue/sebastian/tier_1/cardio_question.tres" id="t1_cardio"]
+[ext_resource type="Resource" path="res://data/dialogue/sebastian/tier_1/symmetry_check.tres" id="t1_symmetry"]
+[ext_resource type="Resource" path="res://data/dialogue/sebastian/tier_1/sweat_equity.tres" id="t1_sweat"]
+[ext_resource type="Resource" path="res://data/dialogue/sebastian/tier_2/physique_oath.tres" id="t2_physique"]
+[ext_resource type="Resource" path="res://data/dialogue/sebastian/tier_2/voice_test.tres" id="t2_voice"]
+[ext_resource type="Resource" path="res://data/dialogue/sebastian/tier_2/watch_deviation.tres" id="t2_watch"]
+[ext_resource type="Resource" path="res://data/dialogue/sebastian/tier_2/mouthguard_story.tres" id="t2_mouthguard"]
+[ext_resource type="Resource" path="res://data/dialogue/sebastian/tier_2/side_chest.tres" id="t2_sidechest"]
+[ext_resource type="Resource" path="res://data/dialogue/sebastian/tier_2/entrance_music.tres" id="t2_music"]
+
+[resource]
+script = ExtResource("1_deck")
+tier_0 = Array[Resource]([ExtResource("t0_handshake"), ExtResource("t0_schedule"), ExtResource("t0_flex"), ExtResource("t0_trunks"), ExtResource("t0_mirror"), ExtResource("t0_protan")])
+tier_1 = Array[Resource]([ExtResource("t1_bird"), ExtResource("t1_moustache"), ExtResource("t1_spotter"), ExtResource("t1_cardio"), ExtResource("t1_symmetry"), ExtResource("t1_sweat")])
+tier_2 = Array[Resource]([ExtResource("t2_physique"), ExtResource("t2_voice"), ExtResource("t2_watch"), ExtResource("t2_mouthguard"), ExtResource("t2_sidechest"), ExtResource("t2_music")])

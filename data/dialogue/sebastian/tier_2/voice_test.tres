@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="DialoguePrompt" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/game/dialogue_prompt.gd" id="1_prompt"]
+[ext_resource type="Script" path="res://scripts/game/dialogue_answer.gd" id="2_answer"]
+
+[sub_resource type="Resource" id="ans_right"]
+script = ExtResource("2_answer")
+text = "I will not be moved."
+outcome = 2
+reaction_text = "The diaphragm has spoken. You are heard."
+
+[sub_resource type="Resource" id="ans_neutral"]
+script = ExtResource("2_answer")
+text = "I w...will n..not be moved."
+outcome = 1
+reaction_text = "Pitch acceptable. Resonance lacking."
+
+[sub_resource type="Resource" id="ans_wrong"]
+script = ExtResource("2_answer")
+text = "I wIlL nOt Be MoVeD!"
+outcome = 0
+reaction_text = "WE ARE NOT IN A MUSICAL."
+
+[resource]
+script = ExtResource("1_prompt")
+body_text = "Sebastian lowers his stance, voice dropping an octave. “Repeat after me. Use chest, not throat. ‘I will not be moved.’”"
+answers = Array[Resource]([SubResource("ans_right"), SubResource("ans_neutral"), SubResource("ans_wrong")])

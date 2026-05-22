@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="DialoguePrompt" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/game/dialogue_prompt.gd" id="1_prompt"]
+[ext_resource type="Script" path="res://scripts/game/dialogue_answer.gd" id="2_answer"]
+
+[sub_resource type="Resource" id="ans_right"]
+script = ExtResource("2_answer")
+text = "*matches the pose, holds*"
+outcome = 2
+reaction_text = "We are aligned. *almost smiles*"
+
+[sub_resource type="Resource" id="ans_neutral"]
+script = ExtResource("2_answer")
+text = "*tries to match the pose*"
+outcome = 1
+reaction_text = "Approximate. Intent counts. Slightly."
+
+[sub_resource type="Resource" id="ans_wrong"]
+script = ExtResource("2_answer")
+text = "*does double biceps instead*"
+outcome = 0
+reaction_text = "WRONG POSE! WE WERE A UNIT!"
+
+[resource]
+script = ExtResource("1_prompt")
+body_text = "Sebastian drops into a side chest pose. Holds it. The vein returns. “Mirror me. Exactly. If you can.”"
+answers = Array[Resource]([SubResource("ans_right"), SubResource("ans_neutral"), SubResource("ans_wrong")])
