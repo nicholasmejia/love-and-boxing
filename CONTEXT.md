@@ -45,6 +45,20 @@ This file is the canonical vocabulary for the project. When code, plans, or art 
 - **IJKL** — Reserved for Riddle navigation and Menu navigation. `I` = up/middle, `J` = left, `L` = right, `K` = confirm.
 - **Arrow keys + Enter + Mouse** — Fallback for menus only (not for gameplay).
 
+## Screens
+
+Top-level scenes the player moves through. Distinct from UI Regions (which are sub-components inside a screen).
+
+- **Attract Sequence** — The animated opening that runs from cold start of the game. Plays a multi-phase sequence and comes to rest on the Title Screen layout. Fades out to the Main Menu when the player confirms after `Press K to start` has appeared. Skippable to the Title Screen rest state at any earlier point. The animated phases (1–4) are timed against the `title_intro` stinger as a master clock — the Title Slam's white flash and the cross-cut to `title_main_loop` coincide exactly. The six phases are:
+  - **Slide-In** — The three attraction pennants (Tofu, then Minty, then Sebastian, strictly sequential) slide into a composite triangular arrangement. The `attract_punch` sprite is parented behind the pennants from scene init so it is invisible until the pennants leave.
+  - **Attract Punch** — `attract_punch` scales up from behind the assembled composite (revealing itself); at peak scale the three pennants begin a spin-and-fly-off in separate directions; the punch then shrinks back toward its rest scale as the pennants exit the screen.
+  - **Camera Pan** — Reads as the camera tilting down onto the ring: `title_background` fades in while translating upward, and `title_ring` plus the three character stand-ups also translate upward, at faster rates than the background, producing parallax. The `attract_punch` fades out during this phase.
+  - **Title Slam** — `title_text` slams in from above with scale-overshoot. A full-screen flash to white peaks at the moment of impact, which is also the exact moment `title_intro` ends and `title_main_loop` begins.
+  - **Settle Hold** — A short held beat at the resting composite with `title_main_loop` playing. No new motion. `Press K to start` is not yet visible.
+  - **Press-K Flash** — `Press K to start` begins flashing at the bottom of the screen. This is the persistent Title Screen rest state. Confirm input is armed; pressing it fades the scene to black and transitions to the Main Menu.
+- **Title Screen** — The composite layout shown in `assets/sprites/title/final_title_desired_result.png`: stadium background, ring corners, three character stand-ups, the `LOVE AND BOXING` logo, and `Press K to start` at the bottom. It is the final, resting phase of the Attract Sequence — not a separate scene. From this rest state the player presses K to fade into the Main Menu.
+- **Main Menu** — The button screen with `Start / Options / Credits / Quit`. Lives at `scenes/main_menu.tscn` (the file historically called `title_screen.tscn` — it was misnamed; the *animated* sequence is the title screen, the buttons are the main menu). Reached from the Title Screen via K-confirm.
+
 ## UI Regions
 
 - **Heart Row** — Top-left. Five heart slots showing current HP.
