@@ -39,6 +39,9 @@ const PAN_DURATION := 4.3                       # 6.7 → 11.0
 const PAN_BACKGROUND_RISE := 200.0              # px; background starts this far below rest (1.0× reference)
 const PAN_RING_MULTIPLIER := 1.6                # ring rises this much faster than background
 const PAN_CHARACTER_MULTIPLIER := 2.4           # characters rise faster still (closest layer)
+const PAN_CHARACTER_DURATION := 2.5             # each character takes this long to land in rest
+const PAN_CHARACTER_STAGGER := 0.9              # delay between Tofu → Minty → Sebastian starts
+# Invariant: PAN_CHARACTER_DURATION + 2*PAN_CHARACTER_STAGGER == PAN_DURATION (4.3)
 const PAN_TRANS := Tween.TRANS_SINE
 const PAN_EASE := Tween.EASE_OUT
 
@@ -236,17 +239,20 @@ func _start_punch_fadeout() -> void:
 func _play_camera_pan() -> void:
 	_phase = Phase.CAMERA_PAN
 	var pan_tween := create_tween().set_parallel(true)
+	# Background + ring: full pan window, smooth parallax.
 	pan_tween.tween_property(_title_background, "position:y", _bg_rest_y, PAN_DURATION).set_trans(PAN_TRANS).set_ease(PAN_EASE)
 	pan_tween.tween_property(_title_background, "modulate:a", 1.0, PAN_DURATION).set_trans(PAN_TRANS).set_ease(PAN_EASE)
 	pan_tween.tween_property(_title_ring, "position:y", _ring_rest_y, PAN_DURATION).set_trans(PAN_TRANS).set_ease(PAN_EASE)
 	pan_tween.tween_property(_title_ring, "modulate:a", 1.0, PAN_DURATION).set_trans(PAN_TRANS).set_ease(PAN_EASE)
-	pan_tween.tween_property(_title_tofu, "position:y", _tofu_rest_y, PAN_DURATION).set_trans(PAN_TRANS).set_ease(PAN_EASE)
-	pan_tween.tween_property(_title_tofu, "modulate:a", 1.0, PAN_DURATION).set_trans(PAN_TRANS).set_ease(PAN_EASE)
-	pan_tween.tween_property(_title_minty, "position:y", _minty_rest_y, PAN_DURATION).set_trans(PAN_TRANS).set_ease(PAN_EASE)
-	pan_tween.tween_property(_title_minty, "modulate:a", 1.0, PAN_DURATION).set_trans(PAN_TRANS).set_ease(PAN_EASE)
-	pan_tween.tween_property(_title_sebastian, "position:y", _sebastian_rest_y, PAN_DURATION).set_trans(PAN_TRANS).set_ease(PAN_EASE)
-	pan_tween.tween_property(_title_sebastian, "modulate:a", 1.0, PAN_DURATION).set_trans(PAN_TRANS).set_ease(PAN_EASE)
+	# Characters: staggered starts (Tofu → Minty → Sebastian), each runs its own pan.
+	_schedule_character_pan(pan_tween, _title_tofu, _tofu_rest_y, 0.0)
+	_schedule_character_pan(pan_tween, _title_minty, _minty_rest_y, PAN_CHARACTER_STAGGER)
+	_schedule_character_pan(pan_tween, _title_sebastian, _sebastian_rest_y, PAN_CHARACTER_STAGGER * 2.0)
 	await pan_tween.finished
+
+func _schedule_character_pan(tween: Tween, sprite: TextureRect, rest_y: float, delay: float) -> void:
+	tween.tween_property(sprite, "position:y", rest_y, PAN_CHARACTER_DURATION).set_trans(PAN_TRANS).set_ease(PAN_EASE).set_delay(delay)
+	tween.tween_property(sprite, "modulate:a", 1.0, PAN_CHARACTER_DURATION).set_trans(PAN_TRANS).set_ease(PAN_EASE).set_delay(delay)
 
 func _play_title_slam() -> void:
 	_phase = Phase.TITLE_SLAM
