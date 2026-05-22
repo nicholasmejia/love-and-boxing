@@ -49,12 +49,13 @@ const PRESS_K_PERIOD := 1.0
 const PRESS_K_FLOOR := 0.3
 const PRESS_K_CEILING := 1.0
 
-# SFX hook keys
+# SFX hook keys (named so the bespoke-SFX follow-up is a one-line edit per key).
 const SFX_CONFIRM := "menu_option_select"
-# const SFX_PUNCH_IMPACT := "opponent_punch_body"      # wired in Task 10
-# const SFX_PENNANT_FLYOFF := "swing"                  # wired in Task 10
-# const SFX_PENNANT_WHOOSH := ""                       # TODO: bespoke clip
-# const SFX_TITLE_SLAM := ""                           # TODO: bespoke clip
+const SFX_PUNCH_IMPACT := "opponent_punch_body"
+const SFX_PENNANT_FLYOFF := "swing"
+# TODO bespoke clips (planned follow-up — see memory project_attract_sequence_sfx_followup):
+#   const SFX_PENNANT_WHOOSH := "attract_pennant_whoosh"  # one per slide-in start, 3 calls
+#   const SFX_TITLE_SLAM := "title_slam"                  # at slam impact frame
 
 # ── State ────────────────────────────────────────────────────────────────────
 enum Phase { SLIDE_IN, ATTRACT_PUNCH, CAMERA_PAN, TITLE_SLAM, SETTLE_HOLD, PRESS_K_FLASH, FADING_OUT }
@@ -187,6 +188,8 @@ func _play_attract_punch() -> void:
 	var grow_tween := create_tween()
 	grow_tween.tween_property(_attract_punch, "scale", PUNCH_PEAK_SCALE, PUNCH_GROW_DURATION).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	await grow_tween.finished
+	AudioBus.play_sfx(SFX_PUNCH_IMPACT)
+	AudioBus.play_sfx(SFX_PENNANT_FLYOFF)
 	# Impact: pennants begin spin + fly-off; punch starts shrinking back.
 	var fly_tween := create_tween().set_parallel(true)
 	fly_tween.tween_property(_attract_punch, "scale", PUNCH_REST_SCALE, FLY_OFF_DURATION).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
@@ -221,6 +224,7 @@ func _play_title_slam() -> void:
 	_slam_tween.tween_property(_title_text, "position:y", _title_text_rest_y, SLAM_DURATION).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	_slam_tween.tween_property(_title_text, "scale", Vector2.ONE, SLAM_DURATION).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	await _slam_tween.finished
+	# TODO: AudioBus.play_sfx(SFX_TITLE_SLAM) once a bespoke title slam clip is authored.
 	# Impact frame: cross-cut music and fire flash simultaneously.
 	AudioBus.play_music("title_main_loop")
 	_white_flash.color.a = 1.0
