@@ -41,6 +41,7 @@ var _attack_step_generation: int = 0
 var _current_prompt: DialoguePrompt
 var _bgm_stream: AudioStream = null
 var _bgm_track_id: String = ""
+var _damage_multiplier: int = 1
 
 const _BLOCK_FLASH_SECONDS := 0.30
 const _DAMAGE_HIT_SECONDS := 0.35
@@ -71,6 +72,9 @@ func _ready() -> void:
 	add_child(_defense)
 	_defense.step_seconds = config.show_phase_step_seconds
 	_defense.input_window_seconds = config.repeat_phase_window_seconds
+	_defense.sequence_growth = config.combo_input_step
+	_combo.set_input_step(config.combo_input_step)
+	_damage_multiplier = max(1, config.damage_multiplier)
 	_defense.step_flashed.connect(_on_step_flashed)
 	_defense.step_blocked.connect(_on_step_blocked)
 	_defense.damage_taken.connect(_on_damage_taken)
@@ -290,7 +294,7 @@ func _on_damage_taken(expected_direction: int) -> void:
 	_prompts.flash_fail(expected_direction, _DAMAGE_HIT_SECONDS)
 	# Punch lands at the direction the player failed to block; gloves stay idle.
 	_swing_opponent_for(expected_direction)
-	_hearts.take_damage()
+	_hearts.take_damage(_damage_multiplier)
 	AudioBus.play_sfx("player_block_or_hit")
 	AudioBus.play_sfx("input_failure")
 	if _combo.level() > 1:
@@ -404,9 +408,11 @@ func _on_attack_step_landed(index: int) -> void:
 	# Layered punch beat: player swing + body impact + the combo-position cue.
 	# Index 0/1/2 within the attack sequence maps to the 1st/2nd/3rd combo_success
 	# file, so a 3-hit finisher escalates audibly across its three keystrokes.
+	# Clamp at the 3rd cue for high-input-step opponents (e.g. Sebastian) whose
+	# finisher chain exceeds three hits — only three combo_success_*.wav exist.
 	AudioBus.play_sfx("swing")
 	AudioBus.play_sfx("opponent_punch_body")
-	AudioBus.play_sfx("combo_success_%d_hit" % (index + 1))
+	AudioBus.play_sfx("combo_success_%d_hit" % min(index + 1, 3))
 	var direction: int = _attack.current_sequence().steps()[index]
 	_attack_step_generation += 1
 	var my_generation := _attack_step_generation
@@ -545,7 +551,7 @@ func _on_answer_submitted(outcome: int) -> void:
 			assert(_defense.current_sequence().length() > 0, "WRONG submitted with empty Simon chain")
 			var hit_direction: int = _defense.current_sequence().steps()[0]
 			_swing_opponent_for(hit_direction)
-			_hearts.take_damage()
+			_hearts.take_damage(_damage_multiplier)
 			AudioBus.play_sfx("player_block_or_hit")
 			if _combo.level() > 1:
 				AudioBus.play_sfx("combo_reset")
