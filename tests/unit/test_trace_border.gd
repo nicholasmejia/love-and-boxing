@@ -50,3 +50,38 @@ func test_trail_color_midpoint_alpha_between_zero_and_one():
 	var c = tb._trail_color(mid)
 	assert_gt(c.a, 0.0, "mid alpha must be > 0")
 	assert_lt(c.a, 1.0, "mid alpha must be < 1")
+
+func test_play_trace_activates_and_resets_progress():
+	var tb = _make_trace(188.0, 188.0)
+	tb._progress = 0.7
+	tb._active = false
+	tb.play_trace()
+	assert_true(tb._active, "play_trace must set _active = true")
+	assert_eq(tb._progress, 0.0, "play_trace must reset _progress to 0")
+
+func test_stop_trace_deactivates():
+	var tb = _make_trace(188.0, 188.0)
+	tb._active = true
+	tb._progress = 0.5
+	tb.stop_trace()
+	assert_false(tb._active, "stop_trace must set _active = false")
+
+func test_process_advances_progress_when_active():
+	var tb = _make_trace(188.0, 188.0)
+	tb.play_trace()
+	tb._advance(0.05)  # 0.05 / 0.20 = 0.25
+	assert_almost_eq(tb._progress, 0.25, 0.001)
+	assert_true(tb._active)
+
+func test_process_deactivates_when_progress_reaches_one():
+	var tb = _make_trace(188.0, 188.0)
+	tb.play_trace()
+	tb._advance(TB._LAP_SECONDS)
+	assert_false(tb._active, "_active must clear once a full lap completes")
+
+func test_process_noop_when_inactive():
+	var tb = _make_trace(188.0, 188.0)
+	tb._active = false
+	tb._progress = 0.0
+	tb._advance(0.10)
+	assert_eq(tb._progress, 0.0, "_advance must not move progress when inactive")

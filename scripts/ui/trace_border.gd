@@ -34,3 +34,35 @@ func _trail_color(i: int) -> Color:
 	if u < 0.5:
 		return _HEAD_COLOR.lerp(_MID_COLOR, u * 2.0)
 	return _MID_COLOR.lerp(_TAIL_COLOR, (u - 0.5) * 2.0)
+
+var _active: bool = false
+var _progress: float = 0.0
+
+func _ready() -> void:
+	mouse_filter = MOUSE_FILTER_IGNORE
+	set_anchors_preset(Control.PRESET_FULL_RECT)
+
+func play_trace() -> void:
+	_progress = 0.0
+	_active = true
+	queue_redraw()
+
+func stop_trace() -> void:
+	_active = false
+	queue_redraw()
+
+func _process(delta: float) -> void:
+	if not _active:
+		return
+	_advance(delta)
+	queue_redraw()
+
+# Pure state-machine step extracted from _process so unit tests can drive
+# progress without depending on the SceneTree.
+func _advance(delta: float) -> void:
+	if not _active:
+		return
+	_progress += delta / _LAP_SECONDS
+	if _progress >= 1.0:
+		_progress = 1.0
+		_active = false
