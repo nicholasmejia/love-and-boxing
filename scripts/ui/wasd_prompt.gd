@@ -105,6 +105,7 @@ var _active_tween: Tween
 # display — protects against Godot's tween-kill semantics emitting (or not
 # emitting) the `finished` signal in ways that race with the next animation.
 var _display_generation: int = 0
+@onready var _trace: TraceBorder = $TraceBorder
 
 func _ready() -> void:
 	_rest_scale = scale
@@ -163,9 +164,11 @@ func hide_prompt() -> void:
 	_display_generation += 1  # invalidate any in-flight display coroutine
 	_reset_to_clean_state()
 	visible = false
+	_trace.stop_trace()
 
 func _animate_prompt_pulse(duration_seconds: float) -> void:
 	_reset_to_clean_state()
+	_trace.play_trace()
 	visible = true
 	var total_in := _PROMPT_PULSE_OUT_SECONDS + _PROMPT_PULSE_SETTLE_SECONDS
 	# Clamp hold to 0 — at the fastest difficulty (~0.35s step budget), the
@@ -349,6 +352,8 @@ func _reset_to_clean_state() -> void:
 	scale = Vector2.ZERO
 	rotation = 0.0
 	modulate.a = 0.0
+	if _trace != null:
+		_trace.stop_trace()
 
 func _kill_active_tween() -> void:
 	if _active_tween and _active_tween.is_valid():
