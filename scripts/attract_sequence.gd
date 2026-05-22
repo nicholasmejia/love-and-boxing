@@ -12,20 +12,27 @@ const SLAM_START_SCALE := Vector2(1.3, 1.3)
 const FLASH_DECAY := 0.25                       # white → clear
 
 # Slide-In (phase 1) — strict sequential: Tofu → Minty → Sebastian
-const SLIDE_IN_PER_CHARACTER := 1.7             # 1.7s × 3 = 5.1 total
+const SLIDE_IN_PER_CHARACTER := 1.0             # 1.0s × 3 = 3.0 total (snappier landing)
 const SLIDE_IN_DISTANCE := 1400.0               # px; off-screen start offset
-const SLIDE_IN_TRANS := Tween.TRANS_BACK
+const SLIDE_IN_TRANS := Tween.TRANS_QUART       # clean decel, minimal overshoot
 const SLIDE_IN_EASE := Tween.EASE_OUT
 
+# Pre-Punch Hold — pennants sit assembled at rest before the punch fires
+const PRE_PUNCH_HOLD := 2.0
+
 # Attract Punch (phase 2)
-const PUNCH_DURATION := 1.6                     # 5.1 → 6.7
-const PUNCH_GROW_DURATION := 0.5                # punch wind-up before pennants fly
-const PUNCH_PEAK_SCALE := Vector2(1.6, 1.6)
+const PUNCH_DURATION := 1.7                     # 5.0 → 6.7
+const PUNCH_GROW_DURATION := 0.2                # punch wind-up (2.5× faster than before)
+const PUNCH_PEAK_SCALE := Vector2(2.5, 2.5)     # more aggressive growth
 const PUNCH_REST_SCALE := Vector2(1.0, 1.0)
 const PUNCH_FADE_OVERLAP := 0.6                 # fades to 0 during early camera pan
-const FLY_OFF_DURATION := 1.1                   # 5.6 → 6.7 (after grow start at +0.5)
-const FLY_OFF_DISTANCE := 1400.0                # px; how far each pennant travels
-const FLY_OFF_SPIN_DEGREES := 180.0
+const FLY_OFF_DURATION := 1.5                   # rise + fall; heavier airborne feel
+const FLY_RISE_DURATION := 0.6                  # impact → apex (decelerating)
+const FLY_FALL_DURATION := 0.9                  # apex → off-screen below (gravity)
+const FLY_APEX_OFFSET_Y := -500.0               # how high above rest the pennants peak
+const FLY_FINAL_DROP := 1400.0                  # how far below rest they fall (off-screen)
+const FLY_HORIZONTAL_SPREAD := 200.0            # sideways drift at apex per pennant
+const FLY_OFF_SPIN_DEGREES := 180.0             # half-rotation tumble (heavy, slow)
 
 # Camera Pan (phase 3)
 const PAN_DURATION := 4.3                       # 6.7 → 11.0
@@ -35,8 +42,8 @@ const PAN_TRANS := Tween.TRANS_SINE
 const PAN_EASE := Tween.EASE_OUT
 
 # Phase windows (cumulative time-since-scene-start)
-const SLIDE_IN_TOTAL := SLIDE_IN_PER_CHARACTER * 3.0                                          # 5.1
-const PUNCH_START_TIME := SLIDE_IN_TOTAL                                                       # 5.1
+const SLIDE_IN_TOTAL := SLIDE_IN_PER_CHARACTER * 3.0                                          # 3.0
+const PUNCH_START_TIME := SLIDE_IN_TOTAL + PRE_PUNCH_HOLD                                      # 5.0
 const PAN_START_TIME := PUNCH_START_TIME + PUNCH_DURATION                                      # 6.7
 const SLAM_START_TIME := TITLE_INTRO_LENGTH - SLAM_DURATION                                    # 11.0
 # Invariant: PAN_START_TIME + PAN_DURATION == SLAM_START_TIME (asserted in _ready).
@@ -123,6 +130,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _run_sequence() -> void:
 	await _play_slide_in()
+	await get_tree().create_timer(PRE_PUNCH_HOLD).timeout
 	await _play_attract_punch()
 	_start_punch_fadeout()
 	await _play_camera_pan()
@@ -197,18 +205,27 @@ func _play_attract_punch() -> void:
 	await grow_tween.finished
 	AudioBus.play_sfx(SFX_PUNCH_IMPACT)
 	AudioBus.play_sfx(SFX_PENNANT_FLYOFF)
-	# Impact: pennants begin spin + fly-off; punch starts shrinking back.
-	var fly_tween := create_tween().set_parallel(true)
-	fly_tween.tween_property(_attract_punch, "scale", PUNCH_REST_SCALE, FLY_OFF_DURATION).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
-	_schedule_pennant_flyoff(fly_tween, _pennant_tofu, Vector2(-1.0, -0.6).normalized(), -FLY_OFF_SPIN_DEGREES)
-	_schedule_pennant_flyoff(fly_tween, _pennant_minty, Vector2(1.0, -0.6).normalized(), FLY_OFF_SPIN_DEGREES)
-	_schedule_pennant_flyoff(fly_tween, _pennant_sebastian, Vector2(0.0, 1.0).normalized(), FLY_OFF_SPIN_DEGREES)
-	await fly_tween.finished
+	# Impact: pennants get tossed straight up, arc, then fall off-screen.
+	# Punch shrinks back during the same window.
+	var punch_shrink := create_tween()
+	punch_shrink.tween_property(_attract_punch, "scale", PUNCH_REST_SCALE, FLY_OFF_DURATION).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
+	_toss_pennant(_pennant_tofu, -FLY_HORIZONTAL_SPREAD, -FLY_OFF_SPIN_DEGREES)
+	_toss_pennant(_pennant_minty, FLY_HORIZONTAL_SPREAD, FLY_OFF_SPIN_DEGREES)
+	_toss_pennant(_pennant_sebastian, 0.0, FLY_OFF_SPIN_DEGREES)
+	await punch_shrink.finished
 
-func _schedule_pennant_flyoff(tween: Tween, pennant: TextureRect, direction: Vector2, spin_degrees: float) -> void:
-	var target_position := pennant.position + direction * FLY_OFF_DISTANCE
-	tween.tween_property(pennant, "position", target_position, FLY_OFF_DURATION).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
-	tween.tween_property(pennant, "rotation_degrees", spin_degrees, FLY_OFF_DURATION).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+func _toss_pennant(pennant: TextureRect, x_drift: float, spin_degrees: float) -> void:
+	# Two-stage arc: rise to apex (EASE_OUT, decelerating against "gravity"),
+	# then fall off-screen below (EASE_IN, gravity-accelerated). Spin runs in
+	# parallel at a linear rate for a slow, heavy tumble.
+	var start_pos := pennant.position
+	var apex := Vector2(start_pos.x + x_drift * 0.5, start_pos.y + FLY_APEX_OFFSET_Y)
+	var end_pos := Vector2(start_pos.x + x_drift, start_pos.y + FLY_FINAL_DROP)
+	var arc := create_tween()
+	arc.tween_property(pennant, "position", apex, FLY_RISE_DURATION).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	arc.tween_property(pennant, "position", end_pos, FLY_FALL_DURATION).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	var spin := create_tween()
+	spin.tween_property(pennant, "rotation_degrees", spin_degrees, FLY_OFF_DURATION).set_trans(Tween.TRANS_LINEAR)
 
 func _start_punch_fadeout() -> void:
 	var fade := create_tween()
