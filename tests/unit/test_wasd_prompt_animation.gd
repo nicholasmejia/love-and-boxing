@@ -30,3 +30,60 @@ func test_toss_horizontal_for_directions():
 	assert_eq(WP.toss_horizontal_for(SimonSequence.Direction.RIGHT), -WP._ATTACK_HIT_TOSS_HORIZ_HOOK_PX, "D → -80 (right hook flies left)")
 	assert_eq(WP.toss_horizontal_for(SimonSequence.Direction.HEAD), -WP._ATTACK_HIT_TOSS_HORIZ_JAB_PX, "W → -40 (head jab flies left)")
 	assert_eq(WP.toss_horizontal_for(SimonSequence.Direction.BODY), WP._ATTACK_HIT_TOSS_HORIZ_JAB_PX, "S → +40 (body jab flies right)")
+
+const WP_SCENE = preload("res://scenes/ui/wasd_prompt.tscn")
+
+func test_prompt_variant_plays_trace():
+	var wp = WP_SCENE.instantiate()
+	add_child_autofree(wp)
+	await get_tree().process_frame
+	wp.display(SimonSequence.Direction.HEAD, WP.Variant.PROMPT, 0.5)
+	await get_tree().process_frame
+	assert_true(wp._trace._active, "PROMPT variant must activate trace")
+	wp.hide_prompt()
+
+func test_success_variant_does_not_play_trace():
+	var wp = WP_SCENE.instantiate()
+	add_child_autofree(wp)
+	await get_tree().process_frame
+	wp.display(SimonSequence.Direction.HEAD, WP.Variant.SUCCESS, 0.5)
+	await get_tree().process_frame
+	assert_false(wp._trace._active, "SUCCESS variant must NOT activate trace")
+	wp.hide_prompt()
+
+func test_fail_variant_does_not_play_trace():
+	var wp = WP_SCENE.instantiate()
+	add_child_autofree(wp)
+	await get_tree().process_frame
+	wp.display(SimonSequence.Direction.HEAD, WP.Variant.FAIL, 0.5)
+	await get_tree().process_frame
+	assert_false(wp._trace._active, "FAIL variant must NOT activate trace")
+	wp.hide_prompt()
+
+func test_success_attack_variant_does_not_play_trace():
+	var wp = WP_SCENE.instantiate()
+	add_child_autofree(wp)
+	await get_tree().process_frame
+	wp.display(SimonSequence.Direction.HEAD, WP.Variant.SUCCESS_ATTACK, 0.5)
+	await get_tree().process_frame
+	assert_false(wp._trace._active, "SUCCESS_ATTACK variant must NOT activate trace")
+	wp.hide_prompt()
+
+func test_fail_attack_variant_does_not_play_trace():
+	var wp = WP_SCENE.instantiate()
+	add_child_autofree(wp)
+	await get_tree().process_frame
+	wp.display(SimonSequence.Direction.HEAD, WP.Variant.FAIL_ATTACK, 0.5)
+	await get_tree().process_frame
+	assert_false(wp._trace._active, "FAIL_ATTACK variant must NOT activate trace")
+	wp.hide_prompt()
+
+func test_hide_prompt_stops_trace():
+	var wp = WP_SCENE.instantiate()
+	add_child_autofree(wp)
+	await get_tree().process_frame
+	wp.display(SimonSequence.Direction.HEAD, WP.Variant.PROMPT, 0.5)
+	await get_tree().process_frame
+	assert_true(wp._trace._active)
+	wp.hide_prompt()
+	assert_false(wp._trace._active, "hide_prompt must stop trace")
