@@ -11,6 +11,16 @@ const SLAM_START_OFFSET_Y := -800.0             # off-screen above
 const SLAM_START_SCALE := Vector2(1.3, 1.3)
 const FLASH_DECAY := 0.25                       # white → clear
 
+# Attract Punch (phase 2)
+const PUNCH_DURATION := 1.6                     # 5.1 → 6.7
+const PUNCH_GROW_DURATION := 0.5                # punch wind-up before pennants fly
+const PUNCH_PEAK_SCALE := Vector2(1.6, 1.6)
+const PUNCH_REST_SCALE := Vector2(1.0, 1.0)
+const PUNCH_FADE_OVERLAP := 0.6                 # fades to 0 during early camera pan
+const FLY_OFF_DURATION := 1.1                   # 5.6 → 6.7 (after grow start at +0.5)
+const FLY_OFF_DISTANCE := 1400.0                # px; how far each pennant travels
+const FLY_OFF_SPIN_DEGREES := 180.0
+
 # Camera Pan (phase 3)
 const PAN_DURATION := 4.3                       # 6.7 → 11.0
 const PAN_BACKGROUND_RISE := 200.0              # px; background starts this far below rest
@@ -18,9 +28,10 @@ const PAN_FOREGROUND_MULTIPLIER := 1.6          # foreground rises this much fas
 const PAN_TRANS := Tween.TRANS_SINE
 const PAN_EASE := Tween.EASE_OUT
 
-# Phase windows (computed from durations — cumulative time-since-scene-start)
-const PAN_START_TIME := TITLE_INTRO_LENGTH - SLAM_DURATION - PAN_DURATION   # 6.7
-const SLAM_START_TIME := TITLE_INTRO_LENGTH - SLAM_DURATION                  # 11.0
+# Phase windows (cumulative time-since-scene-start)
+const PUNCH_START_TIME := TITLE_INTRO_LENGTH - SLAM_DURATION - PAN_DURATION - PUNCH_DURATION  # 5.1
+const PAN_START_TIME := TITLE_INTRO_LENGTH - SLAM_DURATION - PAN_DURATION                     # 6.7
+const SLAM_START_TIME := TITLE_INTRO_LENGTH - SLAM_DURATION                                    # 11.0
 
 # Settle Hold (phase 5)
 const SETTLE_HOLD := 2.0
@@ -55,6 +66,10 @@ var _slam_tween: Tween = null
 @onready var _title_tofu: TextureRect = $TitleTofu
 @onready var _title_minty: TextureRect = $TitleMinty
 @onready var _title_sebastian: TextureRect = $TitleSebastian
+@onready var _attract_punch: TextureRect = $AttractPunch
+@onready var _pennant_tofu: TextureRect = $PennantTofu
+@onready var _pennant_minty: TextureRect = $PennantMinty
+@onready var _pennant_sebastian: TextureRect = $PennantSebastian
 
 var _bg_rest_y: float
 var _ring_rest_y: float
@@ -70,6 +85,7 @@ func _ready() -> void:
 	_press_k.modulate.a = 0.0  # hidden until phase 6
 	_prepare_title_text_offscreen()
 	_prepare_camera_pan_offscreen()
+	_prepare_attract_punch()
 	AudioBus.play_music("title_intro")
 	_run_sequence()
 
@@ -82,9 +98,11 @@ func _unhandled_input(event: InputEvent) -> void:
 # ── Phase orchestration ──────────────────────────────────────────────────────
 
 func _run_sequence() -> void:
-	# Phases 1–2 are placeholder waits in this task — Tasks 7/8 fill them in.
-	# Their cumulative duration must equal PAN_START_TIME.
-	await get_tree().create_timer(PAN_START_TIME).timeout
+	# Phase 1 (Slide-In) is still placeholder in this task — Task 8 fills it in.
+	# Its duration must equal PUNCH_START_TIME.
+	await get_tree().create_timer(PUNCH_START_TIME).timeout
+	await _play_attract_punch()
+	_start_punch_fadeout()
 	await _play_camera_pan()
 	await _play_title_slam()
 	await _settle_hold()
@@ -108,6 +126,36 @@ func _prepare_camera_pan_offscreen() -> void:
 	_title_tofu.position.y = _tofu_rest_y + fg_rise
 	_title_minty.position.y = _minty_rest_y + fg_rise
 	_title_sebastian.position.y = _sebastian_rest_y + fg_rise
+
+func _prepare_attract_punch() -> void:
+	_attract_punch.scale = PUNCH_REST_SCALE
+	_attract_punch.modulate.a = 1.0
+	_attract_punch.pivot_offset = _attract_punch.size * 0.5
+	for pennant in [_pennant_tofu, _pennant_minty, _pennant_sebastian]:
+		pennant.pivot_offset = pennant.size * 0.5
+
+func _play_attract_punch() -> void:
+	_phase = Phase.ATTRACT_PUNCH
+	# Wind-up: punch grows from behind the pennant composite.
+	var grow_tween := create_tween()
+	grow_tween.tween_property(_attract_punch, "scale", PUNCH_PEAK_SCALE, PUNCH_GROW_DURATION).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	await grow_tween.finished
+	# Impact: pennants begin spin + fly-off; punch starts shrinking back.
+	var fly_tween := create_tween().set_parallel(true)
+	fly_tween.tween_property(_attract_punch, "scale", PUNCH_REST_SCALE, FLY_OFF_DURATION).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
+	_schedule_pennant_flyoff(fly_tween, _pennant_tofu, Vector2(-1.0, -0.6).normalized(), -FLY_OFF_SPIN_DEGREES)
+	_schedule_pennant_flyoff(fly_tween, _pennant_minty, Vector2(1.0, -0.6).normalized(), FLY_OFF_SPIN_DEGREES)
+	_schedule_pennant_flyoff(fly_tween, _pennant_sebastian, Vector2(0.0, 1.0).normalized(), FLY_OFF_SPIN_DEGREES)
+	await fly_tween.finished
+
+func _schedule_pennant_flyoff(tween: Tween, pennant: TextureRect, direction: Vector2, spin_degrees: float) -> void:
+	var target_position := pennant.position + direction * FLY_OFF_DISTANCE
+	tween.tween_property(pennant, "position", target_position, FLY_OFF_DURATION).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tween.tween_property(pennant, "rotation_degrees", spin_degrees, FLY_OFF_DURATION).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+
+func _start_punch_fadeout() -> void:
+	var fade := create_tween()
+	fade.tween_property(_attract_punch, "modulate:a", 0.0, PUNCH_FADE_OVERLAP).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 
 func _play_camera_pan() -> void:
 	_phase = Phase.CAMERA_PAN

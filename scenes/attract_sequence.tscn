@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3 uid="uid://b4bbc836aa211"]
+[gd_scene load_steps=12 format=3 uid="uid://b4bbc836aa211"]
 
 [ext_resource type="Script" path="res://scripts/attract_sequence.gd" id="1_attract"]
 [ext_resource type="Texture2D" path="res://assets/sprites/title/title_background.png" id="2_bg"]
@@ -7,6 +7,10 @@
 [ext_resource type="Texture2D" path="res://assets/sprites/title/title_minty.png" id="5_minty"]
 [ext_resource type="Texture2D" path="res://assets/sprites/title/title_sebastian.png" id="6_sebastian"]
 [ext_resource type="Texture2D" path="res://assets/sprites/title/title_text.png" id="7_text"]
+[ext_resource type="Texture2D" path="res://assets/sprites/title/attract_punch.png" id="8_punch"]
+[ext_resource type="Texture2D" path="res://assets/sprites/title/attraction_tofu_slide_in.png" id="9_pennant_tofu"]
+[ext_resource type="Texture2D" path="res://assets/sprites/title/attraction_minty_slide_in.png" id="10_pennant_minty"]
+[ext_resource type="Texture2D" path="res://assets/sprites/title/attraction_sebastian_slide_in.png" id="11_pennant_sebastian"]
 
 [node name="AttractSequence" type="Control"]
 layout_mode = 3
@@ -119,6 +123,82 @@ mouse_filter = 2
 texture = ExtResource("7_text")
 expand_mode = 1
 stretch_mode = 5
+
+[node name="AttractPunch" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -300.0
+offset_top = -300.0
+offset_right = 300.0
+offset_bottom = 300.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("8_punch")
+expand_mode = 1
+stretch_mode = 5
+pivot_offset = Vector2(300, 300)
+
+[node name="PennantTofu" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -540.0
+offset_top = -360.0
+offset_right = -140.0
+offset_bottom = 40.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("9_pennant_tofu")
+expand_mode = 1
+stretch_mode = 5
+pivot_offset = Vector2(200, 200)
+
+[node name="PennantMinty" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = 140.0
+offset_top = -360.0
+offset_right = 540.0
+offset_bottom = 40.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("10_pennant_minty")
+expand_mode = 1
+stretch_mode = 5
+pivot_offset = Vector2(200, 200)
+
+[node name="PennantSebastian" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -200.0
+offset_top = 40.0
+offset_right = 200.0
+offset_bottom = 440.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("11_pennant_sebastian")
+expand_mode = 1
+stretch_mode = 5
+pivot_offset = Vector2(200, 200)
 
 [node name="PressK" type="Label" parent="."]
 layout_mode = 1
