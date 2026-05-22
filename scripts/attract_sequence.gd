@@ -7,10 +7,20 @@ const MAIN_MENU_FADE_DURATION := 0.4
 
 # Title Slam (phase 4)
 const SLAM_DURATION := 0.636                    # 11.0 → 11.636
-const SLAM_START_TIME := TITLE_INTRO_LENGTH - SLAM_DURATION
 const SLAM_START_OFFSET_Y := -800.0             # off-screen above
 const SLAM_START_SCALE := Vector2(1.3, 1.3)
 const FLASH_DECAY := 0.25                       # white → clear
+
+# Camera Pan (phase 3)
+const PAN_DURATION := 4.3                       # 6.7 → 11.0
+const PAN_BACKGROUND_RISE := 200.0              # px; background starts this far below rest
+const PAN_FOREGROUND_MULTIPLIER := 1.6          # foreground rises this much faster
+const PAN_TRANS := Tween.TRANS_SINE
+const PAN_EASE := Tween.EASE_OUT
+
+# Phase windows (computed from durations — cumulative time-since-scene-start)
+const PAN_START_TIME := TITLE_INTRO_LENGTH - SLAM_DURATION - PAN_DURATION   # 6.7
+const SLAM_START_TIME := TITLE_INTRO_LENGTH - SLAM_DURATION                  # 11.0
 
 # Settle Hold (phase 5)
 const SETTLE_HOLD := 2.0
@@ -40,6 +50,17 @@ var _slam_tween: Tween = null
 @onready var _press_k: Label = $PressK
 @onready var _white_flash: ColorRect = $WhiteFlash
 @onready var _fade_overlay: ColorRect = $FadeOverlay
+@onready var _title_background: TextureRect = $TitleBackground
+@onready var _title_ring: TextureRect = $TitleRing
+@onready var _title_tofu: TextureRect = $TitleTofu
+@onready var _title_minty: TextureRect = $TitleMinty
+@onready var _title_sebastian: TextureRect = $TitleSebastian
+
+var _bg_rest_y: float
+var _ring_rest_y: float
+var _tofu_rest_y: float
+var _minty_rest_y: float
+var _sebastian_rest_y: float
 
 func _ready() -> void:
 	_fade_overlay.color = Color(0, 0, 0, 0)
@@ -48,6 +69,7 @@ func _ready() -> void:
 	_white_flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_press_k.modulate.a = 0.0  # hidden until phase 6
 	_prepare_title_text_offscreen()
+	_prepare_camera_pan_offscreen()
 	AudioBus.play_music("title_intro")
 	_run_sequence()
 
@@ -60,9 +82,10 @@ func _unhandled_input(event: InputEvent) -> void:
 # ── Phase orchestration ──────────────────────────────────────────────────────
 
 func _run_sequence() -> void:
-	# Phases 1–3 are placeholder waits in this task — Tasks 6/7/8 fill them in.
-	# Their cumulative duration must equal SLAM_START_TIME.
-	await get_tree().create_timer(SLAM_START_TIME).timeout
+	# Phases 1–2 are placeholder waits in this task — Tasks 7/8 fill them in.
+	# Their cumulative duration must equal PAN_START_TIME.
+	await get_tree().create_timer(PAN_START_TIME).timeout
+	await _play_camera_pan()
 	await _play_title_slam()
 	await _settle_hold()
 	_enter_press_k_flash()
@@ -71,6 +94,31 @@ func _prepare_title_text_offscreen() -> void:
 	_title_text.pivot_offset = _title_text.size * 0.5
 	_title_text.position.y += SLAM_START_OFFSET_Y
 	_title_text.scale = SLAM_START_SCALE
+
+func _prepare_camera_pan_offscreen() -> void:
+	_bg_rest_y = _title_background.position.y
+	_ring_rest_y = _title_ring.position.y
+	_tofu_rest_y = _title_tofu.position.y
+	_minty_rest_y = _title_minty.position.y
+	_sebastian_rest_y = _title_sebastian.position.y
+	_title_background.position.y = _bg_rest_y + PAN_BACKGROUND_RISE
+	_title_background.modulate.a = 0.0
+	var fg_rise := PAN_BACKGROUND_RISE * PAN_FOREGROUND_MULTIPLIER
+	_title_ring.position.y = _ring_rest_y + fg_rise
+	_title_tofu.position.y = _tofu_rest_y + fg_rise
+	_title_minty.position.y = _minty_rest_y + fg_rise
+	_title_sebastian.position.y = _sebastian_rest_y + fg_rise
+
+func _play_camera_pan() -> void:
+	_phase = Phase.CAMERA_PAN
+	var pan_tween := create_tween().set_parallel(true)
+	pan_tween.tween_property(_title_background, "position:y", _bg_rest_y, PAN_DURATION).set_trans(PAN_TRANS).set_ease(PAN_EASE)
+	pan_tween.tween_property(_title_background, "modulate:a", 1.0, PAN_DURATION).set_trans(PAN_TRANS).set_ease(PAN_EASE)
+	pan_tween.tween_property(_title_ring, "position:y", _ring_rest_y, PAN_DURATION).set_trans(PAN_TRANS).set_ease(PAN_EASE)
+	pan_tween.tween_property(_title_tofu, "position:y", _tofu_rest_y, PAN_DURATION).set_trans(PAN_TRANS).set_ease(PAN_EASE)
+	pan_tween.tween_property(_title_minty, "position:y", _minty_rest_y, PAN_DURATION).set_trans(PAN_TRANS).set_ease(PAN_EASE)
+	pan_tween.tween_property(_title_sebastian, "position:y", _sebastian_rest_y, PAN_DURATION).set_trans(PAN_TRANS).set_ease(PAN_EASE)
+	await pan_tween.finished
 
 func _play_title_slam() -> void:
 	_phase = Phase.TITLE_SLAM
