@@ -13,6 +13,7 @@ signal damage_taken(expected_direction: int)
 @export var gap_seconds: float = 0.25
 @export var interlude_seconds: float = 2.0
 @export var input_window_seconds: float = 3.0
+@export var sequence_growth: int = 1
 
 var _sequence: SimonSequence = SimonSequence.new()
 var _running: bool = false
@@ -106,7 +107,8 @@ func replay() -> void:
 func _begin_next_round() -> void:
 	if not _running:
 		return
-	_sequence.extend()
+	for _i in max(1, sequence_growth):
+		_sequence.extend()
 	_run_show_then_repeat()
 
 func _run_show_then_repeat() -> void:

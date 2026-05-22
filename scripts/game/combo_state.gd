@@ -5,12 +5,16 @@ const MIN_LEVEL := 1
 const KNOCKDOWN_LEVEL := 3
 
 var _level: int = MIN_LEVEL
+var _input_step: int = 1
 
 func level() -> int:
 	return _level
 
+func set_input_step(step: int) -> void:
+	_input_step = max(1, step)
+
 func input_count() -> int:
-	return _level
+	return 1 + _input_step * (_level - 1)
 
 func is_at_knockdown_threshold() -> bool:
 	return _level >= KNOCKDOWN_LEVEL

@@ -8,8 +8,8 @@ var _current: int = MAX_HEARTS
 func current() -> int:
 	return _current
 
-func take_damage() -> void:
-	_current = max(0, _current - 1)
+func take_damage(amount: int = 1) -> void:
+	_current = max(0, _current - amount)
 
 func heal() -> void:
 	_current = min(MAX_HEARTS, _current + 1)

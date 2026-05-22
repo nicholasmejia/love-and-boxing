@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="DialoguePrompt" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/game/dialogue_prompt.gd" id="1_prompt"]
+[ext_resource type="Script" path="res://scripts/game/dialogue_answer.gd" id="2_answer"]
+
+[sub_resource type="Resource" id="ans_right"]
+script = ExtResource("2_answer")
+text = "*tackles mid-twitch*"
+outcome = 2
+reaction_text = "TACTICAL DEVIATION! I — I respect this!"
+
+[sub_resource type="Resource" id="ans_neutral"]
+script = ExtResource("2_answer")
+text = "Your watch needs a battery."
+outcome = 1
+reaction_text = "Slander against precision. Unacceptable."
+
+[sub_resource type="Resource" id="ans_wrong"]
+script = ExtResource("2_answer")
+text = "Relax. It’s four seconds."
+outcome = 0
+reaction_text = "ONLY?! ONLY?! YOU ARE A MONSTER!"
+
+[resource]
+script = ExtResource("1_prompt")
+body_text = "Sebastian’s watch chimes. His routine is off by four seconds. His eye twitches violently. “Explain. Now. Why has the clock betrayed me.”"
+answers = Array[Resource]([SubResource("ans_right"), SubResource("ans_neutral"), SubResource("ans_wrong")])

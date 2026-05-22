@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="DialoguePrompt" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/game/dialogue_prompt.gd" id="1_prompt"]
+[ext_resource type="Script" path="res://scripts/game/dialogue_answer.gd" id="2_answer"]
+
+[sub_resource type="Resource" id="ans_right"]
+script = ExtResource("2_answer")
+text = "Tell me about that mouthguard."
+outcome = 2
+reaction_text = "Junior regionals. I was fifteen. *quiet*. Thank you."
+
+[sub_resource type="Resource" id="ans_neutral"]
+script = ExtResource("2_answer")
+text = "Looks important."
+outcome = 1
+reaction_text = "It is. To me. Hmph."
+
+[sub_resource type="Resource" id="ans_wrong"]
+script = ExtResource("2_answer")
+text = "Why is it so chewed?"
+outcome = 0
+reaction_text = "DO NOT INTERROGATE THE BITE MARKS."
+
+[resource]
+script = ExtResource("1_prompt")
+body_text = "Sebastian removes his mouthguard. Sets it on the corner stool, gently. Smaller than expected. Yellowed at the edges. Bite marks deep on one side. “Do not ask about this one. …Ask about this one.”"
+answers = Array[Resource]([SubResource("ans_right"), SubResource("ans_neutral"), SubResource("ans_wrong")])

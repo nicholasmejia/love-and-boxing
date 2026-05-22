@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="DialoguePrompt" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/game/dialogue_prompt.gd" id="1_prompt"]
+[ext_resource type="Script" path="res://scripts/game/dialogue_answer.gd" id="2_answer"]
+
+[sub_resource type="Resource" id="ans_right"]
+script = ExtResource("2_answer")
+text = "*locks eye contact, does not blink*"
+outcome = 2
+reaction_text = "Good. He approves. Reluctantly."
+
+[sub_resource type="Resource" id="ans_neutral"]
+script = ExtResource("2_answer")
+text = "*holds gaze for a moment*"
+outcome = 1
+reaction_text = "Brief. But honest."
+
+[sub_resource type="Resource" id="ans_wrong"]
+script = ExtResource("2_answer")
+text = "*looks away, embarrassed*"
+outcome = 0
+reaction_text = "He saw that. He will not forget."
+
+[resource]
+script = ExtResource("1_prompt")
+body_text = "Sebastian points at a conveniently placed mirror in the boxing ring. “Eye contact. With the man in the glass. Do not flinch. He is judging you.”"
+answers = Array[Resource]([SubResource("ans_right"), SubResource("ans_neutral"), SubResource("ans_wrong")])

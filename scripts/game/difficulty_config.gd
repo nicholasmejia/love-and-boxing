@@ -8,3 +8,5 @@ extends Resource
 @export var dialogue_deck_path: String = ""
 @export var animation_profile_path: String = ""
 @export var bgm_track_path: String = ""
+@export var damage_multiplier: int = 1
+@export var combo_input_step: int = 1

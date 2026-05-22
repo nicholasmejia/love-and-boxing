@@ -1,0 +1,27 @@
+[gd_resource type="Resource" script_class="DialoguePrompt" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://scripts/game/dialogue_prompt.gd" id="1_prompt"]
+[ext_resource type="Script" path="res://scripts/game/dialogue_answer.gd" id="2_answer"]
+
+[sub_resource type="Resource" id="ans_right"]
+script = ExtResource("2_answer")
+text = "Black. Same as you."
+outcome = 2
+reaction_text = "Uniform achieved. We are a unit."
+
+[sub_resource type="Resource" id="ans_neutral"]
+script = ExtResource("2_answer")
+text = "Red. For visibility."
+outcome = 1
+reaction_text = "Aggressive. Not wrong."
+
+[sub_resource type="Resource" id="ans_wrong"]
+script = ExtResource("2_answer")
+text = "Lavender. With sparkles."
+outcome = 0
+reaction_text = "I — I am physically ill."
+
+[resource]
+script = ExtResource("1_prompt")
+body_text = "Sebastian gestures, palm down, at his black posing trunks. “Standard issue. Black. Functional. Tell me what you wore the last time you took a stage.”"
+answers = Array[Resource]([SubResource("ans_right"), SubResource("ans_neutral"), SubResource("ans_wrong")])
