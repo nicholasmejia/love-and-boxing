@@ -64,6 +64,10 @@ var _press_k_armed := false
 var _press_k_tween: Tween = null
 var _fade_tween: Tween = null
 var _slam_tween: Tween = null
+var _settle_timer: SceneTreeTimer = null
+var _phase_wait_timer: SceneTreeTimer = null
+var _skip_requested := false
+var _title_text_rest_y: float = 0.0
 
 @onready var _title_text: TextureRect = $TitleText
 @onready var _press_k: Label = $PressK
@@ -101,10 +105,18 @@ func _ready() -> void:
 	_run_sequence()
 
 func _unhandled_input(event: InputEvent) -> void:
-	if _phase == Phase.FADING_OUT:
+	if not event.is_action_pressed("menu_confirm"):
 		return
-	if event.is_action_pressed("menu_confirm") and _press_k_armed:
-		_confirm_to_main_menu()
+	match _phase:
+		Phase.FADING_OUT:
+			return
+		Phase.PRESS_K_FLASH:
+			if _press_k_armed:
+				_confirm_to_main_menu()
+		Phase.SETTLE_HOLD:
+			_fast_forward_settle()
+		Phase.SLIDE_IN, Phase.ATTRACT_PUNCH, Phase.CAMERA_PAN, Phase.TITLE_SLAM:
+			_skip_to_rest()
 
 # ── Phase orchestration ──────────────────────────────────────────────────────
 
@@ -119,6 +131,7 @@ func _run_sequence() -> void:
 
 func _prepare_title_text_offscreen() -> void:
 	_title_text.pivot_offset = _title_text.size * 0.5
+	_title_text_rest_y = _title_text.position.y
 	_title_text.position.y += SLAM_START_OFFSET_Y
 	_title_text.scale = SLAM_START_SCALE
 
@@ -204,9 +217,8 @@ func _play_camera_pan() -> void:
 
 func _play_title_slam() -> void:
 	_phase = Phase.TITLE_SLAM
-	var rest_y := _title_text.position.y - SLAM_START_OFFSET_Y
 	_slam_tween = create_tween().set_parallel(true)
-	_slam_tween.tween_property(_title_text, "position:y", rest_y, SLAM_DURATION).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_slam_tween.tween_property(_title_text, "position:y", _title_text_rest_y, SLAM_DURATION).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	_slam_tween.tween_property(_title_text, "scale", Vector2.ONE, SLAM_DURATION).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	await _slam_tween.finished
 	# Impact frame: cross-cut music and fire flash simultaneously.
@@ -239,3 +251,56 @@ func _confirm_to_main_menu() -> void:
 	_fade_tween = create_tween()
 	_fade_tween.tween_property(_fade_overlay, "color:a", 1.0, MAIN_MENU_FADE_DURATION)
 	_fade_tween.tween_callback(SceneRouter.goto_main_menu)
+
+func _skip_to_rest() -> void:
+	# Snap every animated element to its rest state; cross-cut audio to the main loop;
+	# enter phase 5 entry. Phase 5 still holds for its full SETTLE_HOLD duration.
+	# Note: the original phase coroutine awaits never resume after kill — that's
+	# intentional; they orphan harmlessly and are reaped on scene change.
+	_skip_requested = true
+	_kill_sequence_tweens()
+	# Pennants: hide them (they would have flown off by now in the natural flow).
+	for pennant in [_pennant_tofu, _pennant_minty, _pennant_sebastian]:
+		pennant.modulate.a = 0.0
+	# Punch: hidden.
+	_attract_punch.modulate.a = 0.0
+	# Camera pan endpoints: every layer to rest.
+	_title_background.modulate.a = 1.0
+	_title_background.position.y = _bg_rest_y
+	_title_ring.position.y = _ring_rest_y
+	_title_tofu.position.y = _tofu_rest_y
+	_title_minty.position.y = _minty_rest_y
+	_title_sebastian.position.y = _sebastian_rest_y
+	# Title slam endpoint.
+	_title_text.position.y = _title_text_rest_y
+	_title_text.scale = Vector2.ONE
+	# White flash: brief decay starting now.
+	_white_flash.color.a = 1.0
+	var flash_tween := create_tween()
+	flash_tween.tween_property(_white_flash, "color:a", 0.0, FLASH_DECAY).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	# Audio: hard-start the main loop from t=0.
+	AudioBus.play_music("title_main_loop")
+	# Resume into settle hold from this point.
+	_run_post_skip()
+
+func _fast_forward_settle() -> void:
+	# Cut the settle hold short and jump straight into phase 6.
+	# SceneTreeTimer has no kill API; we drop the ref and directly enter phase 6.
+	_settle_timer = null
+	_skip_requested = true
+	_enter_press_k_flash()
+
+func _run_post_skip() -> void:
+	_phase = Phase.SETTLE_HOLD
+	_settle_timer = get_tree().create_timer(SETTLE_HOLD)
+	await _settle_timer.timeout
+	_settle_timer = null
+	if _phase != Phase.PRESS_K_FLASH:  # only enter if fast-forward didn't already
+		_enter_press_k_flash()
+
+func _kill_sequence_tweens() -> void:
+	# Kill every active tween created on this node. _press_k_tween is left alone —
+	# it only starts in phase 6 (post-skip) and the skip path doesn't touch it.
+	for tween in get_tree().get_processed_tweens():
+		if tween.is_valid():
+			tween.kill()
