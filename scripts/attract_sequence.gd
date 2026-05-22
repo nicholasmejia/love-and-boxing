@@ -34,10 +34,11 @@ const FLY_FINAL_DROP := 1400.0                  # how far below rest they fall (
 const FLY_HORIZONTAL_SPREAD := 200.0            # sideways drift at apex per pennant
 const FLY_OFF_SPIN_DEGREES := 180.0             # half-rotation tumble (heavy, slow)
 
-# Camera Pan (phase 3)
+# Camera Pan (phase 3) — three parallax layers: background, ring, characters
 const PAN_DURATION := 4.3                       # 6.7 → 11.0
-const PAN_BACKGROUND_RISE := 200.0              # px; background starts this far below rest
-const PAN_FOREGROUND_MULTIPLIER := 1.6          # foreground rises this much faster
+const PAN_BACKGROUND_RISE := 200.0              # px; background starts this far below rest (1.0× reference)
+const PAN_RING_MULTIPLIER := 1.6                # ring rises this much faster than background
+const PAN_CHARACTER_MULTIPLIER := 2.4           # characters rise faster still (closest layer)
 const PAN_TRANS := Tween.TRANS_SINE
 const PAN_EASE := Tween.EASE_OUT
 
@@ -152,11 +153,12 @@ func _prepare_camera_pan_offscreen() -> void:
 	_sebastian_rest_y = _title_sebastian.position.y
 	_title_background.position.y = _bg_rest_y + PAN_BACKGROUND_RISE
 	_title_background.modulate.a = 0.0
-	var fg_rise := PAN_BACKGROUND_RISE * PAN_FOREGROUND_MULTIPLIER
-	_title_ring.position.y = _ring_rest_y + fg_rise
-	_title_tofu.position.y = _tofu_rest_y + fg_rise
-	_title_minty.position.y = _minty_rest_y + fg_rise
-	_title_sebastian.position.y = _sebastian_rest_y + fg_rise
+	var ring_rise := PAN_BACKGROUND_RISE * PAN_RING_MULTIPLIER
+	var character_rise := PAN_BACKGROUND_RISE * PAN_CHARACTER_MULTIPLIER
+	_title_ring.position.y = _ring_rest_y + ring_rise
+	_title_tofu.position.y = _tofu_rest_y + character_rise
+	_title_minty.position.y = _minty_rest_y + character_rise
+	_title_sebastian.position.y = _sebastian_rest_y + character_rise
 	# Foreground stand-ups stay invisible until the camera pan reveals them.
 	_title_ring.modulate.a = 0.0
 	_title_tofu.modulate.a = 0.0
