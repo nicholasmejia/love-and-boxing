@@ -5,23 +5,23 @@
 
 [sub_resource type="Resource" id="ans_right"]
 script = ExtResource("2_answer")
-text = "The hearts make it scarier. Getting lovingly demolished has layers."
+text = "They’re cute, but not as cute as ME"
 outcome = 2
-reaction_text = "Lovingly demolished?! That's my brand! I hate that you know my brand!"
+reaction_text = "Finally, a worthy challenger to my OWN cuteness!"
 
 [sub_resource type="Resource" id="ans_neutral"]
 script = ExtResource("2_answer")
-text = "They're cute, but you still seem tough."
+text = "They’re cute, but you still seem tough."
 outcome = 1
 reaction_text = "Seem tough? I am actively kicking you!"
 
 [sub_resource type="Resource" id="ans_wrong"]
 script = ExtResource("2_answer")
-text = "They're cute, so people probably underestimate you."
+text = "They’re cute, so people probably underestimate you."
 outcome = 0
 reaction_text = "No! The hearts are not a disguise! They are part of the violence!"
 
 [resource]
 script = ExtResource("1_prompt")
-body_text = "Minty flashes pink boxing gloves with tiny heart decals. \"Some fighters say these aren't intimidating. Which is rude, because I can absolutely rearrange teeth with a heart theme.\""
+body_text = "Minty flashes pink boxing gloves with tiny heart decals. “Some fighters say these aren’t intimidating. Which is rude, because I can absolutely rearrange teeth with a heart theme.”"
 answers = Array[Resource]([SubResource("ans_right"), SubResource("ans_neutral"), SubResource("ans_wrong")])

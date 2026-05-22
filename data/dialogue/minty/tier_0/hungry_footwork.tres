@@ -5,9 +5,9 @@
 
 [sub_resource type="Resource" id="ans_right"]
 script = ExtResource("2_answer")
-text = "That wasn't a growl. That was your inner champion demanding noodles."
+text = "Maybe your stomach should throw in the towel."
 outcome = 2
-reaction_text = "My inner champion does want noodles… wait, how did you know?!"
+reaction_text = "Nobody tells my stomach to quit except me!"
 
 [sub_resource type="Resource" id="ans_neutral"]
 script = ExtResource("2_answer")
@@ -17,11 +17,11 @@ reaction_text = "Obviously! These kicks are not powered by air!"
 
 [sub_resource type="Resource" id="ans_wrong"]
 script = ExtResource("2_answer")
-text = "Maybe your stomach should throw in the towel."
+text = "That wasn’t a growl. That was your inner champion demanding noodles."
 outcome = 0
-reaction_text = "Nobody tells my stomach to quit except me!"
+reaction_text = "My inner champion does want noodles… wait, how did you know?!"
 
 [resource]
 script = ExtResource("1_prompt")
-body_text = "Minty's stomach growls loud enough to interrupt her combo. She keeps punching anyway. \"Ignore that! My stomach is just also trying to win the match!\""
+body_text = "Minty’s stomach growls loud enough to interrupt her combo. She keeps punching anyway. “Ignore that! My stomach is just also trying to win the match!”"
 answers = Array[Resource]([SubResource("ans_right"), SubResource("ans_neutral"), SubResource("ans_wrong")])

@@ -5,9 +5,9 @@
 
 [sub_resource type="Resource" id="ans_right"]
 script = ExtResource("2_answer")
-text = "Then I'll block what I can, compliment the hair honestly, and earn the dinner later."
+text = "It looks like you worked hard thinning those eyebrows."
 outcome = 2
-reaction_text = "Earn the dinner later?! Dangerous answer. Emotionally dangerous!"
+reaction_text = "I can’t believe you noticed!  No one ever does!"
 
 [sub_resource type="Resource" id="ans_neutral"]
 script = ExtResource("2_answer")
@@ -17,11 +17,11 @@ reaction_text = "Good, yes, correct, but you are still being punched."
 
 [sub_resource type="Resource" id="ans_wrong"]
 script = ExtResource("2_answer")
-text = "I'd lose on purpose if it made the date go better."
+text = "I’d lose on purpose if it made the date go better."
 outcome = 0
 reaction_text = "Lose on purpose? That is not romance, that is fraud with gloves!"
 
 [resource]
 script = ExtResource("1_prompt")
-body_text = "Minty grins and tightens her guard. \"Some girls like candlelit dinners. I like seeing if someone can survive three rounds and still compliment my hair.\""
+body_text = "Minty grins and tightens her guard. “Some girls like candlelit dinners. I like seeing if someone can survive three rounds and still compliment my hair.”"
 answers = Array[Resource]([SubResource("ans_right"), SubResource("ans_neutral"), SubResource("ans_wrong")])

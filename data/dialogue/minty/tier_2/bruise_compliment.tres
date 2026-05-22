@@ -5,23 +5,23 @@
 
 [sub_resource type="Resource" id="ans_right"]
 script = ExtResource("2_answer")
-text = "Princesses can have battle damage. Yours just comes with better footwork."
+text = "That looks pretty bad!"
 outcome = 2
-reaction_text = "Battle princess with footwork…? Oh no. That got through."
+reaction_text = "All I heard was pretty!  Say it again, big fella!"
 
 [sub_resource type="Resource" id="ans_neutral"]
 script = ExtResource("2_answer")
-text = "It doesn't look that bad."
+text = "It doesn’t look that bad."
 outcome = 1
 reaction_text = "That was medical, not romantic."
 
 [sub_resource type="Resource" id="ans_wrong"]
 script = ExtResource("2_answer")
-text = "Don't worry, I still think you look pretty."
+text = "Don’t worry, I still think you look pretty."
 outcome = 0
-reaction_text = "'Still'? STILL?! I heard that little word do a crime!"
+reaction_text = "‘Still’? STILL?! I heard that little word do a crime!"
 
 [resource]
 script = ExtResource("1_prompt")
-body_text = "Minty blocks your strike and laughs, but you notice a bruise on her shoulder. She catches you looking. \"Don't make that face. I know. Not very princessy, right?\""
+body_text = "Minty blocks your strike and laughs, but you notice a bruise on her shoulder. She catches you looking. “Don’t make that face. I know. Not very princessy, right?”"
 answers = Array[Resource]([SubResource("ans_right"), SubResource("ans_neutral"), SubResource("ans_wrong")])

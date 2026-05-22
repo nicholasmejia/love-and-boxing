@@ -5,9 +5,9 @@
 
 [sub_resource type="Resource" id="ans_right"]
 script = ExtResource("2_answer")
-text = "A happy little mutt with a stupid smile. Extremely pettable. Possibly your soulmate."
+text = "Think he would do some deadlifts with us?"
 outcome = 2
-reaction_text = "A stupid smile mutt?! My weakness! I'm compromised!"
+reaction_text = "You can’t threaten either of us with a good time!"
 
 [sub_resource type="Resource" id="ans_neutral"]
 script = ExtResource("2_answer")
@@ -23,5 +23,5 @@ reaction_text = "Bloodhound?! Why would you put that image in my heart?!"
 
 [resource]
 script = ExtResource("1_prompt")
-body_text = "Minty starts a spinning kick, then gasps at something behind you. \"A dog! No, focus! No, wait, what kind? This matters emotionally!\""
+body_text = "Minty starts a spinning kick, then gasps at something behind you. “A dog! Wait, how did that get here?!”"
 answers = Array[Resource]([SubResource("ans_right"), SubResource("ans_neutral"), SubResource("ans_wrong")])
