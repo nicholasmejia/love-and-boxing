@@ -3,9 +3,9 @@
 [ext_resource type="Script" path="res://scripts/ui/wasd_prompt.gd" id="1_wasd"]
 
 [node name="WasdPrompt" type="Control"]
-custom_minimum_size = Vector2(120, 120)
-offset_right = 120.0
-offset_bottom = 120.0
+custom_minimum_size = Vector2(150, 150)
+offset_right = 150.0
+offset_bottom = 150.0
 mouse_filter = 2
 script = ExtResource("1_wasd")
 
@@ -27,7 +27,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_font_sizes/font_size = 72
+theme_override_font_sizes/font_size = 90
 text = ""
 horizontal_alignment = 1
 vertical_alignment = 1
