@@ -1,6 +1,12 @@
-[gd_scene load_steps=2 format=3 uid="uid://b4bbc836aa211"]
+[gd_scene load_steps=8 format=3 uid="uid://b4bbc836aa211"]
 
 [ext_resource type="Script" path="res://scripts/attract_sequence.gd" id="1_attract"]
+[ext_resource type="Texture2D" path="res://assets/sprites/title/title_background.png" id="2_bg"]
+[ext_resource type="Texture2D" path="res://assets/sprites/title/title_ring.png" id="3_ring"]
+[ext_resource type="Texture2D" path="res://assets/sprites/title/title_tofu.png" id="4_tofu"]
+[ext_resource type="Texture2D" path="res://assets/sprites/title/title_minty.png" id="5_minty"]
+[ext_resource type="Texture2D" path="res://assets/sprites/title/title_sebastian.png" id="6_sebastian"]
+[ext_resource type="Texture2D" path="res://assets/sprites/title/title_text.png" id="7_text"]
 
 [node name="AttractSequence" type="Control"]
 layout_mode = 3
@@ -20,3 +26,123 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 color = Color(0, 0, 0, 1)
+
+[node name="TitleBackground" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("2_bg")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="TitleSebastian" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -160.0
+offset_top = -360.0
+offset_right = 160.0
+offset_bottom = 60.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("6_sebastian")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="TitleRing" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -540.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+texture = ExtResource("3_ring")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="TitleMinty" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -540.0
+offset_top = -200.0
+offset_right = -140.0
+offset_bottom = 360.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("5_minty")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="TitleTofu" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = 140.0
+offset_top = -200.0
+offset_right = 540.0
+offset_bottom = 360.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("4_tofu")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="TitleText" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 60.0
+offset_bottom = 260.0
+grow_horizontal = 2
+mouse_filter = 2
+texture = ExtResource("7_text")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="PressK" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -200.0
+offset_top = -120.0
+offset_right = 200.0
+offset_bottom = -60.0
+grow_horizontal = 2
+grow_vertical = 0
+horizontal_alignment = 1
+vertical_alignment = 1
+text = "Press K to Start"
+
+[node name="FadeOverlay" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0)
