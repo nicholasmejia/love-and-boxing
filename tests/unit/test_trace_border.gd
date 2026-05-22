@@ -56,12 +56,13 @@ func test_trail_color_tail_end_is_violet_transparent():
 	var tb = _make_trace(188.0, 188.0)
 	assert_eq(tb._trail_color(TB._SEGMENT_COUNT - 1), Color.from_hsv(TB._RAINBOW_HUE_END, 1.0, 1.0, 0.0))
 
-func test_trail_color_midpoint_alpha_between_zero_and_one():
+func test_trail_color_fades_in_late_band():
+	# Late segment (i=20 of 24) falls in the last ~40% of the trail where
+	# alpha is between fully opaque and fully transparent.
 	var tb = _make_trace(188.0, 188.0)
-	var mid = TB._SEGMENT_COUNT / 2
-	var c = tb._trail_color(mid)
-	assert_gt(c.a, 0.0, "mid alpha must be > 0")
-	assert_lt(c.a, 1.0, "mid alpha must be < 1")
+	var c = tb._trail_color(20)
+	assert_gt(c.a, 0.0, "late segment alpha must be > 0")
+	assert_lt(c.a, 1.0, "late segment alpha must be < 1")
 
 func test_play_trace_activates_and_resets_progress():
 	var tb = _make_trace(188.0, 188.0)

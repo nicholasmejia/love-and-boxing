@@ -5,7 +5,7 @@ extends Control
 const _LAP_SECONDS := 0.20
 const _TAIL_FRACTION := 1.0 / 3.0
 const _SEGMENT_COUNT := 24
-const _LINE_THICKNESS := 12.0
+const _LINE_THICKNESS := 16.0
 # Trail hue sweeps red (0.0) → violet (~0.83) across its length. Stops short of
 # 1.0 so the tail end doesn't wrap back to red and clash with the opaque head.
 const _RAINBOW_HUE_START := 0.0
@@ -23,12 +23,14 @@ func _circle_point(t: float) -> Vector2:
 	return center + Vector2(cos(angle), sin(angle)) * radius
 
 # Returns the color for trail segment i ∈ [0, _SEGMENT_COUNT).
-# Hue sweeps red → violet across the trail (i = 0 → i = _SEGMENT_COUNT - 1);
-# alpha fades opaque → transparent in lockstep so the tail end disappears.
+# Hue sweeps red → violet across the trail. Alpha holds at 1.0 across the
+# first ~60% of the trail and fades to 0 over the last ~40% — keeps the
+# trail readable against busy sprite backgrounds instead of becoming
+# translucent immediately.
 func _trail_color(i: int) -> Color:
 	var u := float(i) / float(_SEGMENT_COUNT - 1)
 	var hue := lerpf(_RAINBOW_HUE_START, _RAINBOW_HUE_END, u)
-	var alpha := 1.0 - u
+	var alpha := clampf((1.0 - u) * 2.5, 0.0, 1.0)
 	return Color.from_hsv(hue, 1.0, 1.0, alpha)
 
 var _active: bool = false
