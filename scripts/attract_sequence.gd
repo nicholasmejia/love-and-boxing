@@ -11,6 +11,12 @@ const SLAM_START_OFFSET_Y := -800.0             # off-screen above
 const SLAM_START_SCALE := Vector2(1.3, 1.3)
 const FLASH_DECAY := 0.25                       # white → clear
 
+# Slide-In (phase 1) — strict sequential: Tofu → Minty → Sebastian
+const SLIDE_IN_PER_CHARACTER := 1.7             # 1.7s × 3 = 5.1 total
+const SLIDE_IN_DISTANCE := 1400.0               # px; off-screen start offset
+const SLIDE_IN_TRANS := Tween.TRANS_BACK
+const SLIDE_IN_EASE := Tween.EASE_OUT
+
 # Attract Punch (phase 2)
 const PUNCH_DURATION := 1.6                     # 5.1 → 6.7
 const PUNCH_GROW_DURATION := 0.5                # punch wind-up before pennants fly
@@ -29,9 +35,11 @@ const PAN_TRANS := Tween.TRANS_SINE
 const PAN_EASE := Tween.EASE_OUT
 
 # Phase windows (cumulative time-since-scene-start)
-const PUNCH_START_TIME := TITLE_INTRO_LENGTH - SLAM_DURATION - PAN_DURATION - PUNCH_DURATION  # 5.1
-const PAN_START_TIME := TITLE_INTRO_LENGTH - SLAM_DURATION - PAN_DURATION                     # 6.7
+const SLIDE_IN_TOTAL := SLIDE_IN_PER_CHARACTER * 3.0                                          # 5.1
+const PUNCH_START_TIME := SLIDE_IN_TOTAL                                                       # 5.1
+const PAN_START_TIME := PUNCH_START_TIME + PUNCH_DURATION                                      # 6.7
 const SLAM_START_TIME := TITLE_INTRO_LENGTH - SLAM_DURATION                                    # 11.0
+# Invariant: PAN_START_TIME + PAN_DURATION == SLAM_START_TIME (asserted in _ready).
 
 # Settle Hold (phase 5)
 const SETTLE_HOLD := 2.0
@@ -79,6 +87,8 @@ var _sebastian_rest_y: float
 
 func _ready() -> void:
 	_fade_overlay.color = Color(0, 0, 0, 0)
+	assert(is_equal_approx(PAN_START_TIME + PAN_DURATION, SLAM_START_TIME),
+		"Phase budget invariant: pan must end exactly when slam starts")
 	_fade_overlay.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_white_flash.color = Color(1, 1, 1, 0)
 	_white_flash.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -86,6 +96,7 @@ func _ready() -> void:
 	_prepare_title_text_offscreen()
 	_prepare_camera_pan_offscreen()
 	_prepare_attract_punch()
+	_prepare_slide_in_offscreen()
 	AudioBus.play_music("title_intro")
 	_run_sequence()
 
@@ -98,9 +109,7 @@ func _unhandled_input(event: InputEvent) -> void:
 # ── Phase orchestration ──────────────────────────────────────────────────────
 
 func _run_sequence() -> void:
-	# Phase 1 (Slide-In) is still placeholder in this task — Task 8 fills it in.
-	# Its duration must equal PUNCH_START_TIME.
-	await get_tree().create_timer(PUNCH_START_TIME).timeout
+	await _play_slide_in()
 	await _play_attract_punch()
 	_start_punch_fadeout()
 	await _play_camera_pan()
@@ -126,6 +135,31 @@ func _prepare_camera_pan_offscreen() -> void:
 	_title_tofu.position.y = _tofu_rest_y + fg_rise
 	_title_minty.position.y = _minty_rest_y + fg_rise
 	_title_sebastian.position.y = _sebastian_rest_y + fg_rise
+
+var _pennant_rest_positions := {}
+
+func _prepare_slide_in_offscreen() -> void:
+	# Each pennant starts off-screen toward the edge closest to its rest position.
+	# Tofu (left) → from left, Minty (right) → from right, Sebastian (bottom) → from bottom.
+	_pennant_rest_positions[_pennant_tofu] = _pennant_tofu.position
+	_pennant_rest_positions[_pennant_minty] = _pennant_minty.position
+	_pennant_rest_positions[_pennant_sebastian] = _pennant_sebastian.position
+	_pennant_tofu.position.x -= SLIDE_IN_DISTANCE
+	_pennant_minty.position.x += SLIDE_IN_DISTANCE
+	_pennant_sebastian.position.y += SLIDE_IN_DISTANCE
+
+func _play_slide_in() -> void:
+	_phase = Phase.SLIDE_IN
+	# TODO play_sfx(SFX_PENNANT_WHOOSH) once authored — three calls, one per slide-in start.
+	await _slide_pennant(_pennant_tofu)
+	await _slide_pennant(_pennant_minty)
+	await _slide_pennant(_pennant_sebastian)
+
+func _slide_pennant(pennant: TextureRect) -> void:
+	var rest_position: Vector2 = _pennant_rest_positions[pennant]
+	var tween := create_tween()
+	tween.tween_property(pennant, "position", rest_position, SLIDE_IN_PER_CHARACTER).set_trans(SLIDE_IN_TRANS).set_ease(SLIDE_IN_EASE)
+	await tween.finished
 
 func _prepare_attract_punch() -> void:
 	_attract_punch.scale = PUNCH_REST_SCALE
