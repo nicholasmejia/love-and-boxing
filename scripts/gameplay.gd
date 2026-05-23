@@ -200,11 +200,11 @@ func _play_ready_fight() -> void:
 	AudioBus.play_sfx("round_start")
 	await _banner.show_banner("fight", MatchPacing.FIGHT_BANNER)
 
-# Fresh-Start Gap (CONTEXT.md → Riddle Gap):
-#   total: MatchPacing.FRESH_START_GAP seconds, riddle hidden throughout.
-#   front MatchPacing.FRESH_START_DEAD_AIR seconds: dead air, opponent idle, defense paused.
-#   remainder: defense show phase active, riddle still hidden.
-#   at gap end: snap riddle in (encounter starts).
+# Fresh-Start Gap (CONTEXT.md → Riddle Gap + Riddle Render Gate):
+#   MatchPacing.FRESH_START_SETTLE seconds with riddle hidden, opponent idle, defense paused.
+#   Then the prompt loads and the Riddle Render Gate begins — typewriter (or instant
+#   for image bodies) followed by MatchPacing.RIDDLE_READ_FLOOR seconds. DefensePhase
+#   activates at the end of the gate, never earlier.
 func _begin_fresh_start_gap() -> void:
 	_visibility = RiddleVisibility.FRESH_START_GAP
 	_gap_generation += 1
@@ -216,25 +216,32 @@ func _begin_fresh_start_gap() -> void:
 		_riddle.visible = false
 	_prompts.hide_all()
 	_opponent.set_action(Opponent.Action.IDLE, Opponent.Direction.LEFT)
-	# Dead-air front segment: defense paused, opponent idle.
-	await get_tree().create_timer(MatchPacing.FRESH_START_DEAD_AIR).timeout
+	# Settle beat — opponent idle, riddle hidden, defense not yet active.
+	await get_tree().create_timer(MatchPacing.FRESH_START_SETTLE).timeout
 	if my_generation != _gap_generation:
 		return
-	# Defense activates for the remainder of the gap, riddle still hidden.
-	_defense.start()
-	var remainder := MatchPacing.FRESH_START_GAP - MatchPacing.FRESH_START_DEAD_AIR
-	await get_tree().create_timer(remainder).timeout
-	if my_generation != _gap_generation:
-		return
+	# Open the encounter and run the render gate.
 	_visibility = RiddleVisibility.ENCOUNTER
-	_show_next_prompt()
+	_current_prompt = _deck.draw()
+	assert(_current_prompt != null, "DialogueDeck.draw() returned null — deck not loaded?")
 	_riddle.visible = true
+	await _riddle.display(_current_prompt)
+	if my_generation != _gap_generation:
+		return
+	# Post-typewriter read floor — defense still paused so the player can read
+	# the full prompt before being asked to block.
+	await get_tree().create_timer(MatchPacing.RIDDLE_READ_FLOOR).timeout
+	if my_generation != _gap_generation:
+		return
+	_defense.start()
 
-# Breather Gap (CONTEXT.md → Riddle Gap / Riddle Encounter Visibility):
-#   Triggered on Simon damage. MatchPacing.BREATHER_GAP seconds, riddle hidden.
-#   Defense is NOT paused (DefensePhase already reset its sequence and is starting
-#   a new shorter show phase). Clock is NOT paused.
-#   Consecutive damage during the gap resets the timer via _gap_generation.
+# Breather Gap (CONTEXT.md → Riddle Gap + Riddle Render Gate):
+#   Triggered on WRONG / Simon damage / attack-end (non-KO). MatchPacing.BREATHER_GAP
+#   seconds with riddle in REACTION state (or hidden for empty-reaction prompts),
+#   defense paused, clock running. Then the next prompt loads and the Riddle
+#   Render Gate runs — typewriter + MatchPacing.RIDDLE_READ_FLOOR. DefensePhase
+#   activates at the end of the gate.
+#   Consecutive triggers during the gap reset the timer via _gap_generation.
 func _begin_breather_gap() -> void:
 	_visibility = RiddleVisibility.BREATHER_GAP
 	_gap_generation += 1
@@ -247,9 +254,21 @@ func _begin_breather_gap() -> void:
 	await get_tree().create_timer(MatchPacing.BREATHER_GAP).timeout
 	if my_generation != _gap_generation:
 		return
+	# Open the encounter and run the render gate.
 	_visibility = RiddleVisibility.ENCOUNTER
-	_show_next_prompt()
+	_current_prompt = _deck.draw()
+	assert(_current_prompt != null, "DialogueDeck.draw() returned null — deck not loaded?")
 	_riddle.visible = true
+	await _riddle.display(_current_prompt)
+	if my_generation != _gap_generation:
+		return
+	# Post-typewriter read floor — defense still paused so the player can read
+	# the full prompt before being asked to block.
+	await get_tree().create_timer(MatchPacing.RIDDLE_READ_FLOOR).timeout
+	if my_generation != _gap_generation:
+		return
+	# Fresh chain at length 1 — WRONG/damage/attack-end all reset the chain.
+	_defense.start()
 
 func _on_step_flashed(direction: int) -> void:
 	# Show phase telegraphs via the WASD prompt only — the opponent stays in
@@ -310,8 +329,9 @@ func _on_damage_taken(expected_direction: int) -> void:
 		_end_match_loss()
 		return
 	_begin_breather_gap()
-	# Hold the punch frame briefly so the hit reads, then recover to IDLE before
-	# the new show phase's first step lands (interlude_seconds after the damage).
+	# Hold the punch frame briefly so the hit reads, then recover to IDLE. The
+	# next show phase doesn't land until the breather gap + render gate complete,
+	# so we have plenty of time.
 	await get_tree().create_timer(_DAMAGE_HIT_SECONDS).timeout
 	_opponent_idle()
 
@@ -373,11 +393,6 @@ func _hit_opponent_for(direction: int) -> void:
 
 func _opponent_idle() -> void:
 	_opponent.set_action(Opponent.Action.IDLE, Opponent.Direction.LEFT)
-
-func _show_next_prompt() -> void:
-	_current_prompt = _deck.draw()
-	assert(_current_prompt != null, "DialogueDeck.draw() returned null — deck not loaded?")
-	_riddle.display(_current_prompt)
 
 func _snap_clear_simon_visuals() -> void:
 	_prompts.hide_all()
@@ -454,7 +469,7 @@ func _on_attack_succeeded() -> void:
 func _on_attack_first_input() -> void:
 	# Reaction-state riddle visible from the RIGHT-answer beat is now interrupted —
 	# the player has committed to the attack phase. Hide it for the rest of the
-	# phase; the next _show_next_prompt() will rebuild in NORMAL.
+	# phase; the next breather's display() call rebuilds in NORMAL.
 	_riddle.hide()
 
 func _on_attack_failed(expected_direction: int) -> void:
@@ -476,10 +491,10 @@ func _return_to_defense() -> void:
 	_in_attack = false
 	_opponent_idle()
 	# Phase transition resets the Simon chain to length 1 (CONTEXT.md → Simon
-	# Sequence). stop+start clears any in-flight show generation and reseeds.
+	# Sequence). stop() clears any in-flight show generation; the breather gap
+	# will call start() at the end of its render gate to reseed at length 1.
 	_defense.stop()
-	_defense.start()
-	_begin_breather_gap()  # 4s, riddle hidden, snap-show next prompt on exit
+	_begin_breather_gap()
 
 func _play_knockdown_sequence() -> void:
 	_in_attack = false
@@ -564,11 +579,9 @@ func _on_answer_submitted(outcome: int) -> void:
 				return
 
 			# Reset Simon chain (CONTEXT.md → Outcome: wrong resets chain).
-			# stop() clears _running so any in-flight show-phase awaits bail
-			# out; start() reseeds the sequence at length 1 and reschedules a
-			# fresh show phase after interlude_seconds.
+			# stop() clears _running so any in-flight show-phase awaits bail out;
+			# the breather gap will call start() at the end of its render gate.
 			_defense.stop()
-			_defense.start()
 			_begin_breather_gap()
 
 			# Hold the punch frame briefly so the hit reads, then recover to IDLE.
@@ -576,24 +589,40 @@ func _on_answer_submitted(outcome: int) -> void:
 			await get_tree().create_timer(_DAMAGE_HIT_SECONDS).timeout
 			_opponent_idle()
 		Outcome.Type.NEUTRAL:
-			# Reaction-state replaces the old "Try again!" banner: the box already
-			# entered REACTION synchronously from confirm, displaying the picked
-			# answer's reaction line. Hold for TRY_AGAIN_BANNER seconds (same
-			# pacing as before) so the reaction lands, then re-display the SAME
-			# prompt — cards reshuffle, RiddleBox returns to NORMAL — and replay
-			# the Simon chain at its current length from step 0.
+			# NEUTRAL gate: RiddleBox is already in REACTION state from confirm,
+			# with the picked answer's reaction line typing in. Wait for that
+			# typewriter to complete, then hold NEUTRAL_READ_HOLD seconds so the
+			# reaction lands, then re-display the SAME prompt instantly (the
+			# player already read it) and replay the Simon chain at its current
+			# length from step 0. No render gate floor on the re-display — the
+			# read window for the reaction was the gate.
 			AudioBus.play_sfx("riddle_neutral")
 			_snap_clear_simon_visuals()
 			_defense.stop()
 
 			var my_gen := _gap_generation
-			await get_tree().create_timer(MatchPacing.TRY_AGAIN_BANNER).timeout
+			# Tofu (empty reaction_text) skips the typewriter — is_rendering is
+			# already false and RiddleBox hid itself in show_reaction.
+			if _riddle.is_rendering():
+				await _riddle.body_render_complete
+				if my_gen != _gap_generation:
+					return
+			await get_tree().create_timer(MatchPacing.NEUTRAL_READ_HOLD).timeout
 			if my_gen != _gap_generation:
-				return  # round end / match loss invalidated this flow
+				return
 
-			_riddle.display(_current_prompt)
+			# Re-show riddle (Tofu hide() path needs the visibility flip).
+			_riddle.visible = true
+			_riddle.display_instant(_current_prompt)
 			_visibility = RiddleVisibility.ENCOUNTER
-			_defense.replay()
+			# Replay simon chain at current length. Edge case: player K'd the
+			# answer before defense.start() fired (during the render gate's read
+			# floor) — sequence is empty, so replay's length assertion would
+			# fire. Start fresh at length 1 in that case.
+			if _defense.current_sequence().length() > 0:
+				_defense.replay()
+			else:
+				_defense.start()
 		Outcome.Type.RIGHT:
 			AudioBus.play_sfx("riddle_correct")
 			_trigger_attack_phase()

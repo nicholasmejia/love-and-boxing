@@ -11,9 +11,12 @@ signal damage_taken(expected_direction: int)
 
 @export var step_seconds: float = 0.8
 @export var gap_seconds: float = 0.25
-@export var interlude_seconds: float = 2.0
 @export var input_window_seconds: float = 3.0
 @export var sequence_growth: int = 1
+# Breath between a completed Simon chain and the next chain's show phase. Does
+# not apply to the first round after start() — the Riddle Render Gate already
+# owns that breath. See CONTEXT.md → Simon Sequence.
+@export var inter_round_seconds: float = 1.5
 
 var _sequence: SimonSequence = SimonSequence.new()
 var _running: bool = false
@@ -88,11 +91,13 @@ func _fail_with_damage() -> void:
 	# the missed step. Read the direction BEFORE resetting the sequence.
 	var expected_direction: int = _sequence.steps()[_expected_index]
 	_repeat_active = false
+	_running = false
 	_timeout_timer.stop()
 	damage_taken.emit(expected_direction)
 	_sequence.reset()
-	if _running:
-		_begin_next_round()
+	# No auto-continue. Gameplay's damage_taken handler owns scheduling the next
+	# start() via _begin_breather_gap — the Riddle Render Gate must complete
+	# before the new chain's first flash.
 
 func replay() -> void:
 	# Re-run the show phase of the current chain from step 0 without extending
@@ -107,15 +112,20 @@ func replay() -> void:
 func _begin_next_round() -> void:
 	if not _running:
 		return
+	var my_gen := _generation
 	for _i in max(1, sequence_growth):
 		_sequence.extend()
+	# Subsequent rounds (length > 1) get an inter-round breath. The first round
+	# after start() (length == 1) skips it — the external Riddle Render Gate
+	# already owns the pre-first-show beat.
+	if _sequence.length() > 1 and inter_round_seconds > 0.0:
+		await get_tree().create_timer(inter_round_seconds).timeout
+		if my_gen != _generation or not _running:
+			return
 	_run_show_then_repeat()
 
 func _run_show_then_repeat() -> void:
 	var my_gen := _generation
-	await get_tree().create_timer(interlude_seconds).timeout
-	if my_gen != _generation:
-		return
 	show_started.emit(_sequence.steps())
 	for step in _sequence.steps():
 		if my_gen != _generation:

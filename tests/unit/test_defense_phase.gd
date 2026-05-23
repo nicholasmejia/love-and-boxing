@@ -4,7 +4,6 @@ func test_correct_input_emits_step_blocked():
 	var d := DefensePhase.new()
 	d.step_seconds = 0.01
 	d.gap_seconds = 0.01
-	d.interlude_seconds = 0.01
 	add_child_autoqfree(d)
 	var flags := {"seen": false}
 	d.step_blocked.connect(func(_idx): flags["seen"] = true)
@@ -68,7 +67,6 @@ func _make_fast_defense_phase() -> DefensePhase:
 	var d := DefensePhase.new()
 	d.step_seconds = 0.001
 	d.gap_seconds = 0.001
-	d.interlude_seconds = 0.001
 	d.input_window_seconds = 10.0
 	return d
 
@@ -82,7 +80,8 @@ func test_replay_keeps_existing_chain_length():
 	d._sequence.extend()
 	# Chain is length 2 — replay must NOT extend or reset it.
 	d.replay()
-	# Wait long enough for interlude_seconds + show loop to run.
+	# Wait long enough for the show loop to run (interlude_seconds was removed —
+	# show phase fires immediately on replay).
 	await get_tree().create_timer(0.2).timeout
 	assert_not_null(captured["steps"], "show_started should fire from replay")
 	assert_eq(captured["steps"].size(), 2, "replay must re-run the existing length, not extend or reset")
@@ -121,12 +120,11 @@ func test_stop_then_start_cancels_in_flight_show_loop():
 	# only the NEW chain (length 1 after start's reset) emits step_flashed.
 	#
 	# Timing setup: per-step gap is long (0.2s) so the OLD loop is guaranteed
-	# to be mid-await when we cancel and restart. interlude is small so the
-	# NEW chain's single step runs within the post-cancel wait window.
+	# to be mid-await when we cancel and restart. interlude_seconds was removed,
+	# so the NEW chain's single step fires immediately on start().
 	var d := DefensePhase.new()
 	d.step_seconds = 0.01
 	d.gap_seconds = 0.2
-	d.interlude_seconds = 0.001
 	d.input_window_seconds = 10.0
 	add_child_autoqfree(d)
 	# Wrap in dict so the lambda captures by reference (GDScript captures

@@ -2,20 +2,21 @@
 class_name MatchPacing
 
 # Riddle gap durations, in seconds. See CONTEXT.md → "Riddle Gap".
-const FRESH_START_GAP := 3.0
-const FRESH_START_DEAD_AIR := 1.0   # Front portion of FRESH_START_GAP with Simon defense paused
-const BREATHER_GAP := 4.0
+const FRESH_START_SETTLE := 0.5     # Pre-prompt settle on round start / post-knockdown — opponent IDLE, riddle hidden, defense paused.
+const BREATHER_GAP := 4.0           # Post-WRONG / post-Simon-damage / post-attack-end hold before next prompt renders.
+
+# Riddle Render Gate — see CONTEXT.md.
+const RIDDLE_READ_FLOOR := 1.0      # Fixed post-typewriter read window before DefensePhase activates.
+const NEUTRAL_READ_HOLD := 2.0      # Hold after NEUTRAL reaction typewriter completes, before the prompt body re-displays instantly.
 
 # Knockdown pause, in seconds. See CONTEXT.md → "Match" + "Knockdown".
 const KNOCKDOWN_PAUSE := 5.0
 
 # Banner display durations, in seconds. AnnouncementBanner.show_banner awaits these.
-# (TRY_AGAIN_BANNER no longer drives a banner — it's the NEUTRAL reaction-state hold.)
 const PRE_READY_DELAY := 0.5  # Settle beat between scene load (or round transition) and the Ready banner sliding in.
 const READY_BANNER := 1.0
 const FIGHT_BANNER := 1.0
 const ROUND_OVER_BANNER := 3.0
-const TRY_AGAIN_BANNER := 1.5  # NEUTRAL reaction-state hold duration
 
 # Attack phase and knockdown timings, in seconds. See CONTEXT.md → "Attack Phase" + "Knockdown".
 const KNOCK_DOWN_BANNER := 2.0
