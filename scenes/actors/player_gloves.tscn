@@ -3,6 +3,7 @@
 [ext_resource type="Script" path="res://scripts/actors/player_gloves.gd" id="1_gloves"]
 
 [node name="PlayerGloves" type="Node2D"]
+z_index = 20
 script = ExtResource("1_gloves")
 
 [node name="LeftGlove" type="Sprite2D" parent="."]
