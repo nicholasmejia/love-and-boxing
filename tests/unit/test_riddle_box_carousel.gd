@@ -64,3 +64,29 @@ func test_i_is_noop_in_riddle_box():
 	_send_action("menu_up")
 	await get_tree().process_frame
 	assert_eq(box._highlight_index, 0, "menu_up must not change the highlight inside RiddleBox")
+
+# --- Phase B Task 3: at-rest carousel layout ---
+
+func test_display_lays_out_cards_with_center_at_full_scale_sides_shrunk():
+	var box := _mount()
+	box.display_instant(_make_prompt(["r0", "r1", "r2"]))
+	await get_tree().process_frame
+	var cards := box.get_cards()
+	# Middle card (index 1) is the default center → full scale.
+	assert_almost_eq(cards[1].scale.x, 1.0, 0.001, "default center card should be at full scale")
+	assert_almost_eq(cards[1].scale.y, 1.0, 0.001)
+	# Cards 0 and 2 are side cards → SIDE_SCALE.
+	assert_almost_eq(cards[0].scale.x, RiddleBox.SIDE_SCALE, 0.001, "left side card should be at SIDE_SCALE")
+	assert_almost_eq(cards[2].scale.x, RiddleBox.SIDE_SCALE, 0.001, "right side card should be at SIDE_SCALE")
+
+func test_cycle_swaps_which_card_is_at_full_scale():
+	var box := _mount()
+	box.display_instant(_make_prompt(["r0", "r1", "r2"]))
+	await get_tree().process_frame
+	# Initial: card 1 is center.
+	assert_almost_eq(box.get_cards()[1].scale.x, 1.0, 0.001)
+	# One L: center_index becomes 2; card 2 should now be at full scale.
+	_send_action("menu_right")
+	await get_tree().process_frame
+	assert_almost_eq(box.get_cards()[2].scale.x, 1.0, 0.001, "after L, card 2 should be at center")
+	assert_almost_eq(box.get_cards()[1].scale.x, RiddleBox.SIDE_SCALE, 0.001, "after L, card 1 should be at SIDE_SCALE")

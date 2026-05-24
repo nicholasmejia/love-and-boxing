@@ -21,27 +21,29 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_constants/separation = 24
 
-[node name="Answers" type="HBoxContainer" parent="Layout"]
+[node name="Answers" type="Control" parent="Layout"]
+custom_minimum_size = Vector2(900, 197)
 layout_mode = 2
-size_flags_horizontal = 3
+size_flags_horizontal = 4
 size_flags_vertical = 0
-theme_override_constants/separation = 18
-alignment = 1
 
 [node name="Left" parent="Layout/Answers" instance=ExtResource("3_answer")]
-layout_mode = 2
-size_flags_horizontal = 4
-size_flags_vertical = 4
+layout_mode = 1
+anchors_preset = 0
+offset_right = 0.0
+offset_bottom = 0.0
 
 [node name="Middle" parent="Layout/Answers" instance=ExtResource("3_answer")]
-layout_mode = 2
-size_flags_horizontal = 4
-size_flags_vertical = 4
+layout_mode = 1
+anchors_preset = 0
+offset_right = 0.0
+offset_bottom = 0.0
 
 [node name="Right" parent="Layout/Answers" instance=ExtResource("3_answer")]
-layout_mode = 2
-size_flags_horizontal = 4
-size_flags_vertical = 4
+layout_mode = 1
+anchors_preset = 0
+offset_right = 0.0
+offset_bottom = 0.0
 
 [node name="Body" type="TextureRect" parent="Layout"]
 custom_minimum_size = Vector2(900, 281)
