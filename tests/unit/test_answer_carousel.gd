@@ -288,3 +288,20 @@ func test_answer_submitted_emits_at_impact_frame_not_at_k_press():
 	var elapsed_ms := t_emit - t_press
 	var expected_ms := int(PlayerGloves.GLOVE_TRAVEL_DURATION * 1000.0)
 	assert_true(elapsed_ms >= expected_ms - 30, "emit should be delayed by ~GLOVE_TRAVEL_DURATION — got %dms" % elapsed_ms)
+
+# --- Phase 4 Task 11: card_struck_opponent signal ---
+
+func test_card_struck_opponent_emits_after_flight_with_direction_right():
+	var pair := _mount_carousel_with_gloves()
+	var c: AnswerCarousel = pair[0]
+	c.display_prompt_instant(_make_prompt(["r0", "r1", "r2"]))
+	await get_tree().process_frame
+	var emitted: Array = []
+	c.card_struck_opponent.connect(func(direction): emitted.append(direction))
+	_send_action("menu_confirm")
+	# Wait through glove travel + impact + card flight (with slack).
+	var total = PlayerGloves.GLOVE_TRAVEL_DURATION + AnswerCarousel.CARD_FLIGHT_DURATION + 0.05
+	await get_tree().create_timer(total).timeout
+	assert_eq(emitted.size(), 1, "card_struck_opponent should emit once after flight tween completes")
+	# Opponent has `enum Direction { LEFT = 0, RIGHT = 1 }` — confirm RIGHT (= 1).
+	assert_eq(emitted[0], 1, "direction should be Opponent.Direction.RIGHT (1) — card comes from screen-right")

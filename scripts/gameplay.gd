@@ -103,6 +103,11 @@ func _ready() -> void:
 	_deck.set_active_tier(_knockdowns.count())
 	_carousel.answer_submitted.connect(_on_answer_submitted)
 	_carousel.set_player_gloves(_gloves)
+	# Opponent body global position varies as the opponent lunges/recoils, so
+	# capture it lazily per flight via a callback that re-reads the position
+	# at the moment the carousel needs it.
+	_carousel.set_opponent_target_callback(func(): return _opponent.get_node("Body").global_position)
+	_carousel.card_struck_opponent.connect(_on_card_struck_opponent)
 	# Forward the body-render-complete signal to the carousel's fade-in.
 	_riddle.body_render_complete.connect(_carousel.start_fade_in)
 	_riddle.visible = false
@@ -650,3 +655,12 @@ func _on_answer_submitted(outcome: int, picked: DialogueAnswer) -> void:
 		Outcome.Type.RIGHT:
 			AudioBus.play_sfx("riddle_correct")
 			_trigger_attack_phase()
+
+# Carousel's picked card has landed on the opponent. Show the body_hit_low
+# pose (mirrored toward the card's incoming direction), hold HIT_HOLD_DURATION,
+# then transition to guard_down. The Opponent.set_action(action, direction)
+# signature handles flip_h via direction == RIGHT.
+func _on_card_struck_opponent(direction: int) -> void:
+	_opponent.set_action(Opponent.Action.HIT_LOW, direction)
+	await get_tree().create_timer(AnswerCarousel.HIT_HOLD_DURATION).timeout
+	_opponent.set_action(Opponent.Action.GUARD_DOWN)

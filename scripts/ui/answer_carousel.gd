@@ -2,6 +2,12 @@ class_name AnswerCarousel
 extends Control
 
 signal answer_submitted(outcome: int, picked: DialogueAnswer)
+# Emitted when the picked card finishes its flight tween into the opponent
+# body. The argument is an Opponent.Direction value indicating the side the
+# card came from (always RIGHT today — the carousel is on the right of the
+# stage). Gameplay forwards to Opponent.set_action(HIT_LOW, direction) and
+# queues GUARD_DOWN after HIT_HOLD_DURATION.
+signal card_struck_opponent(direction: int)
 
 enum State { NORMAL, REACTION }
 
@@ -28,6 +34,7 @@ const EXIT_DURATION := 0.18
 const CARD_FLIGHT_DURATION  := 0.20
 const CARD_FLASH_DURATION   := 0.08
 const CARD_FLIGHT_END_SCALE := 0.4
+const HIT_HOLD_DURATION := 0.25
 
 enum Slot { OFF_LEFT, SIDE_LEFT, CENTER, SIDE_RIGHT, OFF_RIGHT }
 
@@ -50,6 +57,7 @@ var _card_flight_tween: Tween = null
 var _card_flash_tween: Tween = null
 var _is_punching: bool = false
 var _player_gloves: PlayerGloves = null
+var _opponent_target_callback: Callable = func(): return Vector2(960, 480)  # default fallback
 
 # Rotation state drives _compute_card_transform. When at rest,
 # from_center == to_center and progress == 1.0. While a rotation tween is
@@ -79,6 +87,12 @@ func get_cards() -> Array[AnswerCard]:
 # glove animation plays.
 func set_player_gloves(gloves: PlayerGloves) -> void:
 	_player_gloves = gloves
+
+# Injected by gameplay wiring — supplies the opponent body's global position
+# for the picked-card flight target. Default is a center-of-stage fallback
+# for tests that don't wire a real opponent.
+func set_opponent_target_callback(cb: Callable) -> void:
+	_opponent_target_callback = cb
 
 # Stages the cards for a new prompt. Sets initial alpha based on prompt type:
 # text-body prompts start at alpha 0 (will fade in once the body typewriter
@@ -358,7 +372,6 @@ func _do_punch_chain(picked_index: int) -> void:
 	# Wait for the glove to reach the card.
 	await get_tree().create_timer(PlayerGloves.GLOVE_TRAVEL_DURATION).timeout
 	# IMPACT FRAME — all of these happen on the same beat.
-	AudioBus.play_sfx("opponent_punch_body")
 	AudioBus.play_sfx("menu_option_select")
 	_start_card_flash(picked_index)
 	_start_exit_tween(picked_index)
@@ -382,18 +395,12 @@ func _start_picked_card_flight(picked_index: int) -> void:
 	if _card_flight_tween:
 		_card_flight_tween.kill()
 		_card_flight_tween = null
-	# Phase 3 placeholder target: centered just above the riddle box on
-	# the 1920x1080 stage. Task 11 (Phase 4) wires the real opponent body
-	# global position. Convert from screen space to the card's parent
-	# (the carousel container) local space.
-	var screen_target := Vector2(960, 480)
+	var screen_target: Vector2 = _opponent_target_callback.call()
 	# Control nodes use get_global_transform for coordinate conversion —
 	# to_local lives on Node2D, not on Control/CanvasItem in this Godot version.
 	var parent_control := card.get_parent() as Control
 	var local_target: Vector2 = parent_control.get_global_transform().affine_inverse() * screen_target
-	# Adjust by half card width/height + scale so the card's CENTER lands
-	# on the target, matching the convention in _make_position.
-	var top_left_target: Vector2 = local_target - Vector2(CARD_WIDTH * 0.5, CARD_HEIGHT * 0.5) * CARD_FLIGHT_END_SCALE
+	var top_left_target := local_target - Vector2(CARD_WIDTH * 0.5, CARD_HEIGHT * 0.5) * CARD_FLIGHT_END_SCALE
 	_card_flight_tween = create_tween()
 	_card_flight_tween.set_parallel(true)
 	_card_flight_tween.tween_property(card, "position", top_left_target, CARD_FLIGHT_DURATION)
@@ -401,4 +408,9 @@ func _start_picked_card_flight(picked_index: int) -> void:
 	_card_flight_tween.tween_property(card, "modulate:a", 0.0, CARD_FLIGHT_DURATION)
 	_card_flight_tween.finished.connect(func():
 		card.visible = false
+		AudioBus.play_sfx("opponent_punch_body")
+		# Direction.RIGHT = 1 (matches Opponent.Direction.RIGHT). Card comes
+		# from the right side of the stage, so the opponent's hit-pose mirrors
+		# to face right via flip_h = (direction == RIGHT).
+		card_struck_opponent.emit(1)
 	)
