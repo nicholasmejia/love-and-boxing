@@ -5,3 +5,6 @@
 # macOS
 .DS_Store
 **/.DS_Store
+
+# Superpowers brainstorm artifacts
+.superpowers/
