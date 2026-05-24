@@ -85,8 +85,53 @@ func test_cycle_swaps_which_card_is_at_full_scale():
 	await get_tree().process_frame
 	# Initial: card 1 is center.
 	assert_almost_eq(box.get_cards()[1].scale.x, 1.0, 0.001)
-	# One L: center_index becomes 2; card 2 should now be at full scale.
+	# One L: center_index becomes 2; card 2 should now be at full scale once
+	# the rotation tween completes.
 	_send_action("menu_right")
-	await get_tree().process_frame
+	await get_tree().create_timer(RiddleBox.ROTATION_DURATION + 0.05).timeout
 	assert_almost_eq(box.get_cards()[2].scale.x, 1.0, 0.001, "after L, card 2 should be at center")
 	assert_almost_eq(box.get_cards()[1].scale.x, RiddleBox.SIDE_SCALE, 0.001, "after L, card 1 should be at SIDE_SCALE")
+
+# --- Phase B Task 4: rotation animation + queue + K-lock ---
+
+func test_two_rapid_l_presses_land_on_target_via_queue():
+	var box := _mount()
+	box.display_instant(_make_prompt(["r0", "r1", "r2"]))
+	await get_tree().process_frame
+	# Initial center is index 1. Two L presses: 1 → 2 → 0 (wraps).
+	_send_action("menu_right")
+	# Don't await — fire the second press while the first tween is in flight.
+	_send_action("menu_right")
+	# Wait for both tweens: 2 × ROTATION_DURATION + slack.
+	await get_tree().create_timer(RiddleBox.ROTATION_DURATION * 2.5).timeout
+	assert_eq(box._highlight_index, 0, "two queued L presses should land on index 0 (wrap)")
+
+func test_third_input_during_rotation_is_dropped_not_stacked():
+	var box := _mount()
+	box.display_instant(_make_prompt(["r0", "r1", "r2"]))
+	await get_tree().process_frame
+	# Three rapid L presses: queue depth 1 means we should land on index 0
+	# (1 → 2 from first press, 2 → 0 from the queued second; third is dropped).
+	_send_action("menu_right")
+	_send_action("menu_right")
+	_send_action("menu_right")
+	await get_tree().create_timer(RiddleBox.ROTATION_DURATION * 2.5).timeout
+	assert_eq(box._highlight_index, 0, "third press should be dropped — final index is 0, not 1")
+
+func test_confirm_during_rotation_is_rejected():
+	var box := _mount()
+	box.display_instant(_make_prompt(["r0", "r1", "r2"]))
+	await get_tree().process_frame
+	var emitted: Array = []
+	box.answer_submitted.connect(func(o): emitted.append(o))
+	# Start a rotation, then press K before it finishes.
+	_send_action("menu_right")
+	await get_tree().process_frame  # Tween has started; _is_rotating should be true.
+	_send_action("menu_confirm")
+	await get_tree().process_frame
+	assert_eq(emitted.size(), 0, "K during rotation must not emit answer_submitted")
+	# After the tween completes, K should be accepted.
+	await get_tree().create_timer(RiddleBox.ROTATION_DURATION + 0.05).timeout
+	_send_action("menu_confirm")
+	await get_tree().process_frame
+	assert_eq(emitted.size(), 1, "K after rotation completes should emit answer_submitted")

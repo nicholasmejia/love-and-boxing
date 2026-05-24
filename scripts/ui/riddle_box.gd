@@ -24,6 +24,9 @@ const SIDE_SCALE := 0.7
 const CENTER_SCALE := 1.0
 const CENTER_Z := 10
 const SIDE_Z := 0
+# Animation timings (seconds). Manually playtested per the project's
+# "user is the test harness for visual/feel work" convention.
+const ROTATION_DURATION := 0.18
 
 # A logical slot the card can occupy in the carousel.
 enum Slot { OFF_LEFT, SIDE_LEFT, CENTER, SIDE_RIGHT, OFF_RIGHT }
@@ -45,6 +48,11 @@ var _state: int = State.NORMAL
 # Mirror of the picked answer per display, captured at confirm time so
 # show_reaction() can read reaction_text without knowing the DialogueAnswer.
 var _picked_answers: Array[DialogueAnswer] = []
+# Rotation animation state. _is_rotating gates K-confirm; _queued_rotation
+# buffers exactly one pending J/L press (delta = -1 or +1, 0 means empty).
+var _rotation_tween: Tween = null
+var _is_rotating: bool = false
+var _queued_rotation: int = 0
 
 # Rotation state drives _compute_card_transform. When at rest,
 # from_center == to_center and progress == 1.0. While a rotation tween is
@@ -116,6 +124,11 @@ func _setup_display(prompt: DialoguePrompt) -> void:
 	_rotation_state.from_center = 1
 	_rotation_state.to_center = 1
 	_rotation_state.progress = 1.0
+	_is_rotating = false
+	_queued_rotation = 0
+	if _rotation_tween:
+		_rotation_tween.kill()
+		_rotation_tween = null
 	_apply_all_transforms()
 
 # Awaitable. Resolves when the reaction typewriter completes (or immediately
@@ -167,8 +180,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		_cycle_highlight(1)
 	elif event.is_action_pressed("menu_confirm"):
 		# Render gate: K-confirm is suppressed while the body typewriter is
-		# still running so the player can't skip the read.
-		if _is_rendering:
+		# still running OR while a carousel rotation is in flight (the player
+		# can't confirm a card that hasn't fully settled in the center slot).
+		if _is_rendering or _is_rotating:
 			return
 		var picked_index := _highlight_index
 		# Order matters: show_reaction() must start the reaction typewriter
@@ -178,12 +192,48 @@ func _unhandled_input(event: InputEvent) -> void:
 		answer_submitted.emit(_cards[picked_index].outcome())
 
 func _cycle_highlight(delta: int) -> void:
-	_highlight_index = (_highlight_index + delta + _cards.size()) % _cards.size()
-	_rotation_state.from_center = _rotation_state.to_center
-	_rotation_state.to_center = _highlight_index
-	_rotation_state.progress = 1.0  # Snap-swap — no tween yet (carousel rotation animation is added in a later step).
-	_apply_all_transforms()
+	if _is_rotating:
+		if _queued_rotation != 0:
+			# Queue is already full (depth 1). Drop this press silently.
+			return
+		# Queue depth 1: buffer this press for when the in-flight tween ends.
+		# Advance _highlight_index now so it always reflects the final target.
+		# Audio fires at input time so queued double-taps are audibly confirmed
+		# (per the carousel design — see CONTEXT.md Answer Carousel).
+		AudioBus.play_sfx("menu_change_item")
+		_highlight_index = (_highlight_index + delta + _cards.size()) % _cards.size()
+		_queued_rotation = delta
+		return
+	# Not rotating: advance index, fire audio, and start the tween immediately.
 	AudioBus.play_sfx("menu_change_item")
+	_highlight_index = (_highlight_index + delta + _cards.size()) % _cards.size()
+	_start_rotation_to(_highlight_index)
+
+func _start_rotation_to(target_center: int) -> void:
+	_is_rotating = true
+	_rotation_state.from_center = _rotation_state.to_center
+	_rotation_state.to_center = target_center
+	_rotation_state.progress = 0.0
+	if _rotation_tween:
+		_rotation_tween.kill()
+		_rotation_tween = null
+	_rotation_tween = create_tween()
+	_rotation_tween.tween_method(_apply_rotation_progress, 0.0, 1.0, ROTATION_DURATION)
+	_rotation_tween.finished.connect(_on_rotation_finished)
+
+func _apply_rotation_progress(p: float) -> void:
+	_rotation_state.progress = p
+	_apply_all_transforms()
+
+func _on_rotation_finished() -> void:
+	_is_rotating = false
+	_rotation_state.from_center = _rotation_state.to_center
+	_rotation_state.progress = 1.0
+	if _queued_rotation != 0:
+		_queued_rotation = 0
+		# _highlight_index and the menu_change_item SFX were both committed at
+		# queue time in _cycle_highlight — just drive the visual to the target.
+		_start_rotation_to(_highlight_index)
 
 func _apply_all_transforms() -> void:
 	for i in _cards.size():
