@@ -1,4 +1,4 @@
-[gd_scene load_steps=3 format=3 uid="uid://b1answercarousel001"]
+[gd_scene format=3 uid="uid://dlfvchcyxs7bg"]
 
 [ext_resource type="Script" path="res://scripts/ui/answer_carousel.gd" id="1_carousel"]
 [ext_resource type="PackedScene" path="res://scenes/ui/answer_card.tscn" id="2_answer"]
