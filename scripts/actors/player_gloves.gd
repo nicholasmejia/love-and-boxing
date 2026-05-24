@@ -33,6 +33,10 @@ const PUNCH_TARGETS := {
 	SimonSequence.Direction.HEAD:  { "glove": Side.RIGHT, "pos": Vector2(1020, 500), "scale": 0.55, "rotation_deg": -20.0 },
 }
 const PUNCH_OUT_DURATION := 0.20
+# Used by AnswerCarousel for the K-confirm punch chain. Distinct from
+# PUNCH_OUT_DURATION (which serves Simon attack-phase punches into the
+# opponent) — carousel punches are shorter because the card is closer.
+const GLOVE_TRAVEL_DURATION := 0.15
 const PUNCH_RETURN_DURATION := 0.30
 const PUNCH_OUT_TRANSITION := Tween.TRANS_BACK
 const PUNCH_RETURN_TRANSITION := Tween.TRANS_QUAD
@@ -200,3 +204,32 @@ func _placeholder() -> Texture2D:
 	var img := Image.create(160, 160, false, Image.FORMAT_RGBA8)
 	img.fill(Color(0.8, 0.6, 0.5))
 	return ImageTexture.create_from_image(img)
+
+# Animates the right glove from its current position to target_pos over
+# GLOVE_TRAVEL_DURATION, holds at the target for a single frame (the
+# carousel triggers its impact-frame work then), and returns to rest via
+# the existing PUNCH_RETURN_DURATION machinery. Unlike _apply_punch_pose,
+# this method does not consult PUNCH_TARGETS — the target is supplied by
+# the caller (AnswerCarousel, with the chosen card's screen position).
+func punch_at_screen_position(target_pos: Vector2) -> void:
+	_last_pose_state = State.PUNCH
+	_last_pose_direction = -1  # not a Simon direction; carousel-specific
+	_set_glove_state(Side.RIGHT, State.PUNCH)
+	# Use the existing tween helper so the texture swap + tween bookkeeping
+	# stays in one place. Scale and rotation match the glove's base (no
+	# inward tilt — the punch is straight at the card cluster).
+	_tween_glove_to(
+		Side.RIGHT,
+		target_pos,
+		_right_base_scale,
+		_right_base_rotation,
+		GLOVE_TRAVEL_DURATION,
+		PUNCH_OUT_TRANSITION,
+		Tween.EASE_OUT,
+	)
+	# Hold at the target for PUNCH_RETURN_DURATION to let the carousel
+	# trigger its impact-frame work, then snap the glove back to IDLE.
+	# The hold must exceed the test's read window (GLOVE_TRAVEL_DURATION + 0.05s)
+	# so callers and tests can sample the punch position before the snap.
+	await get_tree().create_timer(GLOVE_TRAVEL_DURATION + PUNCH_RETURN_DURATION).timeout
+	_set_glove_state(Side.RIGHT, State.IDLE)
