@@ -382,9 +382,9 @@ func _do_punch_chain(picked_index: int) -> void:
 		Outcome.Type.RIGHT:
 			_run_right_choreography(picked_index)
 		Outcome.Type.NEUTRAL:
-			_run_right_choreography(picked_index)
+			_run_right_choreography(picked_index)  # Task 2 wires this to _run_neutral_choreography(picked_index)
 		Outcome.Type.WRONG:
-			_run_right_choreography(picked_index)
+			_run_right_choreography(picked_index)  # Task 3 wires this to _run_wrong_choreography() — no picked_index arg
 
 # RIGHT choreography: side cards slide off-screen + fade, picked card flies
 # to opponent body, flight.finished emits card_struck_opponent so gameplay
