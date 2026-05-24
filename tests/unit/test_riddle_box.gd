@@ -32,15 +32,16 @@ func test_display_enters_normal_with_all_cards_visible():
 func test_show_reaction_hides_unpicked_cards_and_swaps_body_text():
 	var box := _mount()
 	var prompt := _make_prompt(["r0", "r1", "r2"])
-	box.display(prompt)
-	await get_tree().process_frame
+	await box.display(prompt)
 	box.show_reaction(1)
-	await get_tree().process_frame
+	# show_reaction now tweens unpicked cards out over EXIT_DURATION; wait
+	# for that to settle before asserting end-state visibility.
+	await get_tree().create_timer(RiddleBox.EXIT_DURATION + 0.05).timeout
 	assert_eq(box.get_state(), RiddleBox.State.REACTION)
 	var cards := box.get_cards()
-	assert_false(cards[0].visible)
-	assert_true(cards[1].visible)
-	assert_false(cards[2].visible)
+	assert_false(cards[0].visible, "unpicked left card should be hidden after exit tween")
+	assert_true(cards[1].visible, "picked center card should remain visible")
+	assert_false(cards[2].visible, "unpicked right card should be hidden after exit tween")
 
 func test_show_reaction_with_empty_reaction_hides_box():
 	var box := _mount()

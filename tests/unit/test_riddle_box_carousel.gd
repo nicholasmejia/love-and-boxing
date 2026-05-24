@@ -172,3 +172,22 @@ func test_jl_locked_while_fading_in():
 	_send_action("menu_right")
 	await get_tree().process_frame
 	assert_eq(box._highlight_index, 1, "J/L must be ignored during fade-in")
+
+# --- Phase B Task 6: side-card exit on confirm ---
+
+func test_unpicked_cards_animate_out_with_alpha_and_position():
+	var box := _mount()
+	var prompt := _make_prompt(["r0", "r1", "r2"])
+	await box.display(prompt)
+	# Capture starting positions of side cards (index 0 and 2 — middle is picked).
+	var cards := box.get_cards()
+	var start_pos_0: Vector2 = cards[0].position
+	var start_pos_2: Vector2 = cards[2].position
+	box.show_reaction(1)
+	# Sample mid-tween (~half of EXIT_DURATION in).
+	await get_tree().create_timer(RiddleBox.EXIT_DURATION * 0.5).timeout
+	# Mid-tween: side cards should be partway to off-screen AND partially faded.
+	assert_true(cards[0].modulate.a < 0.9, "left card alpha should be tweening down")
+	assert_true(cards[2].modulate.a < 0.9, "right card alpha should be tweening down")
+	assert_true(cards[0].position != start_pos_0, "left card position should be tweening toward off-screen")
+	assert_true(cards[2].position != start_pos_2, "right card position should be tweening toward off-screen")

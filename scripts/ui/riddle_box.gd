@@ -28,6 +28,7 @@ const SIDE_Z := 0
 # "user is the test harness for visual/feel work" convention.
 const ROTATION_DURATION := 0.18
 const FADE_IN_DURATION := 0.15
+const EXIT_DURATION := 0.18
 
 # A logical slot the card can occupy in the carousel.
 enum Slot { OFF_LEFT, SIDE_LEFT, CENTER, SIDE_RIGHT, OFF_RIGHT }
@@ -56,6 +57,7 @@ var _is_rotating: bool = false
 var _queued_rotation: int = 0
 var _is_fading_in: bool = false
 var _fade_tween: Tween = null
+var _exit_tween: Tween = null
 
 # Rotation state drives _compute_card_transform. When at rest,
 # from_center == to_center and progress == 1.0. While a rotation tween is
@@ -131,6 +133,9 @@ func _setup_display(prompt: DialoguePrompt) -> void:
 	if _fade_tween:
 		_fade_tween.kill()
 		_fade_tween = null
+	if _exit_tween:
+		_exit_tween.kill()
+		_exit_tween = null
 	# Answer cards are shuffled per display so position never reveals outcome.
 	# Don't mutate prompt.answers — the deck reuses prompts across redraws.
 	var shuffled := prompt.answers.duplicate()
@@ -160,12 +165,52 @@ func show_reaction(picked_index: int) -> void:
 	if not picked.has_reaction():
 		hide()
 		return
-	for i in _cards.size():
-		_cards[i].visible = (i == picked_index)
 	_body_image.visible = false
 	_body_text.visible = true
 	_state = State.REACTION
+	# Tween unpicked cards out (slide to their off-screen wrap position +
+	# fade alpha to 0). Picked card stays put. Visible flag is flipped after
+	# the tween so subsequent display() calls reset cleanly.
+	_start_exit_tween(picked_index)
+	# Start the reaction typewriter in parallel — exit tween and typewriter
+	# run concurrently; await the typewriter (it's the longer of the two,
+	# and the existing contract — callers expect reaction typewriter completion).
 	await _start_typewriter(picked.reaction_text)
+
+func _start_exit_tween(picked_index: int) -> void:
+	# kill() suppresses the old tween's finished signal — the prior lambda
+	# (which closed over a possibly-different picked_index) will not fire.
+	if _exit_tween:
+		_exit_tween.kill()
+		_exit_tween = null
+	_exit_tween = create_tween()
+	_exit_tween.set_parallel(true)
+	for i in _cards.size():
+		if i == picked_index:
+			continue
+		var card := _cards[i]
+		# Target position: the off-screen anchor on the card's CURRENT side.
+		# A card whose visual is left-of-center exits LEFT; right-of-center
+		# exits RIGHT. The picked card is at CENTER (by definition — its
+		# slot role is computed relative to picked_index), so the unpicked
+		# cards are guaranteed to be SIDE_LEFT or SIDE_RIGHT.
+		var role := _slot_role_for(i, picked_index)
+		var target_anchor_x: float
+		if role == Slot.SIDE_LEFT:
+			target_anchor_x = _slot_anchor_x(Slot.OFF_LEFT)
+		else:
+			target_anchor_x = _slot_anchor_x(Slot.OFF_RIGHT)
+		var target_position := Vector2(target_anchor_x - CARD_WIDTH / 2.0, CENTER_Y - CARD_HEIGHT / 2.0)
+		_exit_tween.tween_property(card, "position", target_position, EXIT_DURATION)
+		_exit_tween.tween_property(card, "modulate:a", 0.0, EXIT_DURATION)
+	# After the tween, flip visible flags so subsequent _setup_display reset
+	# starts from a clean slate. The tween's finished signal fires once all
+	# parallel tweens complete.
+	_exit_tween.finished.connect(func():
+		for i in _cards.size():
+			if i != picked_index:
+				_cards[i].visible = false
+	)
 
 func _start_typewriter(text: String) -> void:
 	_typewriter_generation += 1
