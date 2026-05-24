@@ -84,6 +84,12 @@ var _rotation_tween: Tween = null
 var _is_rotating: bool = false
 var _queued_rotation: int = 0
 var _is_fading_in: bool = false
+# True between display_prompt (text-body) and the body_render_complete signal
+# that triggers start_fade_in. Without this, J/L during the riddle typewriter
+# would invoke _apply_all_transforms and overwrite the cards' alpha=0, making
+# them pop in early. Image-body prompts and display_prompt_instant skip this
+# wait — they're interactable as soon as they mount.
+var _is_waiting_for_render: bool = false
 var _fade_tween: Tween = null
 var _exit_tween: Tween = null
 var _card_flight_tween: Tween = null
@@ -189,14 +195,22 @@ func display_prompt(prompt: DialoguePrompt) -> void:
 	_apply_all_transforms()
 	# Text-body prompts hide cards until the body typewriter completes.
 	# start_fade_in animates each card up to its per-slot alpha target.
+	# _is_waiting_for_render gates input until that fade-in trigger fires so
+	# J/L during the typewriter can't repaint card alpha via _apply_all_transforms.
 	if not prompt.has_image_body():
 		for card in _cards:
 			card.modulate.a = 0.0
+		_is_waiting_for_render = true
+	else:
+		_is_waiting_for_render = false
 
 # Synchronous variant — used by the NEUTRAL re-display path. Skips the fade
 # regardless of prompt type (player has already read the prompt once).
 func display_prompt_instant(prompt: DialoguePrompt) -> void:
 	display_prompt(prompt)
+	# Instant path (NEUTRAL re-display) skips the typewriter — clear the
+	# render gate so input opens immediately on the next frame.
+	_is_waiting_for_render = false
 	_apply_all_transforms()
 
 # Awaitable. Public so the caller (gameplay) can trigger the fade once
@@ -204,6 +218,7 @@ func display_prompt_instant(prompt: DialoguePrompt) -> void:
 func start_fade_in() -> void:
 	if _state != State.NORMAL:
 		return
+	_is_waiting_for_render = false
 	_is_fading_in = true
 	if _fade_tween:
 		_fade_tween.kill()
@@ -260,9 +275,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if _state == State.REACTION:
 		return
-	# Lock all carousel input while the cards are still arriving (fade-in)
-	# OR while the K-confirm punch chain is in flight.
-	if _is_fading_in or _is_punching:
+	# Lock all carousel input while the cards are still arriving (fade-in),
+	# while the riddle typewriter is mid-render (cards alpha=0; J/L would
+	# repaint them via _apply_all_transforms), OR while the K-confirm punch
+	# chain is in flight.
+	if _is_fading_in or _is_punching or _is_waiting_for_render:
 		return
 	# J/L cycle with wrap; I is intentionally unused (per CONTEXT.md Riddle
 	# Encounter). Confirm carries no SFX — the riddle outcome SFX
