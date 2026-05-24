@@ -31,6 +31,8 @@ const SIDE_SCALE := 0.7
 const CENTER_SCALE := 1.0
 const CENTER_Z := 10
 const SIDE_Z := 0
+const CENTER_ALPHA := 1.0
+const SIDE_ALPHA := 0.65   # de-emphasizes unselected side cards at rest
 # Animation timings (seconds).
 const ROTATION_DURATION := 0.18
 const FADE_IN_DURATION := 0.15
@@ -132,17 +134,15 @@ func set_opponent_target_callback(cb: Callable) -> void:
 func is_punching() -> bool:
 	return _is_punching
 
-# Stages the cards for a new prompt. Sets initial alpha based on prompt type:
-# text-body prompts start at alpha 0 (will fade in once the body typewriter
-# completes — gameplay wires that), image-body prompts start at alpha 1.
+# Stages the cards for a new prompt. _apply_all_transforms below sets each
+# card's rest-state alpha per slot role (CENTER_ALPHA, SIDE_ALPHA). Text-body
+# prompts override that to 0 — start_fade_in animates each card back up to
+# its per-slot target after the body typewriter completes.
 func display_prompt(prompt: DialoguePrompt) -> void:
 	_state = State.NORMAL
 	visible = true
 	for card in _cards:
 		card.visible = true
-	var start_alpha: float = 0.0 if not prompt.has_image_body() else 1.0
-	for card in _cards:
-		card.modulate.a = start_alpha
 		card.rotation = 0.0
 	_is_fading_in = false
 	_is_punching = false
@@ -184,13 +184,17 @@ func display_prompt(prompt: DialoguePrompt) -> void:
 		_rotation_tween.kill()
 		_rotation_tween = null
 	_apply_all_transforms()
+	# Text-body prompts hide cards until the body typewriter completes.
+	# start_fade_in animates each card up to its per-slot alpha target.
+	if not prompt.has_image_body():
+		for card in _cards:
+			card.modulate.a = 0.0
 
 # Synchronous variant — used by the NEUTRAL re-display path. Skips the fade
 # regardless of prompt type (player has already read the prompt once).
 func display_prompt_instant(prompt: DialoguePrompt) -> void:
 	display_prompt(prompt)
-	for card in _cards:
-		card.modulate.a = 1.0
+	_apply_all_transforms()
 
 # Awaitable. Public so the caller (gameplay) can trigger the fade once
 # RiddleBox.body_render_complete fires. Image-body prompts skip this.
@@ -203,8 +207,9 @@ func start_fade_in() -> void:
 		_fade_tween = null
 	_fade_tween = create_tween()
 	_fade_tween.set_parallel(true)
-	for card in _cards:
-		_fade_tween.tween_property(card, "modulate:a", 1.0, FADE_IN_DURATION)
+	for i in _cards.size():
+		var role := _slot_role_for(i, _highlight_index)
+		_fade_tween.tween_property(_cards[i], "modulate:a", _slot_alpha(role), FADE_IN_DURATION)
 	await _fade_tween.finished
 	_is_fading_in = false
 
@@ -321,6 +326,7 @@ func _apply_all_transforms() -> void:
 		_cards[i].position = t.position
 		_cards[i].scale = t.scale
 		_cards[i].z_index = t.z
+		_cards[i].modulate.a = t.alpha
 
 # THE SEAM. All carousel position/scale/z computation MUST route through this
 # function — no inline transform math anywhere else. ADR-0001 records the
@@ -357,12 +363,14 @@ func _compute_card_transform(card_index: int, state: Dictionary) -> Dictionary:
 	# For wrap cards both from_role and to_role are SIDE slots (same scale), so
 	# this stays flat — correct. If easing is ever added to progress, revisit.
 	var scale_val: float = lerp(_slot_scale(from_role), _slot_scale(to_role), progress)
+	var alpha_val: float = lerp(_slot_alpha(from_role), _slot_alpha(to_role), progress)
 	var z_val := _slot_z(to_role)
 
 	return {
 		"position": _make_position(anchor),
 		"scale": Vector2(scale_val, scale_val),
 		"z": z_val,
+		"alpha": alpha_val,
 	}
 
 # Converts a slot anchor (Vector2 center point in container-local space) into
@@ -397,6 +405,11 @@ func _slot_z(slot: int) -> int:
 	if slot == Slot.CENTER:
 		return CENTER_Z
 	return SIDE_Z
+
+func _slot_alpha(slot: int) -> float:
+	if slot == Slot.CENTER:
+		return CENTER_ALPHA
+	return SIDE_ALPHA
 
 func _trigger_glove_punch(picked_index: int) -> void:
 	AudioBus.play_sfx("swing")

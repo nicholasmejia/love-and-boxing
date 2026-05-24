@@ -144,15 +144,17 @@ func test_display_prompt_text_body_starts_cards_transparent():
 	for card in c.get_cards():
 		assert_almost_eq(card.modulate.a, 0.0, 0.01, "text-body prompt should stage cards at alpha 0")
 
-func test_display_prompt_image_body_starts_cards_opaque():
+func test_display_prompt_image_body_stages_cards_at_per_slot_alpha():
 	var c := _mount()
 	var prompt := _make_prompt(["r0", "r1", "r2"])
 	prompt.body_image = PlaceholderTexture2D.new()
 	# DialoguePrompt.has_image_body() returns true when body_image is set.
 	c.display_prompt(prompt)
 	await get_tree().process_frame
-	for card in c.get_cards():
-		assert_almost_eq(card.modulate.a, 1.0, 0.01, "image-body prompt should stage cards at alpha 1")
+	var cards := c.get_cards()
+	assert_almost_eq(cards[1].modulate.a, AnswerCarousel.CENTER_ALPHA, 0.01, "center card opaque on image-body")
+	assert_almost_eq(cards[0].modulate.a, AnswerCarousel.SIDE_ALPHA, 0.01, "left side card at SIDE_ALPHA")
+	assert_almost_eq(cards[2].modulate.a, AnswerCarousel.SIDE_ALPHA, 0.01, "right side card at SIDE_ALPHA")
 
 func test_start_fade_in_resolves_after_fade_duration():
 	var c := _mount()
@@ -163,14 +165,18 @@ func test_start_fade_in_resolves_after_fade_duration():
 	var elapsed_ms := Time.get_ticks_msec() - t_start
 	var expected_ms := int(AnswerCarousel.FADE_IN_DURATION * 1000.0)
 	assert_true(elapsed_ms >= expected_ms - 30, "start_fade_in should await full FADE_IN_DURATION — expected ≥%dms, got %dms" % [expected_ms - 30, elapsed_ms])
-	for card in c.get_cards():
-		assert_almost_eq(card.modulate.a, 1.0, 0.01, "cards should be opaque after fade-in")
+	var cards := c.get_cards()
+	assert_almost_eq(cards[1].modulate.a, AnswerCarousel.CENTER_ALPHA, 0.01, "center card opaque after fade-in")
+	assert_almost_eq(cards[0].modulate.a, AnswerCarousel.SIDE_ALPHA, 0.01, "left side card at SIDE_ALPHA after fade-in")
+	assert_almost_eq(cards[2].modulate.a, AnswerCarousel.SIDE_ALPHA, 0.01, "right side card at SIDE_ALPHA after fade-in")
 
 func test_display_prompt_instant_skips_fade_cards_immediately_visible():
 	var c := _mount()
 	c.display_prompt_instant(_make_prompt(["r0", "r1", "r2"]))
-	for card in c.get_cards():
-		assert_almost_eq(card.modulate.a, 1.0, 0.01, "display_prompt_instant should show cards at full opacity immediately")
+	var cards := c.get_cards()
+	assert_almost_eq(cards[1].modulate.a, AnswerCarousel.CENTER_ALPHA, 0.01, "instant display: center card opaque")
+	assert_almost_eq(cards[0].modulate.a, AnswerCarousel.SIDE_ALPHA, 0.01, "instant display: left card at SIDE_ALPHA")
+	assert_almost_eq(cards[2].modulate.a, AnswerCarousel.SIDE_ALPHA, 0.01, "instant display: right card at SIDE_ALPHA")
 
 func test_jl_locked_while_fading_in():
 	var c := _mount()
