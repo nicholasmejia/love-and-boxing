@@ -6,14 +6,17 @@ signal answer_submitted(outcome: int, picked: DialogueAnswer)
 enum State { NORMAL, REACTION }
 
 # Carousel layout — container-local (the AnswerCarousel root is the origin).
+# Slot anchors are Vector2 offsets from the container's logical CENTER point.
+# Phase 6 sets SIDE_OFFSET.y / OFF_SCREEN_OFFSET.y to non-zero values for the
+# diagonal tilt; this task leaves them at 0 so layout is unchanged.
 const CONTAINER_WIDTH := 900.0
 const CONTAINER_HEIGHT := 197.0
 const CARD_WIDTH := 288.0
 const CARD_HEIGHT := 197.0
 const CENTER_X := CONTAINER_WIDTH * 0.5
 const CENTER_Y := CONTAINER_HEIGHT * 0.5
-const SIDE_X_OFFSET := 200.0
-const OFF_SCREEN_X_OFFSET := 600.0
+const SIDE_OFFSET := Vector2(200.0, 0.0)        # X = distance to side slot, Y = vertical tilt
+const OFF_SCREEN_OFFSET := Vector2(600.0, 0.0)  # X = distance to wrap exit, Y = vertical tilt
 const SIDE_SCALE := 0.7
 const CENTER_SCALE := 1.0
 const CENTER_Z := 10
@@ -149,12 +152,12 @@ func _start_exit_tween(picked_index: int) -> void:
 		# The picked card is at CENTER (its slot role is computed relative to
 		# picked_index), so the unpicked cards are guaranteed SIDE_LEFT/SIDE_RIGHT.
 		var role := _slot_role_for(i, picked_index)
-		var target_anchor_x: float
+		var target_anchor: Vector2
 		if role == Slot.SIDE_LEFT:
-			target_anchor_x = _slot_anchor_x(Slot.OFF_LEFT)
+			target_anchor = _slot_anchor(Slot.OFF_LEFT)
 		else:
-			target_anchor_x = _slot_anchor_x(Slot.OFF_RIGHT)
-		var target_position := _make_position(target_anchor_x)
+			target_anchor = _slot_anchor(Slot.OFF_RIGHT)
+		var target_position := _make_position(target_anchor)
 		_exit_tween.tween_property(card, "position", target_position, EXIT_DURATION)
 		_exit_tween.tween_property(card, "modulate:a", 0.0, EXIT_DURATION)
 	_exit_tween.finished.connect(func():
@@ -250,44 +253,44 @@ func _compute_card_transform(card_index: int, state: Dictionary) -> Dictionary:
 	var to_role := _slot_role_for(card_index, int(state.to_center))
 	var progress: float = state.progress
 
-	# Wrap = card swaps sides without passing through center. Its visual path
-	# is a two-segment teleport through the off-screen position on its
-	# leaving side. Non-wrapping cards lerp directly between adjacent slots.
 	var wraps := (from_role == Slot.SIDE_LEFT and to_role == Slot.SIDE_RIGHT) \
 		or (from_role == Slot.SIDE_RIGHT and to_role == Slot.SIDE_LEFT)
 
-	var anchor_x: float
+	var anchor: Vector2
 	if wraps:
 		if from_role == Slot.SIDE_LEFT:
+			# Exits via OFF_LEFT, reappears at OFF_RIGHT, then slides to SIDE_RIGHT.
 			if progress < 0.5:
-				anchor_x = lerp(_slot_anchor_x(Slot.SIDE_LEFT), _slot_anchor_x(Slot.OFF_LEFT), progress * 2.0)
+				anchor = _slot_anchor(Slot.SIDE_LEFT).lerp(_slot_anchor(Slot.OFF_LEFT), progress * 2.0)
 			else:
-				anchor_x = lerp(_slot_anchor_x(Slot.OFF_RIGHT), _slot_anchor_x(Slot.SIDE_RIGHT), (progress - 0.5) * 2.0)
+				anchor = _slot_anchor(Slot.OFF_RIGHT).lerp(_slot_anchor(Slot.SIDE_RIGHT), (progress - 0.5) * 2.0)
 		else:
+			# SIDE_RIGHT → exits via OFF_RIGHT, reappears at OFF_LEFT, slides to SIDE_LEFT.
 			if progress < 0.5:
-				anchor_x = lerp(_slot_anchor_x(Slot.SIDE_RIGHT), _slot_anchor_x(Slot.OFF_RIGHT), progress * 2.0)
+				anchor = _slot_anchor(Slot.SIDE_RIGHT).lerp(_slot_anchor(Slot.OFF_RIGHT), progress * 2.0)
 			else:
-				anchor_x = lerp(_slot_anchor_x(Slot.OFF_LEFT), _slot_anchor_x(Slot.SIDE_LEFT), (progress - 0.5) * 2.0)
+				anchor = _slot_anchor(Slot.OFF_LEFT).lerp(_slot_anchor(Slot.SIDE_LEFT), (progress - 0.5) * 2.0)
 	else:
-		anchor_x = lerp(_slot_anchor_x(from_role), _slot_anchor_x(to_role), progress)
+		anchor = _slot_anchor(from_role).lerp(_slot_anchor(to_role), progress)
 
-	# Scale lerps from raw progress, not the piecewise-remapped anchor_x above.
+	# Scale lerps from raw progress, not the piecewise-remapped anchor above.
 	# For wrap cards both from_role and to_role are SIDE slots (same scale), so
 	# this stays flat — correct. If easing is ever added to progress, revisit.
 	var scale_val: float = lerp(_slot_scale(from_role), _slot_scale(to_role), progress)
 	var z_val := _slot_z(to_role)
 
 	return {
-		"position": _make_position(anchor_x),
+		"position": _make_position(anchor),
 		"scale": Vector2(scale_val, scale_val),
 		"z": z_val,
 	}
 
-# Converts a slot anchor-X into the card's top-left position. Pivot is at the
-# card's geometric center (set in _ready), so this lands the visual center on
-# (anchor_x, CENTER_Y). All position math MUST route through this — ADR-0001.
-func _make_position(anchor_x: float) -> Vector2:
-	return Vector2(anchor_x - CARD_WIDTH / 2.0, CENTER_Y - CARD_HEIGHT / 2.0)
+# Converts a slot anchor (Vector2 center point in container-local space) into
+# the card's top-left position. Pivot is at the card's geometric center (set
+# in _ready), so this lands the visual center on the anchor. All position
+# math MUST route through this — ADR-0001.
+func _make_position(anchor: Vector2) -> Vector2:
+	return Vector2(anchor.x - CARD_WIDTH / 2.0, anchor.y - CARD_HEIGHT / 2.0)
 
 func _slot_role_for(card_index: int, center_index: int) -> int:
 	var relative := (card_index - center_index + 3) % 3
@@ -296,14 +299,14 @@ func _slot_role_for(card_index: int, center_index: int) -> int:
 		1: return Slot.SIDE_RIGHT
 		_: return Slot.SIDE_LEFT  # relative == 2
 
-func _slot_anchor_x(slot: int) -> float:
+func _slot_anchor(slot: int) -> Vector2:
 	match slot:
-		Slot.OFF_LEFT: return CENTER_X - OFF_SCREEN_X_OFFSET
-		Slot.SIDE_LEFT: return CENTER_X - SIDE_X_OFFSET
-		Slot.CENTER: return CENTER_X
-		Slot.SIDE_RIGHT: return CENTER_X + SIDE_X_OFFSET
-		Slot.OFF_RIGHT: return CENTER_X + OFF_SCREEN_X_OFFSET
-		_: return CENTER_X
+		Slot.OFF_LEFT:   return Vector2(CENTER_X - OFF_SCREEN_OFFSET.x,  CENTER_Y + OFF_SCREEN_OFFSET.y)
+		Slot.SIDE_LEFT:  return Vector2(CENTER_X - SIDE_OFFSET.x,        CENTER_Y + SIDE_OFFSET.y)
+		Slot.CENTER:     return Vector2(CENTER_X,                         CENTER_Y)
+		Slot.SIDE_RIGHT: return Vector2(CENTER_X + SIDE_OFFSET.x,        CENTER_Y - SIDE_OFFSET.y)
+		Slot.OFF_RIGHT:  return Vector2(CENTER_X + OFF_SCREEN_OFFSET.x,  CENTER_Y - OFF_SCREEN_OFFSET.y)
+		_:               return Vector2(CENTER_X,                         CENTER_Y)
 
 func _slot_scale(slot: int) -> float:
 	if slot == Slot.CENTER:
