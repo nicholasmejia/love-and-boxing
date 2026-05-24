@@ -25,6 +25,9 @@ const SIDE_Z := 0
 const ROTATION_DURATION := 0.18
 const FADE_IN_DURATION := 0.15
 const EXIT_DURATION := 0.18
+const CARD_FLIGHT_DURATION  := 0.20
+const CARD_FLASH_DURATION   := 0.08
+const CARD_FLIGHT_END_SCALE := 0.4
 
 enum Slot { OFF_LEFT, SIDE_LEFT, CENTER, SIDE_RIGHT, OFF_RIGHT }
 
@@ -43,6 +46,8 @@ var _queued_rotation: int = 0
 var _is_fading_in: bool = false
 var _fade_tween: Tween = null
 var _exit_tween: Tween = null
+var _card_flight_tween: Tween = null
+var _card_flash_tween: Tween = null
 var _is_punching: bool = false
 var _player_gloves: PlayerGloves = null
 
@@ -94,6 +99,12 @@ func display_prompt(prompt: DialoguePrompt) -> void:
 	if _exit_tween:
 		_exit_tween.kill()
 		_exit_tween = null
+	if _card_flight_tween:
+		_card_flight_tween.kill()
+		_card_flight_tween = null
+	if _card_flash_tween:
+		_card_flash_tween.kill()
+		_card_flash_tween = null
 	# Answer cards are shuffled per display so position never reveals outcome.
 	# Don't mutate prompt.answers — the deck reuses prompts across redraws.
 	var shuffled := prompt.answers.duplicate()
@@ -196,15 +207,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		if _is_rotating:
 			return
 		var picked_index := _highlight_index
-		var picked := _picked_answers[picked_index]
 		_state = State.REACTION
 		_is_punching = true
-		# Fire the glove punch first; SFX + visual feedback for input
-		# acceptance is the swing of the glove. Impact-frame work moves
-		# here in Task 10; for now, the existing exit + emit fire immediately.
-		_trigger_glove_punch(picked_index)
-		_start_exit_tween(picked_index)
-		answer_submitted.emit(picked.outcome, picked)
+		# Phase 3 Task 10: glove launches NOW; impact-frame work fires
+		# after GLOVE_TRAVEL_DURATION via the await in _do_punch_chain.
+		_do_punch_chain(picked_index)
 
 func _cycle_highlight(delta: int) -> void:
 	if _is_rotating:
@@ -339,3 +346,58 @@ func _trigger_glove_punch(picked_index: int) -> void:
 	# Card's global_position points to its top-left; offset to its visual center.
 	var card_center := card.global_position + Vector2(CARD_WIDTH * 0.5, CARD_HEIGHT * 0.5) * card.scale
 	_player_gloves.punch_at_screen_position(card_center)
+
+# Coroutine: fires the glove launch, waits for impact, then runs the
+# impact-frame work (SFX pair, card flash, side-card exit, picked-card
+# flight, answer_submitted emit). Stays a single async unit so the
+# timing relationships are easy to read.
+func _do_punch_chain(picked_index: int) -> void:
+	var picked := _picked_answers[picked_index]
+	# Launch glove + swing SFX immediately.
+	_trigger_glove_punch(picked_index)
+	# Wait for the glove to reach the card.
+	await get_tree().create_timer(PlayerGloves.GLOVE_TRAVEL_DURATION).timeout
+	# IMPACT FRAME — all of these happen on the same beat.
+	AudioBus.play_sfx("opponent_punch_body")
+	AudioBus.play_sfx("menu_option_select")
+	_start_card_flash(picked_index)
+	_start_exit_tween(picked_index)
+	_start_picked_card_flight(picked_index)
+	answer_submitted.emit(picked.outcome, picked)
+
+func _start_card_flash(picked_index: int) -> void:
+	var card := _cards[picked_index]
+	if _card_flash_tween:
+		_card_flash_tween.kill()
+		_card_flash_tween = null
+	# Spike modulate to white, then decay back over CARD_FLASH_DURATION.
+	# Use modulate (not modulate:a) so the flash brightens the texture
+	# without changing transparency; the flight tween handles alpha.
+	card.modulate = Color(2.0, 2.0, 2.0, card.modulate.a)
+	_card_flash_tween = create_tween()
+	_card_flash_tween.tween_property(card, "modulate", Color(1.0, 1.0, 1.0, card.modulate.a), CARD_FLASH_DURATION)
+
+func _start_picked_card_flight(picked_index: int) -> void:
+	var card := _cards[picked_index]
+	if _card_flight_tween:
+		_card_flight_tween.kill()
+		_card_flight_tween = null
+	# Phase 3 placeholder target: centered just above the riddle box on
+	# the 1920x1080 stage. Task 11 (Phase 4) wires the real opponent body
+	# global position. Convert from screen space to the card's parent
+	# (the carousel container) local space.
+	var screen_target := Vector2(960, 480)
+	# Control nodes use get_global_transform for coordinate conversion.
+	var parent_control := card.get_parent() as Control
+	var local_target: Vector2 = parent_control.get_global_transform().affine_inverse() * screen_target
+	# Adjust by half card width/height + scale so the card's CENTER lands
+	# on the target, matching the convention in _make_position.
+	var top_left_target: Vector2 = local_target - Vector2(CARD_WIDTH * 0.5, CARD_HEIGHT * 0.5) * CARD_FLIGHT_END_SCALE
+	_card_flight_tween = create_tween()
+	_card_flight_tween.set_parallel(true)
+	_card_flight_tween.tween_property(card, "position", top_left_target, CARD_FLIGHT_DURATION)
+	_card_flight_tween.tween_property(card, "scale", Vector2(CARD_FLIGHT_END_SCALE, CARD_FLIGHT_END_SCALE), CARD_FLIGHT_DURATION)
+	_card_flight_tween.tween_property(card, "modulate:a", 0.0, CARD_FLIGHT_DURATION)
+	_card_flight_tween.finished.connect(func():
+		card.visible = false
+	)

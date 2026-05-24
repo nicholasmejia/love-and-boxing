@@ -117,7 +117,8 @@ func test_confirm_during_rotation_is_rejected():
 	assert_eq(emitted.size(), 0, "K during rotation must not emit answer_submitted")
 	await get_tree().create_timer(AnswerCarousel.ROTATION_DURATION + 0.05).timeout
 	_send_action("menu_confirm")
-	await get_tree().process_frame
+	# Emit is now deferred to impact frame — wait for GLOVE_TRAVEL_DURATION.
+	await get_tree().create_timer(PlayerGloves.GLOVE_TRAVEL_DURATION + 0.03).timeout
 	assert_eq(emitted.size(), 1, "K after rotation completes should emit answer_submitted")
 
 # --- Fade-in visibility ---
@@ -178,7 +179,8 @@ func test_confirm_emits_answer_submitted_with_outcome_and_picked():
 	var emitted: Array = []
 	c.answer_submitted.connect(func(outcome, picked): emitted.append([outcome, picked]))
 	_send_action("menu_confirm")
-	await get_tree().process_frame
+	# Emit is now deferred to impact frame — wait for GLOVE_TRAVEL_DURATION.
+	await get_tree().create_timer(PlayerGloves.GLOVE_TRAVEL_DURATION + 0.03).timeout
 	assert_eq(emitted.size(), 1, "K should emit answer_submitted once")
 	var event: Array = emitted[0]
 	assert_true(event[1] is DialogueAnswer, "second arg should be the picked DialogueAnswer")
@@ -265,3 +267,24 @@ func test_k_confirm_triggers_glove_punch_and_locks_is_punching():
 	await get_tree().process_frame
 	var glove_pos := (gloves.get_node("RightGlove") as Node2D).position
 	assert_true(glove_pos.distance_to(Vector2(1760, 920)) > 5.0, "right glove should have started moving from rest (1760, 920)")
+
+# --- Phase 3 Task 10: impact-frame timing ---
+
+func test_answer_submitted_emits_at_impact_frame_not_at_k_press():
+	var pair := _mount_carousel_with_gloves()
+	var c: AnswerCarousel = pair[0]
+	c.display_prompt_instant(_make_prompt(["r0", "r1", "r2"]))
+	await get_tree().process_frame
+	var emitted: Array = []
+	c.answer_submitted.connect(func(outcome, picked): emitted.append(Time.get_ticks_msec()))
+	var t_press := Time.get_ticks_msec()
+	_send_action("menu_confirm")
+	await get_tree().process_frame
+	assert_eq(emitted.size(), 0, "answer_submitted should NOT emit on K-press")
+	# Wait for the glove to reach the card.
+	await get_tree().create_timer(PlayerGloves.GLOVE_TRAVEL_DURATION + 0.03).timeout
+	assert_eq(emitted.size(), 1, "answer_submitted should emit at impact frame")
+	var t_emit: int = emitted[0]
+	var elapsed_ms := t_emit - t_press
+	var expected_ms := int(PlayerGloves.GLOVE_TRAVEL_DURATION * 1000.0)
+	assert_true(elapsed_ms >= expected_ms - 30, "emit should be delayed by ~GLOVE_TRAVEL_DURATION — got %dms" % elapsed_ms)
