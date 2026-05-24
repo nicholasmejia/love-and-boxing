@@ -2,11 +2,15 @@ class_name AnswerCarousel
 extends Control
 
 signal answer_submitted(outcome: int, picked: DialogueAnswer)
-# Emitted when the picked card finishes its flight tween into the opponent
-# body. The argument is an Opponent.Direction value indicating the side the
-# card came from (always RIGHT today — the carousel is on the right of the
-# stage). Gameplay forwards to Opponent.set_action(HIT_LOW, direction) and
-# queues GUARD_DOWN after HIT_HOLD_DURATION.
+# Emitted ONLY on the RIGHT outcome, when the picked card finishes its
+# flight tween into the opponent body. NEUTRAL and WRONG handle their card
+# aftermath internally to the carousel (Card Rebound and Card Toss
+# respectively) and do not emit this signal — see CONTEXT.md "Reaction
+# State" for the per-outcome contract. The argument is an Opponent.Direction
+# value indicating the side the card came from (always RIGHT today — the
+# carousel is on the right of the stage). Gameplay forwards to
+# Opponent.set_action(HIT_LOW, direction) and queues GUARD_DOWN after
+# HIT_HOLD_DURATION.
 signal card_struck_opponent(direction: int)
 
 enum State { NORMAL, REACTION }
