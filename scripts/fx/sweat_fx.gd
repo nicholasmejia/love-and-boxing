@@ -8,14 +8,14 @@ extends Node2D
 # This file is the single-source tuning surface — playtest iteration is a
 # constants-only edit. See docs/superpowers/specs/2026-05-24-sweat-particle-fx-design.md.
 
-# Anchor offsets in Opponent-local coordinates. Y values are placeholder
-# guesses — Task 3 verifies them against the actual sprite layout in the
-# editor and snapshots the corrected values back.
+# Anchor offsets in Opponent-local coordinates. Snapshot of the editor-
+# placed positions in scenes/fx/sweat_fx.tscn — keep in sync if you drag
+# the emitter nodes in the editor.
 const IMPACT_OFFSETS := {
-	SimonSequence.Direction.HEAD:  Vector2(  0, 690),
-	SimonSequence.Direction.LEFT:  Vector2(-90, 690),
-	SimonSequence.Direction.BODY:  Vector2(  0, 820),
-	SimonSequence.Direction.RIGHT: Vector2( 90, 690),
+	SimonSequence.Direction.HEAD:  Vector2( -2,  -68),
+	SimonSequence.Direction.LEFT:  Vector2(-236, 108),
+	SimonSequence.Direction.BODY:  Vector2(  0,  224),
+	SimonSequence.Direction.RIGHT: Vector2(196,  118),
 }
 
 # Per-direction launch vectors. Sign convention matches
