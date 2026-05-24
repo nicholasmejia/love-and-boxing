@@ -3,7 +3,6 @@ extends Control
 
 @onready var _text: Label = $Stack/Text
 @onready var _image: TextureRect = $Stack/Image
-@onready var _highlight: ColorRect = $Highlight
 
 var _outcome: int = Outcome.Type.NEUTRAL
 
@@ -17,9 +16,6 @@ func display(answer: DialogueAnswer) -> void:
 		_text.text = answer.text
 		_text.visible = true
 		_image.visible = false
-
-func set_highlighted(highlighted: bool) -> void:
-	_highlight.visible = highlighted
 
 func outcome() -> int:
 	return _outcome
