@@ -15,8 +15,8 @@ const CARD_WIDTH := 288.0
 const CARD_HEIGHT := 197.0
 const CENTER_X := CONTAINER_WIDTH * 0.5
 const CENTER_Y := CONTAINER_HEIGHT * 0.5
-const SIDE_OFFSET := Vector2(200.0, 0.0)        # X = distance to side slot, Y = vertical tilt
-const OFF_SCREEN_OFFSET := Vector2(600.0, 0.0)  # X = distance to wrap exit, Y = vertical tilt
+const SIDE_OFFSET := Vector2(140.0, 90.0)         # X = distance to side slot, Y = vertical tilt
+const OFF_SCREEN_OFFSET := Vector2(420.0, 270.0)  # X = distance to wrap exit, Y = vertical tilt
 const SIDE_SCALE := 0.7
 const CENTER_SCALE := 1.0
 const CENTER_Z := 10

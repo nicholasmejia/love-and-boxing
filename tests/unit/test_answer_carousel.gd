@@ -211,3 +211,21 @@ func test_show_reaction_for_locks_input():
 	_send_action("menu_right")
 	await get_tree().process_frame
 	assert_eq(c._highlight_index, 1, "J/L must be ignored in REACTION state")
+
+# --- Phase 2 Task 6: diagonal layout ---
+
+func test_side_left_anchor_is_below_and_left_of_center():
+	var c := _mount()
+	c.display_prompt_instant(_make_prompt(["r0", "r1", "r2"]))
+	await get_tree().process_frame
+	var cards := c.get_cards()
+	assert_true(cards[0].position.x < cards[1].position.x, "left side card x should be < center card x")
+	assert_true(cards[0].position.y > cards[1].position.y, "left side card y should be > center card y (lower on screen)")
+
+func test_side_right_anchor_is_above_and_right_of_center():
+	var c := _mount()
+	c.display_prompt_instant(_make_prompt(["r0", "r1", "r2"]))
+	await get_tree().process_frame
+	var cards := c.get_cards()
+	assert_true(cards[2].position.x > cards[1].position.x, "right side card x should be > center card x")
+	assert_true(cards[2].position.y < cards[1].position.y, "right side card y should be < center card y (higher on screen)")
