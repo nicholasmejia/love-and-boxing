@@ -35,6 +35,17 @@ const CARD_FLIGHT_DURATION  := 0.20
 const CARD_FLASH_DURATION   := 0.08
 const CARD_FLIGHT_END_SCALE := 0.5
 const HIT_HOLD_DURATION := 0.25
+# Card Rebound (NEUTRAL outcome). The picked card lands on the opponent,
+# then parabolically arcs screen-right + down past the opponent and exits
+# off-screen, spinning 720° clockwise. Reads as "deflected without effect."
+# Plays AFTER the standard picked-card flight (same flight tween as RIGHT).
+const CARD_REBOUND_DURATION := 0.40
+const CARD_REBOUND_OFFSET_X := 600.0        # screen-right travel past landing
+const CARD_REBOUND_APEX_Y := -120.0         # parabolic apex above landing (negative = up in Godot 2D)
+const CARD_REBOUND_END_Y := 320.0           # ends below landing point (off-screen)
+const CARD_REBOUND_END_SCALE := 0.35        # tapers from CARD_FLIGHT_END_SCALE (0.5)
+const CARD_REBOUND_FADE_TAIL := 0.15        # alpha fades to 0 over the last 150ms only
+const CARD_REBOUND_ROTATION_DEG := 720.0    # two full Z spins, clockwise
 
 enum Slot { OFF_LEFT, SIDE_LEFT, CENTER, SIDE_RIGHT, OFF_RIGHT }
 
@@ -54,6 +65,7 @@ var _is_fading_in: bool = false
 var _fade_tween: Tween = null
 var _exit_tween: Tween = null
 var _card_flight_tween: Tween = null
+var _card_rebound_tween: Tween = null
 var _card_flash_tween: Tween = null
 var _is_punching: bool = false
 var _player_gloves: PlayerGloves = null
@@ -105,6 +117,7 @@ func display_prompt(prompt: DialoguePrompt) -> void:
 	var start_alpha: float = 0.0 if not prompt.has_image_body() else 1.0
 	for card in _cards:
 		card.modulate.a = start_alpha
+		card.rotation = 0.0
 	_is_fading_in = false
 	_is_punching = false
 	if _fade_tween:
@@ -116,6 +129,9 @@ func display_prompt(prompt: DialoguePrompt) -> void:
 	if _card_flight_tween:
 		_card_flight_tween.kill()
 		_card_flight_tween = null
+	if _card_rebound_tween:
+		_card_rebound_tween.kill()
+		_card_rebound_tween = null
 	if _card_flash_tween:
 		_card_flash_tween.kill()
 		_card_flash_tween = null
@@ -382,7 +398,7 @@ func _do_punch_chain(picked_index: int) -> void:
 		Outcome.Type.RIGHT:
 			_run_right_choreography(picked_index)
 		Outcome.Type.NEUTRAL:
-			_run_right_choreography(picked_index)  # Task 2 wires this to _run_neutral_choreography(picked_index)
+			_run_neutral_choreography(picked_index)
 		Outcome.Type.WRONG:
 			_run_right_choreography(picked_index)  # Task 3 wires this to _run_wrong_choreography() — no picked_index arg
 
@@ -397,6 +413,18 @@ func _run_right_choreography(picked_index: int) -> void:
 		# from the right side of the stage, so the opponent's hit-pose mirrors
 		# to face right via flip_h = (direction == RIGHT).
 		card_struck_opponent.emit(1)
+	)
+
+# NEUTRAL choreography: side cards slide off-screen + fade (same as RIGHT),
+# picked card flies to opponent body (same as RIGHT, including the flight-end
+# opponent_punch_body SFX), then on landing the picked card runs Card Rebound
+# instead of emitting card_struck_opponent. Opponent stays in IDLE — gameplay's
+# NEUTRAL branch (_on_answer_submitted) handles the reaction-typewriter wait
+# and instant prompt re-display.
+func _run_neutral_choreography(picked_index: int) -> void:
+	_start_exit_tween(picked_index)
+	_start_picked_card_flight(picked_index, func():
+		_animate_card_rebound(picked_index)
 	)
 
 func _start_card_flash(picked_index: int) -> void:
@@ -436,4 +464,40 @@ func _start_picked_card_flight(picked_index: int, on_landed: Callable) -> void:
 	_card_flight_tween.finished.connect(func():
 		AudioBus.play_sfx("opponent_punch_body")
 		on_landed.call()
+	)
+
+# Card Rebound (NEUTRAL outcome). Animates the picked card from its
+# post-flight landing position into a screen-right + down parabolic arc with
+# a 720° clockwise Z-rotation, scale taper, and a trailing alpha fade. Hides
+# the card at the end. Caller must invoke this AFTER the picked-card flight
+# tween has resolved so the start position matches the landing position.
+func _animate_card_rebound(picked_index: int) -> void:
+	var card := _cards[picked_index]
+	if _card_rebound_tween:
+		_card_rebound_tween.kill()
+		_card_rebound_tween = null
+	var start_pos := card.position
+	var apex_y := start_pos.y + CARD_REBOUND_APEX_Y
+	var end_pos := Vector2(start_pos.x + CARD_REBOUND_OFFSET_X, start_pos.y + CARD_REBOUND_END_Y)
+	var half := CARD_REBOUND_DURATION * 0.5
+	_card_rebound_tween = create_tween()
+	_card_rebound_tween.set_parallel(true)
+	# X glides linearly across the full window.
+	_card_rebound_tween.tween_property(card, "position:x", end_pos.x, CARD_REBOUND_DURATION)
+	# Y arcs up then down (parabolic).
+	_card_rebound_tween.tween_property(card, "position:y", apex_y, half) \
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	_card_rebound_tween.tween_property(card, "position:y", end_pos.y, half) \
+		.set_delay(half).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	# Scale tapers from CARD_FLIGHT_END_SCALE (0.5, set by the flight tween)
+	# to CARD_REBOUND_END_SCALE (0.35) across the full window.
+	_card_rebound_tween.tween_property(card, "scale", Vector2(CARD_REBOUND_END_SCALE, CARD_REBOUND_END_SCALE), CARD_REBOUND_DURATION)
+	# Alpha only fades over the trailing tail — card stays visible through
+	# most of the rebound so the spin reads.
+	_card_rebound_tween.tween_property(card, "modulate:a", 0.0, CARD_REBOUND_FADE_TAIL) \
+		.set_delay(CARD_REBOUND_DURATION - CARD_REBOUND_FADE_TAIL)
+	# Z rotation: 720° clockwise. Godot 2D positive rotation is clockwise.
+	_card_rebound_tween.tween_property(card, "rotation", deg_to_rad(CARD_REBOUND_ROTATION_DEG), CARD_REBOUND_DURATION)
+	_card_rebound_tween.finished.connect(func():
+		card.visible = false
 	)

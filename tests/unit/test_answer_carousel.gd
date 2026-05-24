@@ -319,3 +319,19 @@ func test_card_struck_opponent_emits_after_flight_with_direction_right():
 	assert_eq(emitted.size(), 1, "card_struck_opponent should emit once after flight tween completes")
 	# Opponent has `enum Direction { LEFT = 0, RIGHT = 1 }` — confirm RIGHT (= 1).
 	assert_eq(emitted[0], 1, "direction should be Opponent.Direction.RIGHT (1) — card comes from screen-right")
+
+# --- Per-outcome card choreography ---
+
+func test_neutral_outcome_does_not_emit_card_struck_opponent():
+	var pair := _mount_carousel_with_gloves()
+	var c: AnswerCarousel = pair[0]
+	c.display_prompt_instant(_make_prompt_all(Outcome.Type.NEUTRAL))
+	await get_tree().process_frame
+	var emitted: Array = []
+	c.card_struck_opponent.connect(func(direction): emitted.append(direction))
+	_send_action("menu_confirm")
+	# Wait through glove travel + flight + the full rebound window so any
+	# late emit would have fired by now.
+	var total = PlayerGloves.GLOVE_TRAVEL_DURATION + AnswerCarousel.CARD_FLIGHT_DURATION + AnswerCarousel.CARD_REBOUND_DURATION + 0.1
+	await get_tree().create_timer(total).timeout
+	assert_eq(emitted.size(), 0, "card_struck_opponent must NOT emit on NEUTRAL outcome — opponent stays IDLE through the rebound")
