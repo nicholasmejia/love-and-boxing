@@ -200,7 +200,7 @@ func _start_exit_tween(picked_index: int) -> void:
 			target_anchor_x = _slot_anchor_x(Slot.OFF_LEFT)
 		else:
 			target_anchor_x = _slot_anchor_x(Slot.OFF_RIGHT)
-		var target_position := Vector2(target_anchor_x - CARD_WIDTH / 2.0, CENTER_Y - CARD_HEIGHT / 2.0)
+		var target_position := _make_position(target_anchor_x)
 		_exit_tween.tween_property(card, "position", target_position, EXIT_DURATION)
 		_exit_tween.tween_property(card, "modulate:a", 0.0, EXIT_DURATION)
 	# After the tween, flip visible flags so subsequent _setup_display reset
@@ -366,13 +366,21 @@ func _compute_card_transform(card_index: int, state: Dictionary) -> Dictionary:
 	# correctness comes from scale, not z, during the tween.
 	var z_val := _slot_z(to_role)
 
-	# pivot is at card center (set in _ready); position is the card's top-left
-	# such that its visual center lands on (anchor_x, CENTER_Y).
+	# Position formula routed through _make_position per ADR-0001.
 	return {
-		"position": Vector2(anchor_x - CARD_WIDTH / 2.0, CENTER_Y - CARD_HEIGHT / 2.0),
+		"position": _make_position(anchor_x),
 		"scale": Vector2(scale_val, scale_val),
 		"z": z_val,
 	}
+
+# Converts a carousel anchor-X (the visual center of the slot in container-local
+# space) into the AnswerCard's top-left position. Pivot is set at the card's
+# geometric center in _ready(), so positioning the top-left at (anchor_x -
+# CARD_WIDTH/2, CENTER_Y - CARD_HEIGHT/2) lands the visual center on
+# (anchor_x, CENTER_Y). Both _compute_card_transform and _start_exit_tween
+# MUST route through this — see ADR-0001.
+func _make_position(anchor_x: float) -> Vector2:
+	return Vector2(anchor_x - CARD_WIDTH / 2.0, CENTER_Y - CARD_HEIGHT / 2.0)
 
 func _slot_role_for(card_index: int, center_index: int) -> int:
 	# Maps card_index relative to which card is currently centered, into a
