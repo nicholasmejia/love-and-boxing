@@ -1,6 +1,14 @@
-[gd_scene format=3 uid="uid://5avl4ur153hj"]
+[gd_scene load_steps=4 format=3 uid="uid://5avl4ur153hj"]
 
 [ext_resource type="Script" uid="uid://cxk1p8n3sevx1" path="res://scripts/fx/sweat_fx.gd" id="1_sweat_fx"]
+
+[sub_resource type="Gradient" id="Gradient_initial"]
+offsets = PackedFloat32Array(0, 1)
+colors = PackedColorArray(0.78, 0.80, 0.82, 1, 0.65, 0.78, 0.92, 1)
+
+[sub_resource type="Gradient" id="Gradient_alpha"]
+offsets = PackedFloat32Array(0, 1)
+colors = PackedColorArray(1, 1, 1, 1, 1, 1, 1, 0)
 
 [node name="SweatFX" type="Node2D" unique_id=564403240]
 script = ExtResource("1_sweat_fx")
@@ -19,6 +27,9 @@ initial_velocity_min = 500.0
 initial_velocity_max = 800.0
 scale_amount_min = 5.0
 scale_amount_max = 10.0
+color = Color(0.72, 0.80, 0.86, 1)
+color_initial_ramp = SubResource("Gradient_initial")
+color_ramp = SubResource("Gradient_alpha")
 
 [node name="Head" type="CPUParticles2D" parent="." unique_id=1347578960]
 position = Vector2(-2, -68)
@@ -34,6 +45,9 @@ initial_velocity_min = 500.0
 initial_velocity_max = 800.0
 scale_amount_min = 5.0
 scale_amount_max = 10.0
+color = Color(0.72, 0.80, 0.86, 1)
+color_initial_ramp = SubResource("Gradient_initial")
+color_ramp = SubResource("Gradient_alpha")
 
 [node name="Left" type="CPUParticles2D" parent="." unique_id=1519943317]
 position = Vector2(-236, 108)
@@ -49,6 +63,9 @@ initial_velocity_min = 500.0
 initial_velocity_max = 800.0
 scale_amount_min = 5.0
 scale_amount_max = 10.0
+color = Color(0.72, 0.80, 0.86, 1)
+color_initial_ramp = SubResource("Gradient_initial")
+color_ramp = SubResource("Gradient_alpha")
 
 [node name="Right" type="CPUParticles2D" parent="." unique_id=2094392836]
 position = Vector2(196, 118)
@@ -64,3 +81,6 @@ initial_velocity_min = 500.0
 initial_velocity_max = 800.0
 scale_amount_min = 5.0
 scale_amount_max = 10.0
+color = Color(0.72, 0.80, 0.86, 1)
+color_initial_ramp = SubResource("Gradient_initial")
+color_ramp = SubResource("Gradient_alpha")
