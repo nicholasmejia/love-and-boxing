@@ -107,9 +107,10 @@ func _ready() -> void:
 	# capture it lazily per flight via a callback that re-reads the position
 	# at the moment the carousel needs it.
 	# Body global position is around y=1220 (Opponent at y=400 + Body local y=820),
-	# which is abdomen/waist level on screen. Aim the card ~250px higher so it
-	# lands at chest level for a more readable impact.
-	const CARD_TARGET_CHEST_OFFSET := Vector2(0, -250)
+	# which sits in the lower-third of the screen (groin/waist on the on-screen
+	# character art). Raise the target to ~y=470 — solidly on-chest — by
+	# offsetting up by 750px.
+	const CARD_TARGET_CHEST_OFFSET := Vector2(0, -750)
 	_carousel.set_opponent_target_callback(func(): return _opponent.get_node("Body").global_position + CARD_TARGET_CHEST_OFFSET)
 	_carousel.card_struck_opponent.connect(_on_card_struck_opponent)
 	# Forward the body-render-complete signal to the carousel's fade-in.
