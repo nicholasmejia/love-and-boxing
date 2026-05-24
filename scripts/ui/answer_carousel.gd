@@ -387,7 +387,8 @@ func _start_picked_card_flight(picked_index: int) -> void:
 	# global position. Convert from screen space to the card's parent
 	# (the carousel container) local space.
 	var screen_target := Vector2(960, 480)
-	# Control nodes use get_global_transform for coordinate conversion.
+	# Control nodes use get_global_transform for coordinate conversion —
+	# to_local lives on Node2D, not on Control/CanvasItem in this Godot version.
 	var parent_control := card.get_parent() as Control
 	var local_target: Vector2 = parent_control.get_global_transform().affine_inverse() * screen_target
 	# Adjust by half card width/height + scale so the card's CENTER lands
