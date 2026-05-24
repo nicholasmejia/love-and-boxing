@@ -129,6 +129,7 @@ grow_vertical = 0
 text = "End Match (K)"
 
 [node name="WasdPromptLayer" parent="." instance=ExtResource("10_wasd")]
+z_index = 20
 
 [node name="AnnouncementBanner" parent="." instance=ExtResource("7_banner")]
 layout_mode = 1
