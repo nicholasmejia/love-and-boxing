@@ -37,6 +37,11 @@ const PUNCH_OUT_DURATION := 0.20
 # PUNCH_OUT_DURATION (which serves Simon attack-phase punches into the
 # opponent) — carousel punches are shorter because the card is closer.
 const GLOVE_TRAVEL_DURATION := 0.15
+# Carousel-punch end scale, matching the body-strike scale in PUNCH_TARGETS
+# (LEFT/RIGHT entries). Shrinking as the glove moves forward reads as
+# "punching away from camera" — without it the glove stays at rest scale
+# and looks like it's just gliding to the card.
+const CAROUSEL_PUNCH_SCALE := 0.65
 const PUNCH_RETURN_DURATION := 0.30
 const PUNCH_OUT_TRANSITION := Tween.TRANS_BACK
 const PUNCH_RETURN_TRANSITION := Tween.TRANS_QUAD
@@ -216,12 +221,14 @@ func punch_at_screen_position(target_pos: Vector2) -> void:
 	_last_pose_direction = -1  # not a Simon direction; carousel-specific
 	_set_glove_state(Side.RIGHT, State.PUNCH)
 	# Use the existing tween helper so the texture swap + tween bookkeeping
-	# stays in one place. Scale and rotation match the glove's base (no
-	# inward tilt — the punch is straight at the card cluster).
+	# stays in one place. Scale shrinks to CAROUSEL_PUNCH_SCALE on the
+	# forward stroke to match Simon attack punches — same "punching away
+	# from camera" depth read. Rotation stays at base (no inward tilt —
+	# the punch is straight at the card cluster).
 	_tween_glove_to(
 		Side.RIGHT,
 		target_pos,
-		_right_base_scale,
+		_right_base_scale * CAROUSEL_PUNCH_SCALE,
 		_right_base_rotation,
 		GLOVE_TRAVEL_DURATION,
 		PUNCH_OUT_TRANSITION,
