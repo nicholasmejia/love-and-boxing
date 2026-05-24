@@ -9,6 +9,7 @@ enum RiddleVisibility {
 }
 
 @onready var _riddle: RiddleBox = $RiddleBox
+@onready var _carousel: AnswerCarousel = $AnswerCarousel
 @onready var _timer_view: MatchTimerView = $MatchTimer
 @onready var _banner: AnnouncementBanner = $AnnouncementBanner
 @onready var _opponent: Opponent = $Opponent
@@ -100,7 +101,9 @@ func _ready() -> void:
 	_deck.load_tier(1, deck_res.tier_1)
 	_deck.load_tier(2, deck_res.tier_2)
 	_deck.set_active_tier(_knockdowns.count())
-	_riddle.answer_submitted.connect(_on_answer_submitted)
+	_carousel.answer_submitted.connect(_on_answer_submitted)
+	# Forward the body-render-complete signal to the carousel's fade-in.
+	_riddle.body_render_complete.connect(_carousel.start_fade_in)
 	_riddle.visible = false
 	_refresh_heart_row()
 	_refresh_combo_meter()
@@ -546,7 +549,14 @@ func _play_knockdown_sequence() -> void:
 # the box is hidden (gaps / round transitions). The visibility gate below is
 # the single source of truth for "is the player actually answering a prompt
 # right now".
-func _on_answer_submitted(outcome: int) -> void:
+func _on_answer_submitted(outcome: int, picked: DialogueAnswer) -> void:
+	# Route reaction text or hide based on whether the picked answer has one.
+	# Empty-reaction (Tofu) path hides the riddle box body; AnswerCarousel
+	# already started its exit tween and locked input in _unhandled_input.
+	if picked.has_reaction():
+		_riddle.show_reaction(picked.reaction_text)
+	else:
+		_riddle.hide()
 	if _visibility != RiddleVisibility.ENCOUNTER:
 		return
 	# Flip out of ENCOUNTER immediately so re-entrant K-presses bail at the

@@ -182,7 +182,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			return
 		var picked_index := _highlight_index
 		var picked := _picked_answers[picked_index]
-		_state = State.REACTION  # lock for the duration; gameplay calls show_reaction_for next
+		_state = State.REACTION  # lock for the duration
+		_start_exit_tween(picked_index)
 		answer_submitted.emit(picked.outcome, picked)
 
 func _cycle_highlight(delta: int) -> void:
