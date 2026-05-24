@@ -43,6 +43,8 @@ var _queued_rotation: int = 0
 var _is_fading_in: bool = false
 var _fade_tween: Tween = null
 var _exit_tween: Tween = null
+var _is_punching: bool = false
+var _player_gloves: PlayerGloves = null
 
 # Rotation state drives _compute_card_transform. When at rest,
 # from_center == to_center and progress == 1.0. While a rotation tween is
@@ -66,6 +68,13 @@ func get_state() -> int:
 func get_cards() -> Array[AnswerCard]:
 	return _cards
 
+# Injected by gameplay.tscn wiring — the carousel needs a PlayerGloves
+# reference to fire the K-confirm punch chain. If null (e.g., tests that
+# don't need the punch behavior), K still emits answer_submitted but no
+# glove animation plays.
+func set_player_gloves(gloves: PlayerGloves) -> void:
+	_player_gloves = gloves
+
 # Stages the cards for a new prompt. Sets initial alpha based on prompt type:
 # text-body prompts start at alpha 0 (will fade in once the body typewriter
 # completes — gameplay wires that), image-body prompts start at alpha 1.
@@ -78,6 +87,7 @@ func display_prompt(prompt: DialoguePrompt) -> void:
 	for card in _cards:
 		card.modulate.a = start_alpha
 	_is_fading_in = false
+	_is_punching = false
 	if _fade_tween:
 		_fade_tween.kill()
 		_fade_tween = null
@@ -171,11 +181,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if _state == State.REACTION:
 		return
-	# Lock all carousel input while the cards are still arriving (fade-in in
-	# flight). The body typewriter gate (_is_rendering on RiddleBox) is
-	# enforced by gameplay not calling start_fade_in() until the typewriter
-	# finishes — there's no carousel-local typewriter state anymore.
-	if _is_fading_in:
+	# Lock all carousel input while the cards are still arriving (fade-in)
+	# OR while the K-confirm punch chain is in flight.
+	if _is_fading_in or _is_punching:
 		return
 	# J/L cycle with wrap; I is intentionally unused (per CONTEXT.md Riddle
 	# Encounter). Confirm carries no SFX — the riddle outcome SFX
@@ -189,7 +197,12 @@ func _unhandled_input(event: InputEvent) -> void:
 			return
 		var picked_index := _highlight_index
 		var picked := _picked_answers[picked_index]
-		_state = State.REACTION  # lock for the duration
+		_state = State.REACTION
+		_is_punching = true
+		# Fire the glove punch first; SFX + visual feedback for input
+		# acceptance is the swing of the glove. Impact-frame work moves
+		# here in Task 10; for now, the existing exit + emit fire immediately.
+		_trigger_glove_punch(picked_index)
 		_start_exit_tween(picked_index)
 		answer_submitted.emit(picked.outcome, picked)
 
@@ -317,3 +330,12 @@ func _slot_z(slot: int) -> int:
 	if slot == Slot.CENTER:
 		return CENTER_Z
 	return SIDE_Z
+
+func _trigger_glove_punch(picked_index: int) -> void:
+	AudioBus.play_sfx("swing")
+	if _player_gloves == null:
+		return
+	var card := _cards[picked_index]
+	# Card's global_position points to its top-left; offset to its visual center.
+	var card_center := card.global_position + Vector2(CARD_WIDTH * 0.5, CARD_HEIGHT * 0.5) * card.scale
+	_player_gloves.punch_at_screen_position(card_center)

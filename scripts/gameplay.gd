@@ -102,6 +102,7 @@ func _ready() -> void:
 	_deck.load_tier(2, deck_res.tier_2)
 	_deck.set_active_tier(_knockdowns.count())
 	_carousel.answer_submitted.connect(_on_answer_submitted)
+	_carousel.set_player_gloves(_gloves)
 	# Forward the body-render-complete signal to the carousel's fade-in.
 	_riddle.body_render_complete.connect(_carousel.start_fade_in)
 	_riddle.visible = false

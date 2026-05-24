@@ -229,3 +229,39 @@ func test_side_right_anchor_is_above_and_right_of_center():
 	var cards := c.get_cards()
 	assert_true(cards[2].position.x > cards[1].position.x, "right side card x should be > center card x")
 	assert_true(cards[2].position.y < cards[1].position.y, "right side card y should be < center card y (higher on screen)")
+
+# --- Phase 3 Task 9: glove punch trigger + _is_punching gate ---
+
+const PlayerGlovesScene_Task9 := preload("res://scenes/actors/player_gloves.tscn")
+
+func _mount_carousel_with_gloves() -> Array:
+	# Returns [carousel, gloves]. The carousel needs a gloves reference to
+	# trigger the punch; tests construct both as siblings under a root.
+	var root := Node.new()
+	add_child_autoqfree(root)
+	var gloves: PlayerGloves = PlayerGlovesScene_Task9.instantiate()
+	gloves.name = "PlayerGloves"
+	root.add_child(gloves)
+	var c: AnswerCarousel = AnswerCarouselScene.instantiate()
+	root.add_child(c)
+	# Inject the gloves reference via the carousel's setter (added in this task).
+	c.set_player_gloves(gloves)
+	return [c, gloves]
+
+func test_k_confirm_triggers_glove_punch_and_locks_is_punching():
+	var pair := _mount_carousel_with_gloves()
+	var c: AnswerCarousel = pair[0]
+	var gloves: PlayerGloves = pair[1]
+	c.display_prompt_instant(_make_prompt(["r0", "r1", "r2"]))
+	await get_tree().process_frame
+	assert_false(c._is_punching, "_is_punching should be false before K")
+	_send_action("menu_confirm")
+	await get_tree().process_frame
+	assert_true(c._is_punching, "_is_punching should be true after K")
+	# Glove should have started traveling toward the picked card's global position.
+	# RightGlove rest position is Vector2(1760, 920) per player_gloves.tscn.
+	# TRANS_BACK easing moves very little in the first frame (~4px); wait a second
+	# frame so the tween is well into travel before sampling the position.
+	await get_tree().process_frame
+	var glove_pos := (gloves.get_node("RightGlove") as Node2D).position
+	assert_true(glove_pos.distance_to(Vector2(1760, 920)) > 5.0, "right glove should have started moving from rest (1760, 920)")
