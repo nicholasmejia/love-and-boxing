@@ -230,6 +230,11 @@ func _begin_fresh_start_gap() -> void:
 	# entries are already hidden by RiddleBox itself.
 	if _riddle.get_state() != RiddleBox.State.REACTION:
 		_riddle.visible = false
+	# Keep the carousel container mounted while a per-outcome choreography is
+	# in flight — the cards self-hide via tween callbacks, and hiding the
+	# container now would cancel a still-rendering Card Toss / Card Rebound /
+	# RIGHT flight. Display_prompt at gap-end resets all card state cleanly.
+	if not _carousel.is_punching():
 		_carousel.visible = false
 	_prompts.hide_all()
 	_opponent.set_action(Opponent.Action.IDLE, Opponent.Direction.LEFT)
@@ -270,6 +275,11 @@ func _begin_breather_gap() -> void:
 	# (tofu) and pre-prompt entries are already hidden by RiddleBox itself.
 	if _riddle.get_state() != RiddleBox.State.REACTION:
 		_riddle.visible = false
+	# Keep the carousel container mounted while a per-outcome choreography is
+	# in flight — the cards self-hide via tween callbacks (Card Toss, Card
+	# Rebound, RIGHT flight). Hiding the container synchronously on Tofu's
+	# WRONG path used to cancel the Card Toss before any frame rendered.
+	if not _carousel.is_punching():
 		_carousel.visible = false
 	await get_tree().create_timer(MatchPacing.BREATHER_GAP).timeout
 	if my_generation != _gap_generation:
@@ -571,14 +581,16 @@ func _play_knockdown_sequence() -> void:
 # the single source of truth for "is the player actually answering a prompt
 # right now".
 func _on_answer_submitted(outcome: int, picked: DialogueAnswer) -> void:
-	# Route reaction text or hide based on whether the picked answer has one.
-	# Empty-reaction (Tofu) path hides the riddle box body; AnswerCarousel
-	# already started its exit tween and locked input in _unhandled_input.
+	# Route reaction text or hide the riddle body based on whether the picked
+	# answer has one. The AnswerCarousel container stays mounted on both paths
+	# — its per-outcome card choreography (RIGHT flight, NEUTRAL Card Rebound,
+	# WRONG Card Toss) self-hides each card via tween-finished callbacks, and
+	# hiding the container synchronously here would cancel those animations
+	# before they render (we just emitted at the impact frame).
 	if picked.has_reaction():
 		_riddle.show_reaction(picked.reaction_text)
 	else:
 		_riddle.hide()
-		_carousel.hide()
 	if _visibility != RiddleVisibility.ENCOUNTER:
 		return
 	# Flip out of ENCOUNTER immediately so re-entrant K-presses bail at the

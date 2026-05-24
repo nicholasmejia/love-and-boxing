@@ -124,6 +124,14 @@ func set_player_gloves(gloves: PlayerGloves) -> void:
 func set_opponent_target_callback(cb: Callable) -> void:
 	_opponent_target_callback = cb
 
+# True from K-press through the per-outcome choreography until the next prompt
+# loads (display_prompt resets it). Gameplay reads this so phase-transition
+# code can avoid hiding the carousel container mid-choreography — the cards
+# self-hide via tween-finished callbacks; killing the container would cancel
+# the visible animation.
+func is_punching() -> bool:
+	return _is_punching
+
 # Stages the cards for a new prompt. Sets initial alpha based on prompt type:
 # text-body prompts start at alpha 0 (will fade in once the body typewriter
 # completes — gameplay wires that), image-body prompts start at alpha 1.
