@@ -8,10 +8,19 @@ extends Control
 	SimonSequence.Direction.RIGHT: $Right,
 }
 
+const _PROMPT_SFX_KEYS := {
+	SimonSequence.Direction.HEAD: "prompt-display-W",
+	SimonSequence.Direction.LEFT: "prompt-display-A",
+	SimonSequence.Direction.BODY: "prompt-display-S",
+	SimonSequence.Direction.RIGHT: "prompt-display-D",
+}
+
 func _ready() -> void:
 	hide_all()
 
 func flash(direction: int, duration_seconds: float) -> void:
+	if _PROMPT_SFX_KEYS.has(direction):
+		AudioBus.play_sfx(_PROMPT_SFX_KEYS[direction])
 	_flash_variant(direction, duration_seconds, WasdPrompt.Variant.PROMPT)
 
 # `attack: false` (default) = defense flow → SUCCESS / FAIL variants.
