@@ -119,20 +119,17 @@ func _start_typewriter(text: String) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if _state == State.REACTION:
 		return
-	# menu_change_item fires only when highlight actually moves. Confirm carries
-	# no SFX — the riddle outcome SFX (riddle_correct/_neutral/_wrong) is the
-	# feedback for picking an answer.
-	var new_index: int = _highlight_index
+	# J/L cycle with wrap; I is intentionally unused inside RiddleBox (per
+	# CONTEXT.md Riddle Encounter). Confirm carries no SFX — the riddle
+	# outcome SFX (riddle_correct/_neutral/_wrong) is the feedback for
+	# picking an answer.
 	if event.is_action_pressed("menu_left"):
-		new_index = 0
-	elif event.is_action_pressed("menu_up"):
-		new_index = 1
+		_cycle_highlight(-1)
 	elif event.is_action_pressed("menu_right"):
-		new_index = 2
+		_cycle_highlight(1)
 	elif event.is_action_pressed("menu_confirm"):
 		# Render gate: K-confirm is suppressed while the body typewriter is
-		# still running so the player can't skip the read. Navigation stays
-		# open — the player can pre-position the highlight while reading.
+		# still running so the player can't skip the read.
 		if _is_rendering:
 			return
 		var picked_index := _highlight_index
@@ -141,11 +138,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		# the gameplay handler can read those flags / await reaction render.
 		show_reaction(picked_index)
 		answer_submitted.emit(_cards[picked_index].outcome())
-		return
-	if new_index != _highlight_index:
-		_highlight_index = new_index
-		_refresh_highlight()
-		AudioBus.play_sfx("menu_change_item")
+
+func _cycle_highlight(delta: int) -> void:
+	_highlight_index = (_highlight_index + delta + _cards.size()) % _cards.size()
+	_refresh_highlight()
+	AudioBus.play_sfx("menu_change_item")
 
 func _refresh_highlight() -> void:
 	for i in _cards.size():
