@@ -21,16 +21,43 @@ grow_vertical = 2
 mouse_filter = 2
 color = Color(0.12, 0.08, 0.08, 1)
 
+[node name="StoryTitle" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 30.0
+offset_bottom = 90.0
+grow_horizontal = 2
+theme_override_font_sizes/font_size = 40
+horizontal_alignment = 1
+vertical_alignment = 1
+text = "STORY"
+
+[node name="StoryBody" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 360.0
+offset_top = 110.0
+offset_right = -360.0
+offset_bottom = 290.0
+grow_horizontal = 2
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+text = "You are \"Gorgeous\", the world's most beautiful and handsome boxer, determined to conquer both the ring and the hearts of your opponents.  Enter the ring, and get to know your opponent; connect with their feelings and then connect your fist to their jaw!  No mercy, no love lost!"
+
 [node name="Title" type="Label" parent="."]
 layout_mode = 1
 anchors_preset = 10
 anchor_right = 1.0
-offset_top = 80.0
-offset_bottom = 160.0
+offset_top = 310.0
+offset_bottom = 370.0
 grow_horizontal = 2
+theme_override_font_sizes/font_size = 40
 horizontal_alignment = 1
 vertical_alignment = 1
-text = "Select Opponent"
+text = "SELECT OPPONENT"
 
 [node name="HBoxContainer" type="HBoxContainer" parent="."]
 layout_mode = 1
@@ -40,9 +67,9 @@ anchor_top = 0.5
 anchor_right = 0.5
 anchor_bottom = 0.5
 offset_left = -480.0
-offset_top = -200.0
+offset_top = -140.0
 offset_right = 480.0
-offset_bottom = 200.0
+offset_bottom = 260.0
 grow_horizontal = 2
 grow_vertical = 2
 alignment = 1
@@ -62,3 +89,29 @@ text = "Minty (Medium)"
 custom_minimum_size = Vector2(300, 400)
 layout_mode = 2
 text = "Sebastian (Hard)"
+
+[node name="ControlsTitle" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_top = 820.0
+offset_bottom = 880.0
+grow_horizontal = 2
+theme_override_font_sizes/font_size = 40
+horizontal_alignment = 1
+vertical_alignment = 1
+text = "CONTROLS"
+
+[node name="ControlsBody" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 360.0
+offset_top = 900.0
+offset_right = -360.0
+offset_bottom = 1040.0
+grow_horizontal = 2
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+text = "USE 'WASD' KEYS TO MATCH THE INPUT ON THE SCREEN TO BLOCK/ATTACK - USE 'J' AND 'L' TO CHANGE ANSWER CHOICE AND 'K' TO CONFIRM"
