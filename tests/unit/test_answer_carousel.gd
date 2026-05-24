@@ -335,3 +335,17 @@ func test_neutral_outcome_does_not_emit_card_struck_opponent():
 	var total = PlayerGloves.GLOVE_TRAVEL_DURATION + AnswerCarousel.CARD_FLIGHT_DURATION + AnswerCarousel.CARD_REBOUND_DURATION + 0.1
 	await get_tree().create_timer(total).timeout
 	assert_eq(emitted.size(), 0, "card_struck_opponent must NOT emit on NEUTRAL outcome — opponent stays IDLE through the rebound")
+
+func test_wrong_outcome_does_not_emit_card_struck_opponent():
+	var pair := _mount_carousel_with_gloves()
+	var c: AnswerCarousel = pair[0]
+	c.display_prompt_instant(_make_prompt_all(Outcome.Type.WRONG))
+	await get_tree().process_frame
+	var emitted: Array = []
+	c.card_struck_opponent.connect(func(direction): emitted.append(direction))
+	_send_action("menu_confirm")
+	# Wait through glove travel + the full Card Toss window so any late
+	# emit would have fired by now.
+	var total = PlayerGloves.GLOVE_TRAVEL_DURATION + AnswerCarousel.CARD_TOSS_DURATION + AnswerCarousel.CARD_TOSS_DURATION * AnswerCarousel.CARD_TOSS_DURATION_JITTER + 0.1
+	await get_tree().create_timer(total).timeout
+	assert_eq(emitted.size(), 0, "card_struck_opponent must NOT emit on WRONG outcome — no card flies to the opponent")

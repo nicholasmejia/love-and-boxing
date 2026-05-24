@@ -46,6 +46,19 @@ const CARD_REBOUND_END_Y := 320.0           # ends below landing point (off-scre
 const CARD_REBOUND_END_SCALE := 0.35        # tapers from CARD_FLIGHT_END_SCALE (0.5)
 const CARD_REBOUND_FADE_TAIL := 0.15        # alpha fades to 0 over the last 150ms only
 const CARD_REBOUND_ROTATION_DEG := 720.0    # two full Z spins, clockwise
+# Card Toss (WRONG outcome). All three cards fan outward in parallel —
+# left card hooks left, picked (center) card jabs upward, right card hooks
+# right. Per-card jitter on apex and duration keeps the three from moving
+# identically. Replaces both the side-card exit tween and the picked-card
+# flight on WRONG (neither runs on this path).
+const CARD_TOSS_DURATION := 0.30
+const CARD_TOSS_HOOK_PX := 480.0            # side cards' horizontal travel
+const CARD_TOSS_APEX_Y := -180.0            # parabolic apex above start
+const CARD_TOSS_END_Y := 240.0              # ends below start (off-stage)
+const CARD_TOSS_END_SCALE := 0.5            # tapers from 1.0× (center) or 0.7× (sides)
+const CARD_TOSS_ROTATION_DEG := 30.0        # tumble angle in the toss direction
+const CARD_TOSS_APEX_JITTER := 0.15         # ±15% on per-card apex height
+const CARD_TOSS_DURATION_JITTER := 0.10     # ±10% on per-card duration
 
 enum Slot { OFF_LEFT, SIDE_LEFT, CENTER, SIDE_RIGHT, OFF_RIGHT }
 
@@ -66,6 +79,7 @@ var _fade_tween: Tween = null
 var _exit_tween: Tween = null
 var _card_flight_tween: Tween = null
 var _card_rebound_tween: Tween = null
+var _card_toss_tweens: Array[Tween] = []
 var _card_flash_tween: Tween = null
 var _is_punching: bool = false
 var _player_gloves: PlayerGloves = null
@@ -132,6 +146,10 @@ func display_prompt(prompt: DialoguePrompt) -> void:
 	if _card_rebound_tween:
 		_card_rebound_tween.kill()
 		_card_rebound_tween = null
+	for t in _card_toss_tweens:
+		if t and t.is_valid():
+			t.kill()
+	_card_toss_tweens.clear()
 	if _card_flash_tween:
 		_card_flash_tween.kill()
 		_card_flash_tween = null
@@ -400,7 +418,7 @@ func _do_punch_chain(picked_index: int) -> void:
 		Outcome.Type.NEUTRAL:
 			_run_neutral_choreography(picked_index)
 		Outcome.Type.WRONG:
-			_run_right_choreography(picked_index)  # Task 3 wires this to _run_wrong_choreography() — no picked_index arg
+			_run_wrong_choreography()
 
 # RIGHT choreography: side cards slide off-screen + fade, picked card flies
 # to opponent body, flight.finished emits card_struck_opponent so gameplay
@@ -426,6 +444,20 @@ func _run_neutral_choreography(picked_index: int) -> void:
 	_start_picked_card_flight(picked_index, func():
 		_animate_card_rebound(picked_index)
 	)
+
+# WRONG choreography: neither the side-card exit tween nor the picked-card
+# flight runs. All three cards run Card Toss in parallel, fanning outward
+# from their current slot roles (computed at impact via _slot_role_for).
+# card_struck_opponent does NOT emit — no card lands on the opponent. The
+# flight-end opponent_punch_body SFX is suppressed (no flight to end). The
+# opponent's reaction is owned entirely by gameplay's existing WRONG branch
+# (opponent swings at player, heart damage, screen-flash), which fires from
+# the impact-frame answer_submitted emit and runs in parallel with the toss.
+func _run_wrong_choreography() -> void:
+	_card_toss_tweens.clear()
+	for i in _cards.size():
+		var role := _slot_role_for(i, _highlight_index)
+		_animate_card_toss(_cards[i], role)
 
 func _start_card_flash(picked_index: int) -> void:
 	var card := _cards[picked_index]
@@ -503,3 +535,46 @@ func _animate_card_rebound(picked_index: int) -> void:
 	_card_rebound_tween.finished.connect(func():
 		card.visible = false
 	)
+
+# Card Toss (WRONG outcome). Tosses a single card outward along a parabolic
+# arc with a horizontal sign determined by its slot role at impact. Records
+# the tween in _card_toss_tweens so display_prompt can kill it. Hides the
+# card at the end. Caller iterates all three cards and dispatches per role.
+func _animate_card_toss(card: AnswerCard, role: int) -> void:
+	var direction: float
+	match role:
+		Slot.SIDE_LEFT:
+			direction = -1.0
+		Slot.SIDE_RIGHT:
+			direction = 1.0
+		_:
+			direction = 0.0    # CENTER — jabs straight up
+	var horiz := direction * CARD_TOSS_HOOK_PX
+	var apex_scale := 1.0 + randf_range(-CARD_TOSS_APEX_JITTER, CARD_TOSS_APEX_JITTER)
+	var duration_scale := 1.0 + randf_range(-CARD_TOSS_DURATION_JITTER, CARD_TOSS_DURATION_JITTER)
+	var dur := CARD_TOSS_DURATION * duration_scale
+	var half := dur * 0.5
+	var start_pos := card.position
+	var apex_y := start_pos.y + CARD_TOSS_APEX_Y * apex_scale
+	var end_pos := Vector2(start_pos.x + horiz, start_pos.y + CARD_TOSS_END_Y)
+	# Center card has no horizontal direction → give it a small random tumble
+	# so it doesn't sit dead-still rotationally while the sides spin.
+	var rotation_sign := direction if direction != 0.0 else (1.0 if randf() > 0.5 else -1.0)
+	var rotation_target := deg_to_rad(CARD_TOSS_ROTATION_DEG) * rotation_sign
+	var tween := create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(card, "position:x", end_pos.x, dur)
+	# Y arcs up then down (parabolic). The two Y tweeners share the property —
+	# delay on the second must equal the first's duration so they never race
+	# on the same frame. Both equal `half` here; keep them in sync if tuning.
+	tween.tween_property(card, "position:y", apex_y, half) \
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	tween.tween_property(card, "position:y", end_pos.y, half) \
+		.set_delay(half).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tween.tween_property(card, "scale", Vector2(CARD_TOSS_END_SCALE, CARD_TOSS_END_SCALE), dur)
+	tween.tween_property(card, "modulate:a", 0.0, dur)
+	tween.tween_property(card, "rotation", rotation_target, dur)
+	tween.finished.connect(func():
+		card.visible = false
+	)
+	_card_toss_tweens.append(tween)
