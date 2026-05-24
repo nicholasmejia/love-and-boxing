@@ -60,7 +60,7 @@ func _ready() -> void:
 func get_state() -> int:
 	return _state
 
-func get_cards() -> Array:
+func get_cards() -> Array[AnswerCard]:
 	return _cards
 
 # Stages the cards for a new prompt. Sets initial alpha based on prompt type:
