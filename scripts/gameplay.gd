@@ -105,6 +105,7 @@ func _ready() -> void:
 	# Forward the body-render-complete signal to the carousel's fade-in.
 	_riddle.body_render_complete.connect(_carousel.start_fade_in)
 	_riddle.visible = false
+	_carousel.visible = false
 	_refresh_heart_row()
 	_refresh_combo_meter()
 	_refresh_knockdown_meter()
@@ -158,6 +159,7 @@ func _handle_round_end() -> void:
 	_input_bar.cancel()
 	_prompts.hide_all()
 	_riddle.visible = false
+	_carousel.visible = false
 	_visibility = RiddleVisibility.FRESH_START_GAP
 	_gap_generation += 1  # invalidate any in-flight gap awaits
 	if _clock.current_round() >= MatchClock.TOTAL_ROUNDS:
@@ -217,6 +219,7 @@ func _begin_fresh_start_gap() -> void:
 	# entries are already hidden by RiddleBox itself.
 	if _riddle.get_state() != RiddleBox.State.REACTION:
 		_riddle.visible = false
+		_carousel.visible = false
 	_prompts.hide_all()
 	_opponent.set_action(Opponent.Action.IDLE, Opponent.Direction.LEFT)
 	# Settle beat — opponent idle, riddle hidden, defense not yet active.
@@ -228,6 +231,8 @@ func _begin_fresh_start_gap() -> void:
 	_current_prompt = _deck.draw()
 	assert(_current_prompt != null, "DialogueDeck.draw() returned null — deck not loaded?")
 	_riddle.visible = true
+	_carousel.visible = true
+	_carousel.display_prompt(_current_prompt)
 	await _riddle.display(_current_prompt)
 	if my_generation != _gap_generation:
 		return
@@ -254,6 +259,7 @@ func _begin_breather_gap() -> void:
 	# (tofu) and pre-prompt entries are already hidden by RiddleBox itself.
 	if _riddle.get_state() != RiddleBox.State.REACTION:
 		_riddle.visible = false
+		_carousel.visible = false
 	await get_tree().create_timer(MatchPacing.BREATHER_GAP).timeout
 	if my_generation != _gap_generation:
 		return
@@ -262,6 +268,8 @@ func _begin_breather_gap() -> void:
 	_current_prompt = _deck.draw()
 	assert(_current_prompt != null, "DialogueDeck.draw() returned null — deck not loaded?")
 	_riddle.visible = true
+	_carousel.visible = true
+	_carousel.display_prompt(_current_prompt)
 	await _riddle.display(_current_prompt)
 	if my_generation != _gap_generation:
 		return
@@ -348,6 +356,7 @@ func _end_match_loss() -> void:
 	_input_bar.cancel()
 	_prompts.hide_all()
 	_riddle.visible = false
+	_carousel.visible = false
 	_gap_generation += 1  # invalidate any in-flight gap awaits
 	AudioBus.play_music("defeat")
 	AudioBus.play_sfx("round_knockout")
@@ -474,6 +483,7 @@ func _on_attack_first_input() -> void:
 	# the player has committed to the attack phase. Hide it for the rest of the
 	# phase; the next breather's display() call rebuilds in NORMAL.
 	_riddle.hide()
+	_carousel.hide()
 
 func _on_attack_failed(expected_direction: int) -> void:
 	# CONTEXT.md → "Combo": failed attack inputs do not reset combo. We just
@@ -557,6 +567,7 @@ func _on_answer_submitted(outcome: int, picked: DialogueAnswer) -> void:
 		_riddle.show_reaction(picked.reaction_text)
 	else:
 		_riddle.hide()
+		_carousel.hide()
 	if _visibility != RiddleVisibility.ENCOUNTER:
 		return
 	# Flip out of ENCOUNTER immediately so re-entrant K-presses bail at the
@@ -623,7 +634,9 @@ func _on_answer_submitted(outcome: int, picked: DialogueAnswer) -> void:
 
 			# Re-show riddle (Tofu hide() path needs the visibility flip).
 			_riddle.visible = true
+			_carousel.visible = true
 			_riddle.display_instant(_current_prompt)
+			_carousel.display_prompt_instant(_current_prompt)
 			_visibility = RiddleVisibility.ENCOUNTER
 			# Replay simon chain at current length. Edge case: player K'd the
 			# answer before defense.start() fired (during the render gate's read

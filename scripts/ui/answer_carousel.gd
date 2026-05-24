@@ -111,6 +111,8 @@ func display_prompt_instant(prompt: DialoguePrompt) -> void:
 # Awaitable. Public so the caller (gameplay) can trigger the fade once
 # RiddleBox.body_render_complete fires. Image-body prompts skip this.
 func start_fade_in() -> void:
+	if _state != State.NORMAL:
+		return
 	_is_fading_in = true
 	if _fade_tween:
 		_fade_tween.kill()
@@ -162,6 +164,8 @@ func _start_exit_tween(picked_index: int) -> void:
 	)
 
 func _unhandled_input(event: InputEvent) -> void:
+	if not visible:
+		return
 	if _state == State.REACTION:
 		return
 	# Lock all carousel input while the cards are still arriving (fade-in in

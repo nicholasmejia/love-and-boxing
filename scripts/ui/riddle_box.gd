@@ -60,6 +60,7 @@ func _setup_display(prompt: DialoguePrompt) -> void:
 # already pre-checked has_reaction() — for empty-reaction prompts (Tofu),
 # the caller invokes hide() directly instead of show_reaction().
 func show_reaction(reaction_text: String) -> void:
+	assert(reaction_text != "", "show_reaction requires non-empty text; callers must check has_reaction() and call hide() otherwise")
 	_body_image.visible = false
 	_body_text.visible = true
 	_state = State.REACTION
