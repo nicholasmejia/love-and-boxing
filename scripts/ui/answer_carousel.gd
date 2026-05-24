@@ -361,23 +361,43 @@ func _trigger_glove_punch(picked_index: int) -> void:
 	var card_center := card.global_position + Vector2(CARD_WIDTH * 0.5, CARD_HEIGHT * 0.5) * card.scale
 	_player_gloves.punch_at_screen_position(card_center)
 
-# Coroutine: fires the glove launch, waits for impact, then runs the
-# impact-frame work (SFX pair, card flash, side-card exit, picked-card
-# flight, answer_submitted emit). Stays a single async unit so the
-# timing relationships are easy to read.
+# Coroutine: fires the glove launch, waits for impact, then runs the impact
+# frame (SFX pair, card flash, answer_submitted emit). After the emit,
+# branches on outcome to one of three card choreographies. The pre-impact
+# block stays shared across outcomes — the impact frame is the single sync
+# point that every reaction agrees on.
 func _do_punch_chain(picked_index: int) -> void:
 	var picked := _picked_answers[picked_index]
 	# Launch glove + swing SFX immediately.
 	_trigger_glove_punch(picked_index)
 	# Wait for the glove to reach the card.
 	await get_tree().create_timer(PlayerGloves.GLOVE_TRAVEL_DURATION).timeout
-	# IMPACT FRAME — all of these happen on the same beat.
+	# IMPACT FRAME — shared across outcomes.
 	AudioBus.play_sfx("opponent_punch_body")
 	AudioBus.play_sfx("menu_option_select")
 	_start_card_flash(picked_index)
-	_start_exit_tween(picked_index)
-	_start_picked_card_flight(picked_index)
 	answer_submitted.emit(picked.outcome, picked)
+	# Per-outcome card choreography.
+	match picked.outcome:
+		Outcome.Type.RIGHT:
+			_run_right_choreography(picked_index)
+		Outcome.Type.NEUTRAL:
+			_run_right_choreography(picked_index)
+		Outcome.Type.WRONG:
+			_run_right_choreography(picked_index)
+
+# RIGHT choreography: side cards slide off-screen + fade, picked card flies
+# to opponent body, flight.finished emits card_struck_opponent so gameplay
+# can drive HIT_LOW + GUARD_DOWN.
+func _run_right_choreography(picked_index: int) -> void:
+	_start_exit_tween(picked_index)
+	_start_picked_card_flight(picked_index, func():
+		_cards[picked_index].visible = false
+		# Direction.RIGHT = 1 (matches Opponent.Direction.RIGHT). Card comes
+		# from the right side of the stage, so the opponent's hit-pose mirrors
+		# to face right via flip_h = (direction == RIGHT).
+		card_struck_opponent.emit(1)
+	)
 
 func _start_card_flash(picked_index: int) -> void:
 	var card := _cards[picked_index]
@@ -391,7 +411,12 @@ func _start_card_flash(picked_index: int) -> void:
 	_card_flash_tween = create_tween()
 	_card_flash_tween.tween_property(card, "modulate", Color(1.0, 1.0, 1.0, card.modulate.a), CARD_FLASH_DURATION)
 
-func _start_picked_card_flight(picked_index: int) -> void:
+# Flies the picked card to the opponent body over CARD_FLIGHT_DURATION.
+# At flight end: fires opponent_punch_body SFX, then invokes on_landed.
+# on_landed owns everything after the landing beat — hiding the card,
+# emitting card_struck_opponent on RIGHT, or kicking off Card Rebound on
+# NEUTRAL. WRONG never calls this method (no flight on that path).
+func _start_picked_card_flight(picked_index: int, on_landed: Callable) -> void:
 	var card := _cards[picked_index]
 	if _card_flight_tween:
 		_card_flight_tween.kill()
@@ -407,13 +432,8 @@ func _start_picked_card_flight(picked_index: int) -> void:
 	_card_flight_tween.tween_property(card, "position", top_left_target, CARD_FLIGHT_DURATION)
 	_card_flight_tween.tween_property(card, "scale", Vector2(CARD_FLIGHT_END_SCALE, CARD_FLIGHT_END_SCALE), CARD_FLIGHT_DURATION)
 	# No alpha tween — keep the card fully opaque through the flight so the
-	# impact reads visually. The finished lambda below snaps visible=false
-	# at landing-time, which is the actual "card hits opponent" moment.
+	# impact reads visually.
 	_card_flight_tween.finished.connect(func():
-		card.visible = false
 		AudioBus.play_sfx("opponent_punch_body")
-		# Direction.RIGHT = 1 (matches Opponent.Direction.RIGHT). Card comes
-		# from the right side of the stage, so the opponent's hit-pose mirrors
-		# to face right via flip_h = (direction == RIGHT).
-		card_struck_opponent.emit(1)
+		on_landed.call()
 	)

@@ -16,6 +16,20 @@ func _make_prompt(reactions: Array) -> DialoguePrompt:
 		p.answers.append(a)
 	return p
 
+# Builds a prompt where all three answers carry the same outcome. Lets a test
+# K-press any card and know exactly which outcome path the carousel will run,
+# bypassing the per-display shuffle in display_prompt.
+func _make_prompt_all(outcome: int) -> DialoguePrompt:
+	var p := DialoguePrompt.new()
+	p.body_text = "body"
+	for i in 3:
+		var a := DialogueAnswer.new()
+		a.text = "answer_%d" % i
+		a.outcome = outcome
+		a.reaction_text = "r"
+		p.answers.append(a)
+	return p
+
 func _mount() -> AnswerCarousel:
 	var c: AnswerCarousel = AnswerCarouselScene.instantiate()
 	add_child_autoqfree(c)
@@ -294,7 +308,7 @@ func test_answer_submitted_emits_at_impact_frame_not_at_k_press():
 func test_card_struck_opponent_emits_after_flight_with_direction_right():
 	var pair := _mount_carousel_with_gloves()
 	var c: AnswerCarousel = pair[0]
-	c.display_prompt_instant(_make_prompt(["r0", "r1", "r2"]))
+	c.display_prompt_instant(_make_prompt_all(Outcome.Type.RIGHT))
 	await get_tree().process_frame
 	var emitted: Array = []
 	c.card_struck_opponent.connect(func(direction): emitted.append(direction))
