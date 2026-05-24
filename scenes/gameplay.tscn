@@ -108,10 +108,10 @@ grow_horizontal = 2
 grow_vertical = 0
 
 [node name="AnswerCarousel" parent="." instance=ExtResource("13_carousel")]
-offset_left = 510.0
-offset_top = 498.0
-offset_right = 1410.0
-offset_bottom = 695.0
+offset_left = 1280.0
+offset_top = 410.0
+offset_right = 2180.0
+offset_bottom = 607.0
 
 [node name="EndButton" type="Button" parent="."]
 layout_mode = 1
