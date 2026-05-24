@@ -484,7 +484,9 @@ func _animate_card_rebound(picked_index: int) -> void:
 	_card_rebound_tween.set_parallel(true)
 	# X glides linearly across the full window.
 	_card_rebound_tween.tween_property(card, "position:x", end_pos.x, CARD_REBOUND_DURATION)
-	# Y arcs up then down (parabolic).
+	# Y arcs up then down (parabolic). The two Y tweeners share the property —
+	# delay on the second must equal the first's duration so they never race
+	# on the same frame. Both equal `half` here; keep them in sync if tuning.
 	_card_rebound_tween.tween_property(card, "position:y", apex_y, half) \
 		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
 	_card_rebound_tween.tween_property(card, "position:y", end_pos.y, half) \
