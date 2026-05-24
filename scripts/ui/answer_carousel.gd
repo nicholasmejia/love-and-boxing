@@ -17,16 +17,19 @@ enum State { NORMAL, REACTION }
 
 # Carousel layout — container-local (the AnswerCarousel root is the origin).
 # Slot anchors are Vector2 offsets from the container's logical CENTER point.
-# Phase 6 sets SIDE_OFFSET.y / OFF_SCREEN_OFFSET.y to non-zero values for the
-# diagonal tilt; this task leaves them at 0 so layout is unchanged.
+# Side slots sit on a diagonal tilt (SIDE_OFFSET.y non-zero), but the OFF-screen
+# anchors are AXIS-LOCKED to each side: LEFT-side motion is purely horizontal
+# (OFF_LEFT shares SIDE_LEFT's Y), RIGHT-side motion is purely vertical
+# (OFF_RIGHT shares SIDE_RIGHT's X). This applies to both the wrap exit/entry
+# and the picked-card exit tween. SIDE↔CENTER lerps remain diagonal.
 const CONTAINER_WIDTH := 900.0
 const CONTAINER_HEIGHT := 197.0
 const CARD_WIDTH := 288.0
 const CARD_HEIGHT := 197.0
 const CENTER_X := CONTAINER_WIDTH * 0.5
 const CENTER_Y := CONTAINER_HEIGHT * 0.5
-const SIDE_OFFSET := Vector2(140.0, 90.0)         # X = distance to side slot, Y = vertical tilt
-const OFF_SCREEN_OFFSET := Vector2(420.0, 270.0)  # X = distance to wrap exit, Y = vertical tilt
+const SIDE_OFFSET := Vector2(140.0, 90.0)         # X = distance to side slot, Y = diagonal tilt
+const OFF_SCREEN_OFFSET := Vector2(420.0, 270.0)  # X = LEFT-side horizontal travel, Y = RIGHT-side vertical travel
 const SIDE_SCALE := 0.7
 const CENTER_SCALE := 1.0
 const CENTER_Z := 10
@@ -389,11 +392,13 @@ func _slot_role_for(card_index: int, center_index: int) -> int:
 
 func _slot_anchor(slot: int) -> Vector2:
 	match slot:
-		Slot.OFF_LEFT:   return Vector2(CENTER_X - OFF_SCREEN_OFFSET.x,  CENTER_Y + OFF_SCREEN_OFFSET.y)
+		# OFF_LEFT shares SIDE_LEFT's Y → wrap exit/entry along the LEFT-side horizontal axis.
+		Slot.OFF_LEFT:   return Vector2(CENTER_X - OFF_SCREEN_OFFSET.x,  CENTER_Y + SIDE_OFFSET.y)
 		Slot.SIDE_LEFT:  return Vector2(CENTER_X - SIDE_OFFSET.x,        CENTER_Y + SIDE_OFFSET.y)
 		Slot.CENTER:     return Vector2(CENTER_X,                         CENTER_Y)
 		Slot.SIDE_RIGHT: return Vector2(CENTER_X + SIDE_OFFSET.x,        CENTER_Y - SIDE_OFFSET.y)
-		Slot.OFF_RIGHT:  return Vector2(CENTER_X + OFF_SCREEN_OFFSET.x,  CENTER_Y - OFF_SCREEN_OFFSET.y)
+		# OFF_RIGHT shares SIDE_RIGHT's X → wrap exit/entry along the RIGHT-side vertical axis.
+		Slot.OFF_RIGHT:  return Vector2(CENTER_X + SIDE_OFFSET.x,        CENTER_Y - OFF_SCREEN_OFFSET.y)
 		_:               return Vector2(CENTER_X,                         CENTER_Y)
 
 func _slot_scale(slot: int) -> float:
