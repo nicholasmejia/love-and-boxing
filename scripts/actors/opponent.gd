@@ -67,6 +67,7 @@ const REACTION_BODY_FLASH_COUNT := 3
 @onready var _sprite: Sprite2D = $Body
 @onready var _emote_neutral: Sprite2D = $ReactionEmoteNeutral
 @onready var _emote_wrong: Sprite2D = $ReactionEmoteWrong
+@onready var _sweat_fx: SweatFX = $SweatFX
 
 var _slug: String = "tofu"
 var _profile: OpponentAnimationProfile = null
@@ -358,3 +359,9 @@ func _placeholder() -> Texture2D:
 	var img := Image.create(360, 540, false, Image.FORMAT_RGBA8)
 	img.fill(Color(0.3, 0.4, 0.7))
 	return ImageTexture.create_from_image(img)
+
+# Trigger a per-direction sweat burst at the impact zone. Called by
+# gameplay.gd from _on_attack_step_landed, on the same frame as the
+# combo_success SFX and the HIT_* pose.
+func play_sweat(direction: int) -> void:
+	_sweat_fx.emit_for(direction)

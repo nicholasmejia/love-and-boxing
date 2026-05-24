@@ -1,8 +1,9 @@
-[gd_scene load_steps=4 format=3 uid="uid://b1opnent001"]
+[gd_scene load_steps=5 format=3 uid="uid://b1opnent001"]
 
 [ext_resource type="Script" uid="uid://bthu8aj3s4afl" path="res://scripts/actors/opponent.gd" id="1_opp"]
 [ext_resource type="Texture2D" uid="uid://1xm8ign5o678" path="res://assets/sprites/ui/opponent_reaction_neutral.png" id="2_emote_neu"]
 [ext_resource type="Texture2D" uid="uid://on6hpxaq7bjs" path="res://assets/sprites/ui/opponent_reaction_wrong.png" id="3_emote_wrg"]
+[ext_resource type="PackedScene" path="res://scenes/fx/sweat_fx.tscn" id="4_sweat_fx"]
 
 [node name="Opponent" type="Node2D" unique_id=532113287]
 position = Vector2(960, 400)
@@ -23,3 +24,5 @@ position = Vector2(109, -92)
 scale = Vector2(0.1, 0.1)
 texture = ExtResource("3_emote_wrg")
 modulate = Color(1, 1, 1, 0)
+
+[node name="SweatFX" parent="." instance=ExtResource("4_sweat_fx")]

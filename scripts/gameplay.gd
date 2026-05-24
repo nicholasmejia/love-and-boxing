@@ -470,6 +470,7 @@ func _on_attack_step_landed(index: int) -> void:
 	_input_bar.start(_attack.input_window_seconds)
 	_prompts.flash_success(direction, _PUNCH_FLASH_SECONDS, true)
 	_hit_opponent_for(direction)
+	_opponent.play_sweat(direction)
 	_gloves.set_state(PlayerGloves.State.PUNCH, direction)
 	# Wait the full flash window before resetting. If the player inputs the
 	# next step faster than this await (a real risk at the x3 finisher pace),
