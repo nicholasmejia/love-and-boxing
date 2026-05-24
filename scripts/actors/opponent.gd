@@ -42,7 +42,31 @@ const _ACTION_TOKEN := {
 	Action.HIT_LOW: "hit_low",
 }
 
+# Reaction emote (NEUTRAL = sweat-drop fade-slide-fade; WRONG = anger-vein
+# fade-pulse-fade + body modulate flash). Emote sprites are siblings of Body
+# so they don't inherit Body's lunge/recoil; their tween channels are
+# independent of `_current_tween` so set_action() during an active reaction
+# leaves the reaction running. clear_reaction() is the safety net for new
+# prompts.
+const REACTION_NEUTRAL_FADE_IN := 0.12
+const REACTION_NEUTRAL_SLIDE_DOWN_PX := 40.0
+const REACTION_NEUTRAL_SLIDE_DURATION := 0.9
+const REACTION_NEUTRAL_FADE_OUT := 0.25
+const REACTION_WRONG_FADE_IN := 0.08
+const REACTION_WRONG_PULSE_SCALE := 1.18
+const REACTION_WRONG_PULSE_HALF := 0.06
+const REACTION_WRONG_PULSE_COUNT := 4
+const REACTION_WRONG_FADE_OUT := 0.25
+# 50% red tint at the apex — pulses through 3 cycles in parallel with the
+# WRONG emote. Lives on _body_flash_tween, separate from _current_tween,
+# so set_action() (swing/hit poses) cannot kill it mid-flash.
+const REACTION_BODY_FLASH_COLOR := Color(1.0, 0.5, 0.5)
+const REACTION_BODY_FLASH_HALF := 0.06
+const REACTION_BODY_FLASH_COUNT := 3
+
 @onready var _sprite: Sprite2D = $Body
+@onready var _emote_neutral: Sprite2D = $ReactionEmoteNeutral
+@onready var _emote_wrong: Sprite2D = $ReactionEmoteWrong
 
 var _slug: String = "tofu"
 var _profile: OpponentAnimationProfile = null
@@ -53,14 +77,25 @@ var _base_position: Vector2 = Vector2.ZERO
 var _base_scale: Vector2 = Vector2.ONE
 var _base_rotation: float = 0.0
 
+# Emote base transforms captured at _ready so authored scene values are the
+# single source of tuning truth — clear_reaction() restores from these.
+var _emote_neutral_base_pos: Vector2 = Vector2.ZERO
+var _emote_wrong_base_pos: Vector2 = Vector2.ZERO
+var _emote_wrong_base_scale: Vector2 = Vector2.ONE
+
 var _continuous_mode: int = ContinuousMode.STILL
 var _continuous_mode_t: float = 0.0
 var _current_tween: Tween = null
+var _emote_tween: Tween = null
+var _body_flash_tween: Tween = null
 
 func _ready() -> void:
 	_base_position = _sprite.position
 	_base_scale = _sprite.scale
 	_base_rotation = _sprite.rotation
+	_emote_neutral_base_pos = _emote_neutral.position
+	_emote_wrong_base_pos = _emote_wrong.position
+	_emote_wrong_base_scale = _emote_wrong.scale
 
 func configure(opponent_slug: String, profile: OpponentAnimationProfile = null) -> void:
 	_slug = opponent_slug
@@ -68,6 +103,7 @@ func configure(opponent_slug: String, profile: OpponentAnimationProfile = null) 
 		_profile = profile
 	elif _profile == null:
 		_profile = load("res://data/opponent_animation/tofu.tres") as OpponentAnimationProfile
+	clear_reaction()
 	set_action(Action.IDLE)
 
 func set_action(action: int, direction: int = Direction.LEFT) -> void:
@@ -157,6 +193,81 @@ func play_knockdown_recover() -> void:
 	_current_tween = t
 	await t.finished
 	set_action(Action.IDLE, Direction.LEFT)
+
+# Reaction emote dispatch. Called by gameplay at the impact frame for NEUTRAL
+# and WRONG outcomes (RIGHT has no emote — the opponent is hit, not reacting).
+# Always kills any in-flight reaction before starting the new one so
+# back-to-back submissions don't stack.
+func play_reaction(outcome: int) -> void:
+	_kill_reaction_tweens()
+	match outcome:
+		Outcome.Type.NEUTRAL:
+			_play_neutral_reaction()
+		Outcome.Type.WRONG:
+			_play_wrong_reaction()
+		_:
+			pass
+
+func _play_neutral_reaction() -> void:
+	_emote_neutral.position = _emote_neutral_base_pos
+	_emote_neutral.modulate.a = 0.0
+	var slide_target_y := _emote_neutral_base_pos.y + REACTION_NEUTRAL_SLIDE_DOWN_PX
+	var t := create_tween()
+	# Fade in fast, then slide down across most of the visible window, then fade out.
+	t.tween_property(_emote_neutral, "modulate:a", 1.0, REACTION_NEUTRAL_FADE_IN)
+	t.tween_property(_emote_neutral, "position:y", slide_target_y, REACTION_NEUTRAL_SLIDE_DURATION) \
+		.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	t.tween_property(_emote_neutral, "modulate:a", 0.0, REACTION_NEUTRAL_FADE_OUT)
+	_emote_tween = t
+
+func _play_wrong_reaction() -> void:
+	_emote_wrong.position = _emote_wrong_base_pos
+	_emote_wrong.scale = _emote_wrong_base_scale
+	_emote_wrong.modulate.a = 0.0
+	var apex_scale := _emote_wrong_base_scale * REACTION_WRONG_PULSE_SCALE
+	var t := create_tween()
+	t.tween_property(_emote_wrong, "modulate:a", 1.0, REACTION_WRONG_FADE_IN)
+	for i in REACTION_WRONG_PULSE_COUNT:
+		t.tween_property(_emote_wrong, "scale", apex_scale, REACTION_WRONG_PULSE_HALF) \
+			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		t.tween_property(_emote_wrong, "scale", _emote_wrong_base_scale, REACTION_WRONG_PULSE_HALF) \
+			.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	t.tween_property(_emote_wrong, "modulate:a", 0.0, REACTION_WRONG_FADE_OUT)
+	_emote_tween = t
+	_play_body_flash()
+
+# Body modulate flash (3 quick red pulses) for WRONG. Lives on its own tween
+# so set_action()'s _kill_current_tween() — which fires when the opponent
+# transitions to a swing pose after WRONG — does NOT kill it. _reset_to_base()
+# touches position/scale/rotation only, never modulate.
+func _play_body_flash() -> void:
+	var t := create_tween()
+	for i in REACTION_BODY_FLASH_COUNT:
+		t.tween_property(_sprite, "modulate", REACTION_BODY_FLASH_COLOR, REACTION_BODY_FLASH_HALF)
+		t.tween_property(_sprite, "modulate", Color.WHITE, REACTION_BODY_FLASH_HALF)
+	_body_flash_tween = t
+
+# Safety net for new prompts — kills any in-flight reaction tweens and snaps
+# the emote sprites + body modulate back to rest. Tween end-states already
+# reset visuals on natural completion, so clear_reaction() only matters when
+# the next prompt starts mid-reaction (NEUTRAL re-display, configure() on
+# match start, or back-to-back submissions).
+func clear_reaction() -> void:
+	_kill_reaction_tweens()
+	_emote_neutral.modulate.a = 0.0
+	_emote_neutral.position = _emote_neutral_base_pos
+	_emote_wrong.modulate.a = 0.0
+	_emote_wrong.position = _emote_wrong_base_pos
+	_emote_wrong.scale = _emote_wrong_base_scale
+	_sprite.modulate = Color.WHITE
+
+func _kill_reaction_tweens() -> void:
+	if _emote_tween != null and _emote_tween.is_running():
+		_emote_tween.kill()
+	_emote_tween = null
+	if _body_flash_tween != null and _body_flash_tween.is_running():
+		_body_flash_tween.kill()
+	_body_flash_tween = null
 
 func _process(delta: float) -> void:
 	# Timer is shared across continuous modes and resets on every mode transition

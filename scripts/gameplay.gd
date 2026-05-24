@@ -600,6 +600,9 @@ func _on_answer_submitted(outcome: int, picked: DialogueAnswer) -> void:
 	# itself stays visible — RiddleBox owns its own visibility through the
 	# REACTION state and its fallback hide() for empty-reaction (tofu) prompts.
 	_visibility = RiddleVisibility.BREATHER_GAP
+	# Reaction emote fires at the impact frame, in parallel with the per-outcome
+	# card choreography. RIGHT has no emote (the opponent is hit, not reacting).
+	_opponent.play_reaction(outcome)
 	match outcome:
 		Outcome.Type.WRONG:
 			# Snap-clear first so leftover Simon visuals don't co-exist with the
@@ -658,6 +661,7 @@ func _on_answer_submitted(outcome: int, picked: DialogueAnswer) -> void:
 			# Re-show riddle (Tofu hide() path needs the visibility flip).
 			_riddle.visible = true
 			_carousel.visible = true
+			_opponent.clear_reaction()
 			_riddle.display_instant(_current_prompt)
 			_carousel.display_prompt_instant(_current_prompt)
 			_visibility = RiddleVisibility.ENCOUNTER

@@ -1,6 +1,8 @@
-[gd_scene format=3 uid="uid://b1opnent001"]
+[gd_scene load_steps=4 format=3 uid="uid://b1opnent001"]
 
 [ext_resource type="Script" uid="uid://bthu8aj3s4afl" path="res://scripts/actors/opponent.gd" id="1_opp"]
+[ext_resource type="Texture2D" uid="uid://1xm8ign5o678" path="res://assets/sprites/ui/opponent_reaction_neutral.png" id="2_emote_neu"]
+[ext_resource type="Texture2D" uid="uid://on6hpxaq7bjs" path="res://assets/sprites/ui/opponent_reaction_wrong.png" id="3_emote_wrg"]
 
 [node name="Opponent" type="Node2D" unique_id=532113287]
 position = Vector2(960, 400)
@@ -9,3 +11,15 @@ script = ExtResource("1_opp")
 [node name="Body" type="Sprite2D" parent="." unique_id=339621946]
 position = Vector2(0, 820)
 scale = Vector2(0.85, 0.85)
+
+[node name="ReactionEmoteNeutral" type="Sprite2D" parent="."]
+position = Vector2(155, -99)
+scale = Vector2(0.1, 0.1)
+texture = ExtResource("2_emote_neu")
+modulate = Color(1, 1, 1, 0)
+
+[node name="ReactionEmoteWrong" type="Sprite2D" parent="."]
+position = Vector2(109, -92)
+scale = Vector2(0.1, 0.1)
+texture = ExtResource("3_emote_wrg")
+modulate = Color(1, 1, 1, 0)
