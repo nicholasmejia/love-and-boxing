@@ -33,7 +33,7 @@ const FADE_IN_DURATION := 0.15
 const EXIT_DURATION := 0.18
 const CARD_FLIGHT_DURATION  := 0.20
 const CARD_FLASH_DURATION   := 0.08
-const CARD_FLIGHT_END_SCALE := 0.4
+const CARD_FLIGHT_END_SCALE := 0.5
 const HIT_HOLD_DURATION := 0.25
 
 enum Slot { OFF_LEFT, SIDE_LEFT, CENTER, SIDE_RIGHT, OFF_RIGHT }
@@ -406,7 +406,9 @@ func _start_picked_card_flight(picked_index: int) -> void:
 	_card_flight_tween.set_parallel(true)
 	_card_flight_tween.tween_property(card, "position", top_left_target, CARD_FLIGHT_DURATION)
 	_card_flight_tween.tween_property(card, "scale", Vector2(CARD_FLIGHT_END_SCALE, CARD_FLIGHT_END_SCALE), CARD_FLIGHT_DURATION)
-	_card_flight_tween.tween_property(card, "modulate:a", 0.0, CARD_FLIGHT_DURATION)
+	# No alpha tween — keep the card fully opaque through the flight so the
+	# impact reads visually. The finished lambda below snaps visible=false
+	# at landing-time, which is the actual "card hits opponent" moment.
 	_card_flight_tween.finished.connect(func():
 		card.visible = false
 		AudioBus.play_sfx("opponent_punch_body")
