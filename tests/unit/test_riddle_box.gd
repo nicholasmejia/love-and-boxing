@@ -22,11 +22,12 @@ func _mount() -> RiddleBox:
 
 func test_display_enters_normal_with_all_cards_visible():
 	var box := _mount()
-	box.display(_make_prompt(["r0", "r1", "r2"]))
-	await get_tree().process_frame
+	# display() now resolves after typewriter + fade-in. await the full thing.
+	await box.display(_make_prompt(["r0", "r1", "r2"]))
 	assert_eq(box.get_state(), RiddleBox.State.NORMAL)
 	for card in box.get_cards():
-		assert_true(card.visible)
+		assert_true(card.visible, "card should be visible after display() resolves")
+		assert_almost_eq(card.modulate.a, 1.0, 0.01, "card should be fully opaque after fade-in")
 
 func test_show_reaction_hides_unpicked_cards_and_swaps_body_text():
 	var box := _mount()
@@ -54,29 +55,30 @@ func test_show_reaction_with_empty_reaction_hides_box():
 func test_redisplay_from_reaction_returns_to_normal_with_all_cards():
 	var box := _mount()
 	var prompt := _make_prompt(["r0", "r1", "r2"])
-	box.display(prompt)
-	await get_tree().process_frame
+	await box.display(prompt)
 	box.show_reaction(2)
 	await get_tree().process_frame
-	box.display(prompt)
-	await get_tree().process_frame
+	# Re-display via display() runs the typewriter + fade again.
+	await box.display(prompt)
 	assert_eq(box.get_state(), RiddleBox.State.NORMAL)
 	for card in box.get_cards():
 		assert_true(card.visible)
+		assert_almost_eq(card.modulate.a, 1.0, 0.01)
 
 # --- Render gate contract (Riddle Render Gate, see CONTEXT.md) ---
 
-func test_display_is_awaitable_and_resolves_after_typewriter():
+func test_display_is_awaitable_and_resolves_after_typewriter_and_fade():
 	var box := _mount()
-	# body="body" → 4 chars at default 60 cps ≈ 67ms typewriter.
+	# body="body" → 4 chars at default 60 cps ≈ 67ms typewriter, plus
+	# FADE_IN_DURATION ≈ 150ms fade-in.
 	var prompt := _make_prompt(["r0", "r1", "r2"])
 	var t_start := Time.get_ticks_msec()
 	await box.display(prompt)
 	var elapsed_ms := Time.get_ticks_msec() - t_start
 	assert_false(box.is_rendering(), "is_rendering should be false after display() resolves")
-	# If display() didn't await, elapsed would be ~0ms. Assert it actually
-	# waited for at least a few frames' worth of typewriter timers.
-	assert_true(elapsed_ms >= 30, "display() should await typewriter — expected ≥30ms, got %dms" % elapsed_ms)
+	# Resolution must include both the typewriter and the fade-in.
+	var min_expected_ms := 30 + int(RiddleBox.FADE_IN_DURATION * 1000.0) - 20
+	assert_true(elapsed_ms >= min_expected_ms, "display() should await typewriter + fade — expected ≥%dms, got %dms" % [min_expected_ms, elapsed_ms])
 
 func test_body_render_complete_signal_fires_after_typewriter():
 	var box := _mount()

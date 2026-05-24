@@ -27,6 +27,7 @@ const SIDE_Z := 0
 # Animation timings (seconds). Manually playtested per the project's
 # "user is the test harness for visual/feel work" convention.
 const ROTATION_DURATION := 0.18
+const FADE_IN_DURATION := 0.15
 
 # A logical slot the card can occupy in the carousel.
 enum Slot { OFF_LEFT, SIDE_LEFT, CENTER, SIDE_RIGHT, OFF_RIGHT }
@@ -53,6 +54,8 @@ var _picked_answers: Array[DialogueAnswer] = []
 var _rotation_tween: Tween = null
 var _is_rotating: bool = false
 var _queued_rotation: int = 0
+var _is_fading_in: bool = false
+var _fade_tween: Tween = null
 
 # Rotation state drives _compute_card_transform. When at rest,
 # from_center == to_center and progress == 1.0. While a rotation tween is
@@ -79,19 +82,27 @@ func get_cards() -> Array:
 func is_rendering() -> bool:
 	return _is_rendering
 
-# Awaitable. Resolves when the body typewriter completes (or immediately for
-# image-body prompts and instant re-displays). Caller is the gate that controls
-# when DefensePhase activates — see Riddle Render Gate in CONTEXT.md.
+# Awaitable. Resolves when the body typewriter AND the answer-card fade-in
+# complete. Image-body prompts have no typewriter and no fade — display()
+# returns immediately. Caller is the gate that controls when DefensePhase
+# activates — see Riddle Render Gate in CONTEXT.md.
 func display(prompt: DialoguePrompt) -> void:
 	_setup_display(prompt)
 	if prompt.has_image_body():
 		return
 	await _start_typewriter(prompt.body_text)
+	await _start_fade_in()
 
 # Synchronous full-text display. Used by the NEUTRAL re-display path where the
 # player has already read this prompt — typewriter would be busywork.
 func display_instant(prompt: DialoguePrompt) -> void:
 	_setup_display(prompt)
+	# display_instant is for the NEUTRAL re-display path — skip the fade,
+	# the player has already read and the carousel should be immediately
+	# operable. Force cards to full opacity regardless of what _setup_display
+	# initialized (which assumed the text-body fade path).
+	for card in _cards:
+		card.modulate.a = 1.0
 	if prompt.has_image_body():
 		return
 	_typewriter_generation += 1  # cancel any in-flight typewriter
@@ -111,6 +122,15 @@ func _setup_display(prompt: DialoguePrompt) -> void:
 	else:
 		_body_text.visible = true
 		_body_image.visible = false
+	# Text-body prompts start the cards transparent — they fade in after the
+	# typewriter completes. Image-body prompts skip the fade (no typewriter).
+	var start_alpha: float = 0.0 if not prompt.has_image_body() else 1.0
+	for card in _cards:
+		card.modulate.a = start_alpha
+	_is_fading_in = false
+	if _fade_tween:
+		_fade_tween.kill()
+		_fade_tween = null
 	# Answer cards are shuffled per display so position never reveals outcome.
 	# Don't mutate prompt.answers — the deck reuses prompts across redraws.
 	var shuffled := prompt.answers.duplicate()
@@ -167,8 +187,25 @@ func _start_typewriter(text: String) -> void:
 		_is_rendering = false
 		body_render_complete.emit()
 
+func _start_fade_in() -> void:
+	_is_fading_in = true
+	if _fade_tween:
+		_fade_tween.kill()
+		_fade_tween = null
+	_fade_tween = create_tween()
+	_fade_tween.set_parallel(true)
+	for card in _cards:
+		_fade_tween.tween_property(card, "modulate:a", 1.0, FADE_IN_DURATION)
+	await _fade_tween.finished
+	_is_fading_in = false
+
 func _unhandled_input(event: InputEvent) -> void:
 	if _state == State.REACTION:
+		return
+	# Lock all carousel input while the cards are still arriving (typewriter
+	# running OR fade-in tween in flight). Per CONTEXT.md Riddle Render Gate,
+	# the player cannot navigate or confirm an unsettled carousel.
+	if _is_rendering or _is_fading_in:
 		return
 	# J/L cycle with wrap; I is intentionally unused inside RiddleBox (per
 	# CONTEXT.md Riddle Encounter). Confirm carries no SFX — the riddle
@@ -179,10 +216,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_pressed("menu_right"):
 		_cycle_highlight(1)
 	elif event.is_action_pressed("menu_confirm"):
-		# Render gate: K-confirm is suppressed while the body typewriter is
-		# still running OR while a carousel rotation is in flight (the player
-		# can't confirm a card that hasn't fully settled in the center slot).
-		if _is_rendering or _is_rotating:
+		if _is_rotating:
 			return
 		var picked_index := _highlight_index
 		# Order matters: show_reaction() must start the reaction typewriter

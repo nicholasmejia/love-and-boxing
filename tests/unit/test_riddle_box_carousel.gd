@@ -135,3 +135,40 @@ func test_confirm_during_rotation_is_rejected():
 	_send_action("menu_confirm")
 	await get_tree().process_frame
 	assert_eq(emitted.size(), 1, "K after rotation completes should emit answer_submitted")
+
+# --- Phase B Task 5: visibility timing ---
+
+func test_cards_invisible_during_typewriter_for_text_body():
+	var box := _mount()
+	box.display(_make_prompt(["r0", "r1", "r2"]))
+	# Sample one frame in — typewriter is running, cards should be alpha 0.
+	await get_tree().process_frame
+	for card in box.get_cards():
+		assert_almost_eq(card.modulate.a, 0.0, 0.01, "card should be transparent during typewriter")
+
+func test_cards_fade_to_full_opacity_after_typewriter():
+	var box := _mount()
+	# display() awaits both typewriter and fade-in by Task 5's contract.
+	await box.display(_make_prompt(["r0", "r1", "r2"]))
+	for card in box.get_cards():
+		assert_almost_eq(card.modulate.a, 1.0, 0.01, "card should be fully opaque after display() resolves")
+
+func test_display_instant_skips_fade_cards_immediately_visible():
+	var box := _mount()
+	box.display_instant(_make_prompt(["r0", "r1", "r2"]))
+	# No await — display_instant is synchronous and skips the fade.
+	for card in box.get_cards():
+		assert_almost_eq(card.modulate.a, 1.0, 0.01, "display_instant should show cards at full opacity immediately")
+
+func test_jl_locked_while_fading_in():
+	var box := _mount()
+	box.display(_make_prompt(["r0", "r1", "r2"]))
+	# "body" = 4 chars at 60 cps ≈ 67ms typewriter; FADE_IN_DURATION = 150ms.
+	# Wait 120ms: typewriter is done, fade is in flight (started at ~67ms, ends
+	# at ~217ms). At 120ms the fade has been running ~53ms → alpha ≈ 0.35.
+	await get_tree().create_timer(0.12).timeout
+	# _is_fading_in should be true; any alpha in (0, 1) satisfies the check.
+	assert_almost_eq(box.get_cards()[1].modulate.a, 0.0, 0.99, "still fading in (alpha < 1)")  # any value 0..1
+	_send_action("menu_right")
+	await get_tree().process_frame
+	assert_eq(box._highlight_index, 1, "J/L must be ignored during fade-in")
