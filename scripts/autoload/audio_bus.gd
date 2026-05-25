@@ -27,6 +27,7 @@ const SFX_FILES: PackedStringArray = [
 	"input_failure.wav",
 	"menu_change_item.wav",
 	"menu_option_select.wav",
+	"opponent_mat_hit.wav",
 	"opponent_punch_body_01.wav",
 	"opponent_punch_body_02.wav",
 	"opponent_punch_body_03.wav",

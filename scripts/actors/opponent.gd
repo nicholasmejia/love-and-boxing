@@ -171,7 +171,20 @@ func play_knockdown_fall() -> void:
 	t.parallel().tween_property(_sprite, "scale", _base_scale * _profile.knockdown_fall_end_scale, _profile.knockdown_fall_sway_duration).set_trans(_profile.knockdown_fall_drop_transition).set_ease(Tween.EASE_IN)
 	# Phase 2 (sequentially chained after Phase 1): rotation + position drop in parallel.
 	t.tween_property(_sprite, "rotation", _base_rotation + deg_to_rad(_profile.knockdown_fall_rotation_degrees), _profile.knockdown_fall_drop_duration).set_trans(_profile.knockdown_fall_drop_transition).set_ease(Tween.EASE_IN)
-	t.parallel().tween_property(_sprite, "position", _base_position + Vector2(0.0, _profile.knockdown_fall_drop_y), _profile.knockdown_fall_drop_duration).set_trans(_profile.knockdown_fall_drop_transition).set_ease(Tween.EASE_IN)
+	var floor_position := _base_position + Vector2(0.0, _profile.knockdown_fall_drop_y)
+	t.parallel().tween_property(_sprite, "position", floor_position, _profile.knockdown_fall_drop_duration).set_trans(_profile.knockdown_fall_drop_transition).set_ease(Tween.EASE_IN)
+	# Impact frame: mat-hit thud fires the instant Phase 2 finishes (before bounce).
+	t.tween_callback(func(): AudioBus.play_sfx("opponent_mat_hit"))
+	# Phase 3: bounce — diminishing rebounds against the floor for a "thud".
+	var bounce_height: float = _profile.knockdown_fall_bounce_height
+	var bounce_duration: float = _profile.knockdown_fall_bounce_duration
+	for i in _profile.knockdown_fall_bounce_count:
+		var apex := floor_position + Vector2(0.0, -bounce_height)
+		var half_dur := bounce_duration * 0.5
+		t.tween_property(_sprite, "position", apex, half_dur).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+		t.tween_property(_sprite, "position", floor_position, half_dur).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+		bounce_height *= _profile.knockdown_fall_bounce_decay
+		bounce_duration *= _profile.knockdown_fall_bounce_decay
 	_current_tween = t
 	await t.finished
 

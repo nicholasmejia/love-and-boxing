@@ -32,6 +32,12 @@ extends Resource
 @export var knockdown_fall_drop_duration: float = 0.3
 @export var knockdown_fall_drop_transition: int = Tween.TRANS_QUAD
 
+# Impact bounce — diminishing rebounds after the body hits the floor.
+@export var knockdown_fall_bounce_count: int = 2
+@export var knockdown_fall_bounce_height: float = 18.0
+@export var knockdown_fall_bounce_duration: float = 0.18
+@export var knockdown_fall_bounce_decay: float = 0.4
+
 # Knockdown recover (transient, non-KO only)
 @export var knockdown_recover_duration: float = 0.3
 @export var knockdown_recover_transition: int = Tween.TRANS_BACK
