@@ -3,5 +3,5 @@
 [ext_resource type="Script" path="res://scripts/ui/heart_row.gd" id="1_heartrow"]
 
 [node name="HeartRow" type="HBoxContainer"]
-theme_override_constants/separation = 8
+theme_override_constants/separation = 16
 script = ExtResource("1_heartrow")

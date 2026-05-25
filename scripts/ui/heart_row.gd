@@ -15,7 +15,7 @@ func _ready() -> void:
 	_slots.clear()
 	for i in MAX_HEARTS:
 		var t := TextureRect.new()
-		t.custom_minimum_size = Vector2(48, 48)
+		t.custom_minimum_size = Vector2(96, 96)
 		t.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
 		add_child(t)
 		_slots.append(t)
@@ -28,6 +28,6 @@ func set_hearts(count: int) -> void:
 func _load_or_placeholder(path: String, color: Color) -> Texture2D:
 	if ResourceLoader.exists(path):
 		return load(path)
-	var img := Image.create(48, 48, false, Image.FORMAT_RGBA8)
+	var img := Image.create(96, 96, false, Image.FORMAT_RGBA8)
 	img.fill(color)
 	return ImageTexture.create_from_image(img)
