@@ -558,6 +558,10 @@ func _play_knockdown_sequence() -> void:
 	# "delivered hit" feedback.
 	await _banner.show_banner_then_fly_to("knock_down", MatchPacing.KNOCK_DOWN_BANNER, _knockdown_meter.icon_global_center())
 	_refresh_knockdown_meter()
+	# Knockdown reward: regain one heart (capped at MAX_HEARTS) so the player
+	# trades successful punches for survivability.
+	_hearts.heal()
+	_refresh_heart_row()
 	# KNOCKDOWN_PAUSE is the total clock-pause duration; the banner ate part of
 	# it, hold the remainder before resuming the clock. The banner's wall-clock
 	# now includes its slide-in + hold + fly-to-target, so derive the remainder
