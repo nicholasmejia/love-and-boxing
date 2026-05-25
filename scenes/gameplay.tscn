@@ -51,14 +51,14 @@ grow_vertical = 1
 
 [node name="ComboMeter" parent="." instance=ExtResource("3_combo")]
 layout_mode = 1
-anchors_preset = 2
-anchor_top = 0.0
-anchor_bottom = 0.0
-offset_left = 24.0
-offset_top = 144.0
-offset_right = 216.0
-offset_bottom = 336.0
-grow_vertical = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -677.0
+offset_top = 24.0
+offset_right = -485.0
+offset_bottom = 216.0
+grow_horizontal = 0
 
 [node name="KnockdownMeter" parent="." instance=ExtResource("4_kd")]
 layout_mode = 1
