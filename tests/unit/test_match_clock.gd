@@ -49,6 +49,20 @@ func test_no_third_round():
 	c.tick(MatchClock.ROUND_DURATION_SECONDS)
 	assert_true(c.is_match_over())
 
+func test_elapsed_seconds_round_one():
+	var c := MatchClock.new()
+	c.start()
+	c.tick(30.0)
+	assert_almost_eq(c.elapsed_seconds(), 30.0, 0.001)
+
+func test_elapsed_seconds_carries_across_rounds():
+	var c := MatchClock.new()
+	c.start()
+	c.tick(MatchClock.ROUND_DURATION_SECONDS)
+	c.advance_to_next_round()
+	c.tick(45.0)
+	assert_almost_eq(c.elapsed_seconds(), MatchClock.ROUND_DURATION_SECONDS + 45.0, 0.001)
+
 func test_advance_after_match_end_is_idempotent():
 	var c := MatchClock.new()
 	c.start()

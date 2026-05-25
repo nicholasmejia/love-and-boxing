@@ -15,6 +15,7 @@ func _ready() -> void:
 	# finished naturally, this is a 0.5s fade-in from silence.
 	AudioBus.play_music("menu", 0.5)
 	if Globals.last_match_outcome == Globals.MatchOutcome.WIN:
+		SaveData.set_best_time_seconds(Globals.last_played_tier, Globals.last_match_elapsed_seconds)
 		var next_tier := Globals.last_played_tier + 1
 		if next_tier <= 3 and next_tier > SaveData.unlocked_tier():
 			SaveData.unlock_tier(next_tier)

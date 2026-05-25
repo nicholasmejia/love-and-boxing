@@ -24,6 +24,18 @@ func unlock_tier(tier: int) -> void:
 	_config.set_value("progress", "unlocked_tier", tier)
 	_config.save(_path)
 
+func best_time_seconds(tier: int) -> float:
+	return _config.get_value("progress", "best_time_tier_%d" % tier, 0.0)
+
+func set_best_time_seconds(tier: int, seconds: float) -> void:
+	if seconds <= 0.0:
+		return
+	var current := best_time_seconds(tier)
+	if current > 0.0 and seconds >= current:
+		return
+	_config.set_value("progress", "best_time_tier_%d" % tier, seconds)
+	_config.save(_path)
+
 # Audio preferences. Stored in a separate section so reset() leaves them alone —
 # wiping progress shouldn't silence the player's tuned volumes.
 func bgm_volume_percent() -> int:

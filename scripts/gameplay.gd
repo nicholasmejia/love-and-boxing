@@ -552,6 +552,9 @@ func _play_knockdown_sequence() -> void:
 	# until the banner flies into the icon below.
 	_knockdowns.increment()
 	if _knockdowns.is_knockout():
+		# Snapshot elapsed at the killing-blow frame (clock is already paused
+		# above) so the PR time excludes the banner/skip wall-clock that follows.
+		Globals.last_match_elapsed_seconds = _clock.elapsed_seconds()
 		# Begin the opponent-BGM fade the instant the KO knockdown lands so the
 		# track is fully out under the knock_down + knock_out banners ahead of
 		# the you_win stinger.

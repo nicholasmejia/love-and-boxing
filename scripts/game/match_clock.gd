@@ -26,6 +26,9 @@ func tick(delta: float) -> void:
 func seconds_remaining() -> float:
 	return _seconds_remaining
 
+func elapsed_seconds() -> float:
+	return (_current_round - 1) * ROUND_DURATION_SECONDS + (ROUND_DURATION_SECONDS - _seconds_remaining)
+
 func current_round() -> int:
 	return _current_round
 

@@ -39,9 +39,22 @@ func _apply_lock_states() -> void:
 			label.text = "[LOCKED]\n" + _card_labels[i]
 		else:
 			label.text = _card_labels[i]
+		_pr_label(card).text = _format_pr(SaveData.best_time_seconds(tier))
 
 func _card_label(card: Button) -> Label:
 	return card.get_node("CardLabel") as Label
+
+func _pr_label(card: Button) -> Label:
+	return card.get_node("PRLabel") as Label
+
+static func _format_pr(seconds: float) -> String:
+	if seconds <= 0.0:
+		return ""
+	var total_cs := int(round(seconds * 100.0))
+	var mm := total_cs / 6000
+	var ss := (total_cs / 100) % 60
+	var cc := total_cs % 100
+	return "PR: %02d:%02d:%02d" % [mm, ss, cc]
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("menu_left"):
