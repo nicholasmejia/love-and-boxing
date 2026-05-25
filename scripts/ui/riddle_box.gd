@@ -81,7 +81,7 @@ func _start_typewriter(text: String) -> void:
 		if my_generation != _typewriter_generation:
 			return
 		_body_text.visible_characters += 1
-		await get_tree().create_timer(1.0 / _typewriter_speed).timeout
+		await get_tree().create_timer(1.0 / _typewriter_speed, false).timeout
 	if my_generation == _typewriter_generation:
 		_is_rendering = false
 		body_render_complete.emit()

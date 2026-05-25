@@ -119,7 +119,7 @@ func _begin_next_round() -> void:
 	# after start() (length == 1) skips it — the external Riddle Render Gate
 	# already owns the pre-first-show beat.
 	if _sequence.length() > 1 and inter_round_seconds > 0.0:
-		await get_tree().create_timer(inter_round_seconds).timeout
+		await get_tree().create_timer(inter_round_seconds, false).timeout
 		if my_gen != _generation or not _running:
 			return
 	_run_show_then_repeat()
@@ -131,10 +131,10 @@ func _run_show_then_repeat() -> void:
 		if my_gen != _generation:
 			return
 		step_flashed.emit(step)
-		await get_tree().create_timer(step_seconds).timeout
+		await get_tree().create_timer(step_seconds, false).timeout
 		if my_gen != _generation:
 			return
-		await get_tree().create_timer(gap_seconds).timeout
+		await get_tree().create_timer(gap_seconds, false).timeout
 	show_completed.emit()
 	if my_gen == _generation:
 		begin_repeat_phase()

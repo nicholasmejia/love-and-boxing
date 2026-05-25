@@ -238,5 +238,5 @@ func punch_at_screen_position(target_pos: Vector2) -> void:
 	# trigger its impact-frame work, then snap the glove back to IDLE.
 	# The hold must exceed the test's read window (GLOVE_TRAVEL_DURATION + 0.05s)
 	# so callers and tests can sample the punch position before the snap.
-	await get_tree().create_timer(GLOVE_TRAVEL_DURATION + PUNCH_RETURN_DURATION).timeout
+	await get_tree().create_timer(GLOVE_TRAVEL_DURATION + PUNCH_RETURN_DURATION, false).timeout
 	_set_glove_state(Side.RIGHT, State.IDLE)

@@ -48,7 +48,7 @@ static func total_duration_with_fly(hold_seconds: float) -> float:
 func show_banner(banner_name: String, duration_seconds: float) -> void:
 	_apply_banner_image(banner_name)
 	await _animate_in()
-	await get_tree().create_timer(duration_seconds).timeout
+	await get_tree().create_timer(duration_seconds, false).timeout
 	await _animate_out()
 
 # Slides in, holds, then flies the banner toward target_global while shrinking
@@ -56,7 +56,7 @@ func show_banner(banner_name: String, duration_seconds: float) -> void:
 func show_banner_then_fly_to(banner_name: String, hold_seconds: float, target_global: Vector2) -> void:
 	_apply_banner_image(banner_name)
 	await _animate_in()
-	await get_tree().create_timer(hold_seconds).timeout
+	await get_tree().create_timer(hold_seconds, false).timeout
 	await _animate_fly_to(target_global)
 
 # Same as show_banner, but the hold races a skip Signal — whichever fires
@@ -66,7 +66,7 @@ func show_banner_then_fly_to(banner_name: String, hold_seconds: float, target_gl
 func show_banner_skippable(banner_name: String, max_seconds: float, skipper: Signal) -> void:
 	_apply_banner_image(banner_name)
 	await _animate_in()
-	await _await_first(get_tree().create_timer(max_seconds).timeout, skipper)
+	await _await_first(get_tree().create_timer(max_seconds, false).timeout, skipper)
 	await _animate_out()
 
 func _apply_banner_image(banner_name: String) -> void:

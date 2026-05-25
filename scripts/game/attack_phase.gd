@@ -57,7 +57,7 @@ func current_sequence() -> SimonSequence:
 
 func _show() -> void:
 	var my_gen := _generation
-	await get_tree().create_timer(interlude_seconds).timeout
+	await get_tree().create_timer(interlude_seconds, false).timeout
 	if my_gen != _generation:
 		return
 	show_started.emit(_sequence.steps())
@@ -65,10 +65,10 @@ func _show() -> void:
 		if my_gen != _generation:
 			return
 		step_flashed.emit(step)
-		await get_tree().create_timer(step_seconds).timeout
+		await get_tree().create_timer(step_seconds, false).timeout
 		if my_gen != _generation:
 			return
-		await get_tree().create_timer(gap_seconds).timeout
+		await get_tree().create_timer(gap_seconds, false).timeout
 	if my_gen == _generation:
 		_begin_repeat()
 

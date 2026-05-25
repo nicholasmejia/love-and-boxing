@@ -20,6 +20,7 @@ enum RiddleVisibility {
 @onready var _combo_meter: ComboMeter = $ComboMeter
 @onready var _knockdown_meter: KnockdownMeter = $KnockdownMeter
 @onready var _damage_effect: DamageEffect = $DamageEffect
+@onready var _pause_menu: PauseMenu = $PauseMenu
 
 var _clock := MatchClock.new()
 var _hearts := Hearts.new()
@@ -143,6 +144,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and event.keycode == KEY_F9:
 		_play_knockdown_sequence()
 		return
+	if event.is_action_pressed("ui_cancel"):
+		_pause_menu.open()
+		return
 	if _awaiting_continue and event.is_action_pressed("menu_confirm"):
 		_awaiting_continue = false
 		_continue_pressed.emit()
@@ -211,7 +215,7 @@ func _wait_for_continue() -> void:
 func _play_ready_fight() -> void:
 	# Settle beat before the Ready slide-in so the player's eye lands on the
 	# empty match scene first instead of catching the banner already in motion.
-	await get_tree().create_timer(MatchPacing.PRE_READY_DELAY).timeout
+	await get_tree().create_timer(MatchPacing.PRE_READY_DELAY, false).timeout
 	await _banner.show_banner("ready", MatchPacing.READY_BANNER)
 	# Opponent BGM starts in sync with the Fight banner. Round 2's call no-ops
 	# against the Track ID that's already playing from Round 1.
@@ -243,7 +247,7 @@ func _begin_fresh_start_gap() -> void:
 	_prompts.hide_all()
 	_opponent.set_action(Opponent.Action.IDLE, Opponent.Direction.LEFT)
 	# Settle beat — opponent idle, riddle hidden, defense not yet active.
-	await get_tree().create_timer(MatchPacing.FRESH_START_SETTLE).timeout
+	await get_tree().create_timer(MatchPacing.FRESH_START_SETTLE, false).timeout
 	if my_generation != _gap_generation:
 		return
 	# Open the encounter and run the render gate.
@@ -258,7 +262,7 @@ func _begin_fresh_start_gap() -> void:
 		return
 	# Post-typewriter read floor — defense still paused so the player can read
 	# the full prompt before being asked to block.
-	await get_tree().create_timer(MatchPacing.RIDDLE_READ_FLOOR).timeout
+	await get_tree().create_timer(MatchPacing.RIDDLE_READ_FLOOR, false).timeout
 	if my_generation != _gap_generation:
 		return
 	_defense.start()
@@ -285,7 +289,7 @@ func _begin_breather_gap() -> void:
 	# WRONG path used to cancel the Card Toss before any frame rendered.
 	if not _carousel.is_punching():
 		_carousel.visible = false
-	await get_tree().create_timer(MatchPacing.BREATHER_GAP).timeout
+	await get_tree().create_timer(MatchPacing.BREATHER_GAP, false).timeout
 	if my_generation != _gap_generation:
 		return
 	# Open the encounter and run the render gate.
@@ -300,7 +304,7 @@ func _begin_breather_gap() -> void:
 		return
 	# Post-typewriter read floor — defense still paused so the player can read
 	# the full prompt before being asked to block.
-	await get_tree().create_timer(MatchPacing.RIDDLE_READ_FLOOR).timeout
+	await get_tree().create_timer(MatchPacing.RIDDLE_READ_FLOOR, false).timeout
 	if my_generation != _gap_generation:
 		return
 	# Fresh chain at length 1 — WRONG/damage/attack-end all reset the chain.
@@ -332,7 +336,7 @@ func _on_step_blocked(index: int) -> void:
 	_prompts.flash_success(direction, _BLOCK_FLASH_SECONDS)
 	_swing_opponent_for(direction)
 	_gloves.set_state(PlayerGloves.State.BLOCK, direction)
-	await get_tree().create_timer(_BLOCK_FLASH_SECONDS).timeout
+	await get_tree().create_timer(_BLOCK_FLASH_SECONDS, false).timeout
 	# If a faster next-step input bumped the generation while we awaited, that
 	# newer handler owns cleanup — bail before clobbering its in-flight pose.
 	if my_generation != _defense_step_generation:
@@ -368,7 +372,7 @@ func _on_damage_taken(expected_direction: int) -> void:
 	# Hold the punch frame briefly so the hit reads, then recover to IDLE. The
 	# next show phase doesn't land until the breather gap + render gate complete,
 	# so we have plenty of time.
-	await get_tree().create_timer(_DAMAGE_HIT_SECONDS).timeout
+	await get_tree().create_timer(_DAMAGE_HIT_SECONDS, false).timeout
 	_opponent_idle()
 
 func _refresh_heart_row() -> void:
@@ -481,7 +485,7 @@ func _on_attack_step_landed(index: int) -> void:
 	# that step bumps _attack_step_generation and this handler bails below —
 	# otherwise we'd snap the next step's in-flight punch tween mid-pose and
 	# clobber its opponent HIT sprite.
-	await get_tree().create_timer(_PUNCH_FLASH_SECONDS).timeout
+	await get_tree().create_timer(_PUNCH_FLASH_SECONDS, false).timeout
 	if my_generation != _attack_step_generation:
 		return
 	_gloves.set_state(PlayerGloves.State.IDLE)
@@ -496,7 +500,7 @@ func _on_attack_succeeded() -> void:
 	# AttackPhase emits step_landed and attack_succeeded synchronously back-to-back
 	# on the last input — without this await, KNOCKED_DOWN or IDLE would clobber
 	# the HIT sprite within the same frame, before any render.
-	await get_tree().create_timer(_PUNCH_FLASH_SECONDS).timeout
+	await get_tree().create_timer(_PUNCH_FLASH_SECONDS, false).timeout
 	if _combo.is_at_knockdown_threshold():
 		await _play_knockdown_sequence()
 	else:
@@ -569,7 +573,7 @@ func _play_knockdown_sequence() -> void:
 	# would under-count and shorten the post-knockdown pause.
 	var remainder := MatchPacing.KNOCKDOWN_PAUSE - AnnouncementBanner.total_duration_with_fly(MatchPacing.KNOCK_DOWN_BANNER)
 	if remainder > 0.0:
-		await get_tree().create_timer(remainder).timeout
+		await get_tree().create_timer(remainder, false).timeout
 	if _knockdowns.is_knockout():
 		AudioBus.play_sfx("round_knockout")
 		await _banner.show_banner("knock_out", MatchPacing.KNOCK_OUT_BANNER)
@@ -672,7 +676,7 @@ func _on_answer_submitted(outcome: int, picked: DialogueAnswer) -> void:
 
 			# Hold the punch frame briefly so the hit reads, then recover to IDLE.
 			# Runs in parallel with the 4s gap (same pattern as _on_damage_taken).
-			await get_tree().create_timer(_DAMAGE_HIT_SECONDS).timeout
+			await get_tree().create_timer(_DAMAGE_HIT_SECONDS, false).timeout
 			_opponent_idle()
 		Outcome.Type.NEUTRAL:
 			# NEUTRAL gate: RiddleBox is already in REACTION state from confirm,
@@ -693,7 +697,7 @@ func _on_answer_submitted(outcome: int, picked: DialogueAnswer) -> void:
 				await _riddle.body_render_complete
 				if my_gen != _gap_generation:
 					return
-			await get_tree().create_timer(MatchPacing.NEUTRAL_READ_HOLD).timeout
+			await get_tree().create_timer(MatchPacing.NEUTRAL_READ_HOLD, false).timeout
 			if my_gen != _gap_generation:
 				return
 
@@ -722,5 +726,5 @@ func _on_answer_submitted(outcome: int, picked: DialogueAnswer) -> void:
 # signature handles flip_h via direction == RIGHT.
 func _on_card_struck_opponent(direction: int) -> void:
 	_opponent.set_action(Opponent.Action.HIT_LOW, direction)
-	await get_tree().create_timer(AnswerCarousel.HIT_HOLD_DURATION).timeout
+	await get_tree().create_timer(AnswerCarousel.HIT_HOLD_DURATION, false).timeout
 	_opponent.set_action(Opponent.Action.GUARD_DOWN)

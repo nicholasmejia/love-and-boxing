@@ -468,7 +468,7 @@ func _do_punch_chain(picked_index: int) -> void:
 	# Launch glove + swing SFX immediately.
 	_trigger_glove_punch(picked_index)
 	# Wait for the glove to reach the card.
-	await get_tree().create_timer(PlayerGloves.GLOVE_TRAVEL_DURATION).timeout
+	await get_tree().create_timer(PlayerGloves.GLOVE_TRAVEL_DURATION, false).timeout
 	# IMPACT FRAME — shared across outcomes.
 	AudioBus.play_sfx("opponent_punch_body")
 	AudioBus.play_sfx("menu_option_select")
