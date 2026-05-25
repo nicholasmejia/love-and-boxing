@@ -30,6 +30,7 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="VBox" type="VBoxContainer" parent="CenterContainer"]
+custom_minimum_size = Vector2(1400, 0)
 layout_mode = 2
 theme_override_constants/separation = 24
 
@@ -41,6 +42,23 @@ text = "Match Complete"
 [node name="UnlockLabel" type="Label" parent="CenterContainer/VBox"]
 layout_mode = 2
 text = ""
+
+[node name="ChampionMessage" type="Label" parent="CenterContainer/VBox"]
+visible = false
+layout_mode = 2
+theme_override_constants/line_spacing = 14
+theme_override_font_sizes/font_size = 36
+text = "YOU DID IT!
+
+YOU MANAGED TO DUCK, WEAVE, AND SMOOTH TALK YOUR WAY TO THE BELT!
+
+NOW THAT YOU HAVE CONQUERED THE ARENA OF FIST AND OF LOVE, YOU SET YOUR SIGHTS ON YOUR NEXT CHALLENGE:
+
+FRANCHISE OWNERSHIP
+
+TILL NEXT TIME BOXER!"
+horizontal_alignment = 1
+autowrap_mode = 2
 
 [node name="ReturnButton" type="Button" parent="CenterContainer/VBox"]
 layout_mode = 2

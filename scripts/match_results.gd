@@ -2,10 +2,12 @@ extends Control
 
 @onready var _outcome_label: Label = $CenterContainer/VBox/Outcome
 @onready var _unlock_label: Label = $CenterContainer/VBox/UnlockLabel
+@onready var _champion_message: Label = $CenterContainer/VBox/ChampionMessage
 
 func _ready() -> void:
 	_outcome_label.text = _outcome_text()
 	_unlock_label.visible = false
+	_champion_message.visible = _beat_sebastian()
 	# Results is treated as part of the menu loop — the stinger has already
 	# played on the YOU_WIN / YOU_LOSE banner in gameplay. If it's still
 	# audible when we land here (K-skip mid-stinger), the 0.5s cross-fade
