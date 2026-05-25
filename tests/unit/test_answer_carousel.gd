@@ -355,3 +355,50 @@ func test_wrong_outcome_does_not_emit_card_struck_opponent():
 	var total = PlayerGloves.GLOVE_TRAVEL_DURATION + AnswerCarousel.CARD_TOSS_DURATION + AnswerCarousel.CARD_TOSS_DURATION * AnswerCarousel.CARD_TOSS_DURATION_JITTER + 0.1
 	await get_tree().create_timer(total).timeout
 	assert_eq(emitted.size(), 0, "card_struck_opponent must NOT emit on WRONG outcome — no card flies to the opponent")
+
+# --- answer_committed: the K-press race-fix signal ---
+
+func test_answer_committed_emits_synchronously_on_k_press():
+	# Contract: answer_committed fires the same frame as K so gameplay can stop
+	# the defense phase before the GLOVE_TRAVEL_DURATION delay lets a defense
+	# timeout / show-loop step leak into the attack phase. answer_submitted
+	# continues to emit at the impact frame.
+	var pair := _mount_carousel_with_gloves()
+	var c: AnswerCarousel = pair[0]
+	c.display_prompt_instant(_make_prompt_all(Outcome.Type.RIGHT))
+	await get_tree().process_frame
+	var committed: Array = []
+	var submitted: Array = []
+	c.answer_committed.connect(func(outcome): committed.append(outcome))
+	c.answer_submitted.connect(func(_outcome, _picked): submitted.append(Time.get_ticks_msec()))
+	_send_action("menu_confirm")
+	await get_tree().process_frame
+	assert_eq(committed.size(), 1, "answer_committed must fire synchronously on K-press (same frame)")
+	assert_eq(committed[0], Outcome.Type.RIGHT, "answer_committed must carry the picked answer's outcome")
+	assert_eq(submitted.size(), 0, "answer_submitted must NOT fire on the same frame as answer_committed")
+	# Wait through the glove travel — answer_submitted should fire at the impact frame.
+	await get_tree().create_timer(PlayerGloves.GLOVE_TRAVEL_DURATION + 0.03).timeout
+	assert_eq(submitted.size(), 1, "answer_submitted must still fire at the impact frame after glove travel")
+
+func test_answer_committed_does_not_fire_during_rotation_lock():
+	# K is ignored while _is_rotating is true (same gate that suppresses
+	# _do_punch_chain). answer_committed must respect the same gate — gameplay
+	# would otherwise tear down the Simon phase for a press the carousel itself
+	# refused to honor.
+	var pair := _mount_carousel_with_gloves()
+	var c: AnswerCarousel = pair[0]
+	c.display_prompt_instant(_make_prompt_all(Outcome.Type.RIGHT))
+	await get_tree().process_frame
+	var committed: Array = []
+	c.answer_committed.connect(func(outcome): committed.append(outcome))
+	_send_action("menu_right")
+	# Rotation is mid-flight; K during this window must be dropped.
+	await get_tree().process_frame
+	_send_action("menu_confirm")
+	await get_tree().process_frame
+	assert_eq(committed.size(), 0, "answer_committed must NOT fire while a rotation tween is mid-flight")
+	# After rotation settles, K should emit normally.
+	await get_tree().create_timer(AnswerCarousel.ROTATION_DURATION + 0.05).timeout
+	_send_action("menu_confirm")
+	await get_tree().process_frame
+	assert_eq(committed.size(), 1, "answer_committed must fire once the rotation finishes")

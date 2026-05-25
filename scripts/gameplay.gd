@@ -102,6 +102,7 @@ func _ready() -> void:
 	_deck.load_tier(2, deck_res.tier_2)
 	_deck.set_active_tier(_knockdowns.count())
 	_carousel.answer_submitted.connect(_on_answer_submitted)
+	_carousel.answer_committed.connect(_on_answer_committed)
 	_carousel.set_player_gloves(_gloves)
 	# Opponent body global position varies as the opponent lunges/recoils, so
 	# capture it lazily per flight via a callback that re-reads the position
@@ -575,6 +576,30 @@ func _play_knockdown_sequence() -> void:
 	# Defense restarts inside _begin_fresh_start_gap() after the 1s dead-air front.
 	_defense.stop()
 	_begin_fresh_start_gap()
+
+# K-press commit beat — fires synchronously from AnswerCarousel BEFORE the
+# GLOVE_TRAVEL_DURATION await that delays answer_submitted. End the Simon
+# phase here so the ~150ms glove travel doesn't let stale defense activity
+# leak into the attack phase:
+#   - Show-loop step_flashed emissions that would visually collide with the
+#     attack telegraph (or with each other on Tofu's slow 0.8s pace).
+#   - Repeat-phase _on_input_timeout firing _fail_with_damage during the
+#     glove travel — which would reset the combo BEFORE attack begins and
+#     schedule a breather_gap whose later _defense.start() runs in parallel
+#     with the active attack phase.
+#   - Lingering _on_step_blocked / _on_damage_taken handlers awaiting their
+#     flash windows; bumping _defense_step_generation invalidates them so
+#     they can't clobber the attack opponent's GUARD_DOWN_EXCITED pose.
+# answer_submitted continues to own outcome-specific choreography at the
+# impact frame; the redundant _defense.stop() calls inside those branches
+# remain safe no-ops.
+func _on_answer_committed(_outcome: int) -> void:
+	if _visibility != RiddleVisibility.ENCOUNTER:
+		return
+	_gap_generation += 1
+	_defense_step_generation += 1
+	_defense.stop()
+	_snap_clear_simon_visuals()
 
 # Riddle answer submission (K-press on the highlighted answer card). RiddleBox
 # emits answer_submitted whenever K fires while it's mounted — including while

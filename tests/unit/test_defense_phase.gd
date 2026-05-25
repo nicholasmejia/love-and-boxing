@@ -113,6 +113,32 @@ func test_replay_after_stop_resumes():
 	await get_tree().create_timer(0.2).timeout
 	assert_true(flags["show_started"], "replay must re-set _running so the show phase fires")
 
+func test_stop_during_active_repeat_cancels_pending_timeout():
+	# Regression for the K-press-during-repeat race: gameplay calls
+	# _defense.stop() synchronously on answer_committed (K-press). The
+	# repeat-phase timer must be killed atomically so a subsequent timeout
+	# CANNOT fire damage_taken after the player has already committed to
+	# the attack phase. Without this guarantee, the player's combo resets
+	# (and a stale breather_gap is scheduled) inside the ~150ms glove-travel
+	# window before answer_submitted lands.
+	var d := DefensePhase.new()
+	d.step_seconds = 0.001
+	d.gap_seconds = 0.001
+	d.input_window_seconds = 0.05  # short window so the test exposes a leaked timeout fast
+	add_child_autoqfree(d)
+	var flags := {"damaged": false}
+	d.damage_taken.connect(func(_direction): flags["damaged"] = true)
+	d._sequence.seed_rng(1)
+	d._sequence.extend()
+	d.begin_repeat_phase()
+	# Stop BEFORE the input window expires. The timer was running; stop()
+	# must cancel it so the timeout coroutine never fires _fail_with_damage.
+	d.stop()
+	# Wait well past the original input_window — if stop() left the timer
+	# running, damage_taken would fire here.
+	await get_tree().create_timer(0.15).timeout
+	assert_false(flags["damaged"], "stop() during active repeat must prevent the timeout from firing damage_taken")
+
 func test_stop_then_start_cancels_in_flight_show_loop():
 	# Reproduces the M9 WRONG-outcome race: an in-flight show loop from the
 	# OLD chain was emitting step_flashed for its remaining steps after stop()

@@ -2,6 +2,15 @@ class_name AnswerCarousel
 extends Control
 
 signal answer_submitted(outcome: int, picked: DialogueAnswer)
+# Emitted synchronously on K-press, BEFORE the GLOVE_TRAVEL_DURATION await that
+# delays answer_submitted. Gameplay uses this to end the Simon phase the instant
+# the player commits — otherwise the defense show loop, repeat-phase timer, and
+# any in-flight breather_gap continue to run during the ~150ms glove travel,
+# letting stale step_flashed emissions, timeouts, and damage events leak into
+# the attack phase. answer_submitted still owns the impact-frame choreography
+# (attack begin / WRONG hit / NEUTRAL re-display); answer_committed is the
+# earlier "stop everything Simon-side" beat.
+signal answer_committed(outcome: int)
 # Emitted ONLY on the RIGHT outcome, when the picked card finishes its
 # flight tween into the opponent body. NEUTRAL and WRONG handle their card
 # aftermath internally to the carousel (Card Rebound and Card Toss
@@ -294,6 +303,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		var picked_index := _highlight_index
 		_state = State.REACTION
 		_is_punching = true
+		# Fire answer_committed BEFORE _do_punch_chain so gameplay can tear down
+		# the Simon phase synchronously on K-press. answer_submitted still emits
+		# from inside _do_punch_chain at the impact frame for outcome-specific
+		# choreography.
+		answer_committed.emit(_picked_answers[picked_index].outcome)
 		# Phase 3 Task 10: glove launches NOW; impact-frame work fires
 		# after GLOVE_TRAVEL_DURATION via the await in _do_punch_chain.
 		_do_punch_chain(picked_index)
