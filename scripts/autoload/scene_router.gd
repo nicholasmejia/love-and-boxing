@@ -6,6 +6,7 @@ const LEVEL_SELECT := "res://scenes/level_select.tscn"
 const GAMEPLAY := "res://scenes/gameplay.tscn"
 const MATCH_RESULTS := "res://scenes/match_results.tscn"
 const CREDITS := "res://scenes/credits.tscn"
+const OPTIONS_MENU := "res://scenes/options_menu.tscn"
 
 func goto_attract_sequence() -> void:
 	get_tree().change_scene_to_file(ATTRACT_SEQUENCE)
@@ -24,6 +25,9 @@ func goto_match_results() -> void:
 
 func goto_credits() -> void:
 	get_tree().change_scene_to_file(CREDITS)
+
+func goto_options_menu() -> void:
+	get_tree().change_scene_to_file(OPTIONS_MENU)
 
 func quit_game() -> void:
 	get_tree().quit()

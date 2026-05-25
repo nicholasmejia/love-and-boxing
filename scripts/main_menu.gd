@@ -15,7 +15,7 @@ func _ready() -> void:
 	_update_focus()
 	AudioBus.play_music("menu")
 	$VBoxContainer/StartButton.pressed.connect(SceneRouter.goto_level_select)
-	$VBoxContainer/OptionsButton.pressed.connect(_show_coming_soon)
+	$VBoxContainer/OptionsButton.pressed.connect(SceneRouter.goto_options_menu)
 	$VBoxContainer/CreditsButton.pressed.connect(SceneRouter.goto_credits)
 	$VBoxContainer/QuitButton.pressed.connect(SceneRouter.quit_game)
 

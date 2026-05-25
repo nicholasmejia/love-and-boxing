@@ -74,6 +74,12 @@ var _sfx_next_index: int = 0
 # "_NN") collapse to the same key and play_sfx picks one at random.
 var _sfx_streams: Dictionary = {}
 
+# Baselines captured from default_bus_layout.tres at startup. The user's volume
+# slider (0..100%) is applied as a multiplier on top of this baseline so the
+# tuned mix is preserved at 100% and stays consistent across sessions.
+var _music_baseline_db: float = 0.0
+var _sfx_baseline_db: float = 0.0
+
 func _ready() -> void:
 	for i in 2:
 		var p := AudioStreamPlayer.new()
@@ -82,6 +88,10 @@ func _ready() -> void:
 		_players.append(p)
 	_init_sfx_pool()
 	_build_sfx_index()
+	_music_baseline_db = AudioServer.get_bus_volume_db(AudioServer.get_bus_index("Music"))
+	_sfx_baseline_db = AudioServer.get_bus_volume_db(AudioServer.get_bus_index("SFX"))
+	_apply_music_volume(SaveData.bgm_volume_percent())
+	_apply_sfx_volume(SaveData.sfx_volume_percent())
 
 func play_music(name: String, crossfade_seconds: float = 0.0) -> void:
 	if not MUSIC_TRACKS.has(name):
@@ -166,6 +176,27 @@ func _build_sfx_index() -> void:
 		if not _sfx_streams.has(key):
 			_sfx_streams[key] = []
 		_sfx_streams[key].append(stream)
+
+# Public volume controls. Persist via SaveData and re-apply the bus volume so
+# the change is audible immediately. Both setters accept 0..100 (int percent).
+func set_bgm_volume_percent(percent: int) -> void:
+	SaveData.set_bgm_volume_percent(percent)
+	_apply_music_volume(percent)
+
+func set_sfx_volume_percent(percent: int) -> void:
+	SaveData.set_sfx_volume_percent(percent)
+	_apply_sfx_volume(percent)
+
+func _apply_music_volume(percent: int) -> void:
+	AudioServer.set_bus_volume_db(AudioServer.get_bus_index("Music"), _percent_to_db(percent, _music_baseline_db))
+
+func _apply_sfx_volume(percent: int) -> void:
+	AudioServer.set_bus_volume_db(AudioServer.get_bus_index("SFX"), _percent_to_db(percent, _sfx_baseline_db))
+
+func _percent_to_db(percent: int, baseline_db: float) -> float:
+	if percent <= 0:
+		return SILENT_DB
+	return baseline_db + linear_to_db(percent / 100.0)
 
 func _sfx_key_from_filename(stem: String) -> String:
 	# Collapse "<key>_NN" variant pools onto the bare key. Filenames that don't

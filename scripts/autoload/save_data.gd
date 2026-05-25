@@ -24,11 +24,25 @@ func unlock_tier(tier: int) -> void:
 	_config.set_value("progress", "unlocked_tier", tier)
 	_config.save(_path)
 
+# Audio preferences. Stored in a separate section so reset() leaves them alone —
+# wiping progress shouldn't silence the player's tuned volumes.
+func bgm_volume_percent() -> int:
+	return _config.get_value("audio", "bgm_volume_percent", 100)
+
+func sfx_volume_percent() -> int:
+	return _config.get_value("audio", "sfx_volume_percent", 100)
+
+func set_bgm_volume_percent(percent: int) -> void:
+	_config.set_value("audio", "bgm_volume_percent", percent)
+	_config.save(_path)
+
+func set_sfx_volume_percent(percent: int) -> void:
+	_config.set_value("audio", "sfx_volume_percent", percent)
+	_config.save(_path)
+
 func reset() -> void:
-	if FileAccess.file_exists(_path):
-		DirAccess.remove_absolute(ProjectSettings.globalize_path(_path))
-	_config = ConfigFile.new()
-	_load()
+	_config.erase_section("progress")
+	_config.save(_path)
 
 func _load() -> void:
 	var err := _config.load(_path)
