@@ -55,6 +55,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			_cards[_focus_index].pressed.emit()
 	elif event.is_action_pressed("ui_cancel"):
 		SceneRouter.goto_main_menu()
+	elif event is InputEventKey and event.pressed and event.keycode == KEY_F10:
+		_unlock_all()
 	elif event is InputEventKey and event.pressed and event.keycode == KEY_F12:
 		_wipe_progress()
 
@@ -70,3 +72,8 @@ func _wipe_progress() -> void:
 	SaveData.reset()
 	_apply_lock_states()
 	print("[LevelSelect] Progress wiped.")
+
+func _unlock_all() -> void:
+	SaveData.unlock_tier(3)
+	_apply_lock_states()
+	print("[LevelSelect] All tiers unlocked.")
