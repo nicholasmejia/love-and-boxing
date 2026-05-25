@@ -140,6 +140,9 @@ func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey and event.pressed and event.keycode == KEY_F8:
 		_clock.tick(280.0)
 		return
+	if event is InputEventKey and event.pressed and event.keycode == KEY_F9:
+		_play_knockdown_sequence()
+		return
 	if _awaiting_continue and event.is_action_pressed("menu_confirm"):
 		_awaiting_continue = false
 		_continue_pressed.emit()
