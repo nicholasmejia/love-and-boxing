@@ -5,6 +5,7 @@ const TB = preload("res://scripts/ui/trace_border.gd")
 func _make_trace(w: float, h: float) -> Node:
 	var tb = TB.new()
 	tb.size = Vector2(w, h)
+	autofree(tb)
 	return tb
 
 const _EPS := 0.001
