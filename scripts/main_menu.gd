@@ -28,6 +28,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		_update_focus()
 	elif event.is_action_pressed("menu_confirm"):
 		_buttons[_focus_index].pressed.emit()
+	elif event.is_action_pressed("ui_cancel"):
+		SceneRouter.goto_attract_sequence()
 
 func _update_focus() -> void:
 	_buttons[_focus_index].grab_focus()
