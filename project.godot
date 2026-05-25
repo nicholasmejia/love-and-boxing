@@ -11,7 +11,7 @@ config_version=5
 [application]
 
 config/name="LoveAndBoxing"
-run/main_scene="res://scenes/attract_sequence.tscn"
+run/main_scene="res://scenes/logo_screen.tscn"
 config/features=PackedStringArray("4.6", "GL Compatibility")
 config/icon="res://icon.svg"
 

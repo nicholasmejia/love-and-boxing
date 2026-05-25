@@ -1,5 +1,6 @@
 extends Node
 
+const LOGO_SCREEN := "res://scenes/logo_screen.tscn"
 const ATTRACT_SEQUENCE := "res://scenes/attract_sequence.tscn"
 const MAIN_MENU := "res://scenes/main_menu.tscn"
 const LEVEL_SELECT := "res://scenes/level_select.tscn"
@@ -7,6 +8,9 @@ const GAMEPLAY := "res://scenes/gameplay.tscn"
 const MATCH_RESULTS := "res://scenes/match_results.tscn"
 const CREDITS := "res://scenes/credits.tscn"
 const OPTIONS_MENU := "res://scenes/options_menu.tscn"
+
+func goto_logo_screen() -> void:
+	get_tree().change_scene_to_file(LOGO_SCREEN)
 
 func goto_attract_sequence() -> void:
 	get_tree().change_scene_to_file(ATTRACT_SEQUENCE)
