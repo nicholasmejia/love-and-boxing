@@ -40,6 +40,21 @@ func hide_all() -> void:
 	for p in _prompts.values():
 		p.hide_prompt()
 
+# Screen-space center of the per-direction prompt slot. Used by DamageEffect
+# to position the player_hit splat over the missed input. Returns
+# Vector2.ZERO for unknown directions (the splat is suppressed in that case).
+#
+# Note: WasdPrompt._ready sets `pivot_offset = size / 2.0` so scale/rotation
+# anchor at the visible center. In Godot 4 that pivot is folded into the
+# global transform, so `global_position` already reports the visual center
+# of these prompts — not the top-left. Don't add `size / 2` here; it would
+# double-count the offset and place the splat at the bottom-right corner.
+func prompt_center_global(direction: int) -> Vector2:
+	if not _prompts.has(direction):
+		return Vector2.ZERO
+	var p: Control = _prompts[direction]
+	return p.global_position
+
 # Fire-and-forget — the prompt owns its own timing now (display() awaits the
 # variant's tween chain and hides itself when it lands). The layer's flash
 # methods used to gate the hide via an external get_tree timer; that's gone.

@@ -354,7 +354,7 @@ func _on_damage_taken(expected_direction: int) -> void:
 	_refresh_heart_row()
 	_combo.on_damage_taken()
 	_refresh_combo_meter()
-	_damage_effect.play()
+	_damage_effect.play(_prompts.prompt_center_global(expected_direction))
 	if _hearts.is_empty():
 		# Begin the opponent-BGM fade the moment the killing blow lands so the
 		# track is mostly out by the time the you_lose banner + stinger fire.
@@ -646,7 +646,7 @@ func _on_answer_submitted(outcome: int, picked: DialogueAnswer) -> void:
 			_refresh_heart_row()
 			_combo.on_damage_taken()
 			_refresh_combo_meter()
-			_damage_effect.play()
+			_damage_effect.play(_prompts.prompt_center_global(hit_direction))
 			if _hearts.is_empty():
 				_end_match_loss()
 				return

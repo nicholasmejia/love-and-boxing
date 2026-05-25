@@ -1,6 +1,7 @@
-[gd_scene format=3 uid="uid://c3damagefx01"]
+[gd_scene load_steps=3 format=3 uid="uid://c3damagefx01"]
 
 [ext_resource type="Script" path="res://scripts/ui/damage_effect.gd" id="1_dmgfx"]
+[ext_resource type="Texture2D" uid="uid://b1risxylvhtao" path="res://assets/sprites/ui/player_hit.png" id="2_splat"]
 
 [node name="DamageEffect" type="Control"]
 layout_mode = 3
@@ -33,3 +34,16 @@ grow_vertical = 2
 mouse_filter = 2
 color = Color(0, 0, 0, 1)
 modulate = Color(1, 1, 1, 0)
+
+[node name="HitSplat" type="TextureRect" parent="."]
+z_index = 25
+custom_minimum_size = Vector2(350, 350)
+offset_right = 350.0
+offset_bottom = 350.0
+pivot_offset = Vector2(175, 175)
+scale = Vector2(0, 0)
+modulate = Color(1, 1, 1, 0)
+mouse_filter = 2
+texture = ExtResource("2_splat")
+expand_mode = 1
+stretch_mode = 5
