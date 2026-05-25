@@ -1,4 +1,4 @@
-[gd_scene load_steps=14 format=3 uid="uid://b1gameplay001"]
+[gd_scene load_steps=15 format=3 uid="uid://b1gameplay001"]
 
 [ext_resource type="Script" path="res://scripts/gameplay.gd" id="1_gmply"]
 [ext_resource type="PackedScene" path="res://scenes/ui/heart_row.tscn" id="2_hearts"]
@@ -13,6 +13,7 @@
 [ext_resource type="PackedScene" path="res://scenes/ui/input_timer_bar.tscn" id="11_inputbar"]
 [ext_resource type="PackedScene" path="res://scenes/ui/damage_effect.tscn" id="12_dmgfx"]
 [ext_resource type="PackedScene" path="res://scenes/ui/answer_carousel.tscn" id="13_carousel"]
+[ext_resource type="PackedScene" path="res://scenes/ui/pause_menu.tscn" id="14_pause"]
 
 [node name="Gameplay" type="Control"]
 layout_mode = 3
@@ -140,3 +141,6 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="DamageEffect" parent="." instance=ExtResource("12_dmgfx")]
+
+[node name="PauseMenu" parent="." instance=ExtResource("14_pause")]
+z_index = 100
