@@ -20,6 +20,10 @@ func _ready() -> void:
 			_unlock_label.visible = true
 	$CenterContainer/VBox/ReturnButton.pressed.connect(SceneRouter.goto_level_select)
 
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("menu_confirm"):
+		SceneRouter.goto_level_select()
+
 func _outcome_text() -> String:
 	match Globals.last_match_outcome:
 		Globals.MatchOutcome.WIN: return "You Win!"
