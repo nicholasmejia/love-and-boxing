@@ -1,6 +1,7 @@
-[gd_scene load_steps=2 format=3 uid="uid://b8t8lab1ttl01"]
+[gd_scene load_steps=3 format=3 uid="uid://b8t8lab1ttl01"]
 
 [ext_resource type="Script" path="res://scripts/main_menu.gd" id="1_lab01"]
+[ext_resource type="Texture2D" path="res://assets/sprites/follow_on_insta.png" id="2_insta"]
 
 [node name="MainMenu" type="Control"]
 layout_mode = 3
@@ -19,7 +20,7 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-color = Color(0.12, 0.08, 0.08, 1)
+color = Color(0, 0, 0, 1)
 
 [node name="TitleLabel" type="Label" parent="."]
 layout_mode = 1
@@ -71,11 +72,30 @@ anchor_top = 1.0
 anchor_right = 0.5
 anchor_bottom = 1.0
 offset_left = -160.0
-offset_top = -160.0
+offset_top = -240.0
 offset_right = 160.0
-offset_bottom = -100.0
+offset_bottom = -180.0
 grow_horizontal = 2
 grow_vertical = 0
 horizontal_alignment = 1
 vertical_alignment = 1
 text = "Coming Soon"
+
+[node name="InstaLink" type="TextureButton" parent="."]
+custom_minimum_size = Vector2(140, 140)
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -70.0
+offset_top = -160.0
+offset_right = 70.0
+offset_bottom = -20.0
+grow_horizontal = 2
+grow_vertical = 0
+tooltip_text = "Follow @CHOMIEGANG on Instagram"
+texture_normal = ExtResource("2_insta")
+ignore_texture_size = true
+stretch_mode = 5
