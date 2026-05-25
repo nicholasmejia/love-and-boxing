@@ -12,6 +12,13 @@ const _SLIDE_OFFSET_X := 120.0
 const _IN_DURATION := 0.25
 const _OUT_DURATION := 0.20
 
+# Fly-to-target outro used by show_banner_then_fly_to. The banner shrinks and
+# moves toward a global-space target (e.g. the KnockdownMeter icon) instead of
+# the usual rightward slide-out.
+const _FLY_DURATION := 0.45
+const _FLY_END_SCALE := Vector2(0.05, 0.05)
+const _FLY_FADE_FRACTION := 0.35  # alpha → 0 over the last 35% of the fly
+
 @onready var _backdrop: ColorRect = $Backdrop
 @onready var _center: CenterContainer = $CenterContainer
 @onready var _image: TextureRect = $CenterContainer/Image
@@ -33,11 +40,24 @@ func _ready() -> void:
 static func total_duration_for(hold_seconds: float) -> float:
 	return _IN_DURATION + hold_seconds + _OUT_DURATION
 
+# Same idea as total_duration_for, but for the show_banner_then_fly_to flow
+# where the outro is the fly-to-target tween instead of the slide-out.
+static func total_duration_with_fly(hold_seconds: float) -> float:
+	return _IN_DURATION + hold_seconds + _FLY_DURATION
+
 func show_banner(banner_name: String, duration_seconds: float) -> void:
 	_apply_banner_image(banner_name)
 	await _animate_in()
 	await get_tree().create_timer(duration_seconds).timeout
 	await _animate_out()
+
+# Slides in, holds, then flies the banner toward target_global while shrinking
+# and fading. Used to visually "deliver" a knockdown into the meter icon.
+func show_banner_then_fly_to(banner_name: String, hold_seconds: float, target_global: Vector2) -> void:
+	_apply_banner_image(banner_name)
+	await _animate_in()
+	await get_tree().create_timer(hold_seconds).timeout
+	await _animate_fly_to(target_global)
 
 # Same as show_banner, but the hold races a skip Signal — whichever fires
 # first wins, then the slide-out plays. Used for the YOU_WIN / YOU_LOSE
@@ -106,6 +126,31 @@ func _animate_out() -> void:
 	visible = false
 	modulate.a = 1.0
 	_center.position.x = _center_rest_x
+
+# Shrink + translate the banner toward target_global, then snap-restore.
+# The visual content lives inside _image (centered by _center); shifting
+# _center by the delta between the image's current global center and the
+# target moves the image to the target without fighting CenterContainer.
+func _animate_fly_to(target_global: Vector2) -> void:
+	_kill_active_tween()
+	_image.pivot_offset = _image.size * 0.5
+	var image_center_global := _image.global_position + _image.size * 0.5
+	var delta := target_global - image_center_global
+	var target_center_position := _center.position + delta
+	_active_tween = create_tween().set_parallel(true)
+	_active_tween.set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	_active_tween.tween_property(_center, "position", target_center_position, _FLY_DURATION)
+	_active_tween.tween_property(_image, "scale", _FLY_END_SCALE, _FLY_DURATION)
+	# Fade only over the tail so the banner stays readable while it's in flight.
+	var fade_duration := _FLY_DURATION * _FLY_FADE_FRACTION
+	var fade_delay := _FLY_DURATION - fade_duration
+	_active_tween.tween_property(self, "modulate:a", 0.0, fade_duration).set_delay(fade_delay)
+	await _active_tween.finished
+	visible = false
+	modulate.a = 1.0
+	_image.scale = Vector2.ONE
+	_center.position.x = _center_rest_x
+	_center.position.y = 0.0
 
 func _kill_active_tween() -> void:
 	if _active_tween and _active_tween.is_valid():

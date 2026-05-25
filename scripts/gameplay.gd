@@ -543,21 +543,27 @@ func _play_knockdown_sequence() -> void:
 	# everywhere else a banner takes over the frame (round end, match loss,
 	# attack-phase entry).
 	_snap_clear_simon_visuals()
+	# Internal state ticks now so is_knockout() drives the BGM fade and the
+	# downstream branch at the right beat — but the meter's UI tick is held
+	# until the banner flies into the icon below.
 	_knockdowns.increment()
-	_refresh_knockdown_meter()
 	if _knockdowns.is_knockout():
 		# Begin the opponent-BGM fade the instant the KO knockdown lands so the
 		# track is fully out under the knock_down + knock_out banners ahead of
 		# the you_win stinger.
 		AudioBus.stop_music(_BGM_END_FADE_SECONDS)
 	await _opponent.play_knockdown_fall()
-	await _banner.show_banner("knock_down", MatchPacing.KNOCK_DOWN_BANNER)
+	# Banner slides in, holds, then flies into the KnockdownMeter icon. The
+	# counter increments + pulses the moment the banner lands, selling the
+	# "delivered hit" feedback.
+	await _banner.show_banner_then_fly_to("knock_down", MatchPacing.KNOCK_DOWN_BANNER, _knockdown_meter.icon_global_center())
+	_refresh_knockdown_meter()
 	# KNOCKDOWN_PAUSE is the total clock-pause duration; the banner ate part of
 	# it, hold the remainder before resuming the clock. The banner's wall-clock
-	# now includes its slide-in + hold + slide-out, so derive the remainder via
-	# AnnouncementBanner.total_duration_for() — the raw hold constant would
-	# under-count and shorten the post-knockdown pause.
-	var remainder := MatchPacing.KNOCKDOWN_PAUSE - AnnouncementBanner.total_duration_for(MatchPacing.KNOCK_DOWN_BANNER)
+	# now includes its slide-in + hold + fly-to-target, so derive the remainder
+	# via AnnouncementBanner.total_duration_with_fly() — the raw hold constant
+	# would under-count and shorten the post-knockdown pause.
+	var remainder := MatchPacing.KNOCKDOWN_PAUSE - AnnouncementBanner.total_duration_with_fly(MatchPacing.KNOCK_DOWN_BANNER)
 	if remainder > 0.0:
 		await get_tree().create_timer(remainder).timeout
 	if _knockdowns.is_knockout():

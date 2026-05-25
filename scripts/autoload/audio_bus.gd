@@ -25,6 +25,7 @@ const SFX_FILES: PackedStringArray = [
 	"combo_success_2_hit.wav",
 	"combo_success_3_hit.wav",
 	"input_failure.wav",
+	"knockdown_increase.wav",
 	"menu_change_item.wav",
 	"menu_option_select.wav",
 	"opponent_mat_hit.wav",
