@@ -1,7 +1,7 @@
 class_name MatchClock
 extends RefCounted
 
-const ROUND_DURATION_SECONDS := 300.0
+const ROUND_DURATION_SECONDS := 180.0
 const TOTAL_ROUNDS := 2
 
 var _seconds_remaining: float = ROUND_DURATION_SECONDS

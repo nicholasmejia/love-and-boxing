@@ -12,7 +12,7 @@ func _ready() -> void:
 		_bg.visible = true
 	else:
 		_bg.visible = false
-	set_seconds(300.0)
+	set_seconds(MatchClock.ROUND_DURATION_SECONDS)
 
 func set_seconds(seconds: float) -> void:
 	var s := int(ceil(seconds))
