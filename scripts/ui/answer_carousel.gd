@@ -293,9 +293,11 @@ func _unhandled_input(event: InputEvent) -> void:
 	# J/L cycle with wrap; I is intentionally unused (per CONTEXT.md Riddle
 	# Encounter). Confirm carries no SFX — the riddle outcome SFX
 	# (riddle_correct/_neutral/_wrong) is the feedback for picking an answer.
-	if event.is_action_pressed("menu_left"):
+	# carousel_left/right are J/L + arrows only; A/D belong to menu_* for
+	# pre-match navigation and must never reach the cards.
+	if event.is_action_pressed("carousel_left"):
 		_cycle_highlight(-1)
-	elif event.is_action_pressed("menu_right"):
+	elif event.is_action_pressed("carousel_right"):
 		_cycle_highlight(1)
 	elif event.is_action_pressed("menu_confirm"):
 		if _is_rotating:
