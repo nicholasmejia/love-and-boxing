@@ -1,0 +1,207 @@
+[gd_scene format=3 uid="uid://cdncin11jyvnk"]
+
+[ext_resource type="Script" path="res://scripts/credits.gd" id="1_credits"]
+[ext_resource type="Texture2D" path="res://assets/sprites/thanks_for_playing.png" id="2_thanks"]
+[ext_resource type="Texture2D" path="res://assets/sprites/logo-black-background.png" id="3_logo"]
+
+[node name="Credits" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_credits")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 1)
+
+[node name="ScrollContent" type="VBoxContainer" parent="."]
+custom_minimum_size = Vector2(1400, 0)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -700.0
+offset_right = 700.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/separation = 32
+alignment = 1
+
+[node name="ThanksImage" type="TextureRect" parent="ScrollContent"]
+custom_minimum_size = Vector2(1400, 467)
+layout_mode = 2
+size_flags_horizontal = 4
+texture = ExtResource("2_thanks")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="GapAfterThanks" type="Control" parent="ScrollContent"]
+custom_minimum_size = Vector2(0, 80)
+layout_mode = 2
+
+[node name="CreditsTitle" type="Label" parent="ScrollContent"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 120
+text = "CREDITS"
+horizontal_alignment = 1
+
+[node name="GapAfterTitle" type="Control" parent="ScrollContent"]
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+
+[node name="MusicHeader" type="Label" parent="ScrollContent"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 56
+text = "MUSIC BY BIT BY BIT SOUND"
+horizontal_alignment = 1
+
+[node name="MusicUrl" type="Label" parent="ScrollContent"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 36
+text = "(https://bit-by-bit-sound.itch.io/)"
+horizontal_alignment = 1
+
+[node name="GapAfterMusic" type="Control" parent="ScrollContent"]
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+
+[node name="SfxHeader" type="Label" parent="ScrollContent"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 56
+text = "SFX FROM EPIDEMIC SOUND"
+horizontal_alignment = 1
+
+[node name="GapAfterSfx" type="Control" parent="ScrollContent"]
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+
+[node name="DirectedHeader" type="Label" parent="ScrollContent"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 56
+text = "Directed by ME"
+horizontal_alignment = 1
+
+[node name="GapAfterDirected" type="Control" parent="ScrollContent"]
+custom_minimum_size = Vector2(0, 80)
+layout_mode = 2
+
+[node name="NoteLine1" type="Label" parent="ScrollContent"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 40
+text = "NGL, almost everything was AI generated"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="GapNote1" type="Control" parent="ScrollContent"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+
+[node name="NoteLine2" type="Label" parent="ScrollContent"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 40
+text = "If I was going to make a game I intended to sell, I'd hire artists, I promise."
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="GapNote2" type="Control" parent="ScrollContent"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+
+[node name="NoteLine3" type="Label" parent="ScrollContent"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 40
+text = "This was purely an exercise to see how far I could push Claude and CHATGPT"
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="GapNote3" type="Control" parent="ScrollContent"]
+custom_minimum_size = Vector2(0, 32)
+layout_mode = 2
+
+[node name="NoteLine4" type="Label" parent="ScrollContent"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 40
+text = "I had fun making this, I hope you got a few chuckles."
+horizontal_alignment = 1
+autowrap_mode = 2
+
+[node name="GapAfterNotes" type="Control" parent="ScrollContent"]
+custom_minimum_size = Vector2(0, 100)
+layout_mode = 2
+
+[node name="StayChill" type="Label" parent="ScrollContent"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 64
+text = "Stay chill!"
+horizontal_alignment = 1
+
+[node name="GapAfterChill" type="Control" parent="ScrollContent"]
+custom_minimum_size = Vector2(0, 100)
+layout_mode = 2
+
+[node name="FollowLabel" type="Label" parent="ScrollContent"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 44
+text = "Follow me here and on insta:"
+horizontal_alignment = 1
+
+[node name="GapBeforeHandle" type="Control" parent="ScrollContent"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+
+[node name="Handle" type="Label" parent="ScrollContent"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 80
+text = "@CHOMIEGANG"
+horizontal_alignment = 1
+
+[node name="GapBeforeLogo" type="Control" parent="ScrollContent"]
+custom_minimum_size = Vector2(0, 100)
+layout_mode = 2
+
+[node name="LogoImage" type="TextureRect" parent="ScrollContent"]
+custom_minimum_size = Vector2(800, 600)
+layout_mode = 2
+size_flags_horizontal = 4
+texture = ExtResource("3_logo")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="FadeOverlay" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0)
+
+[node name="SkipHint" type="Label" parent="."]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -200.0
+offset_top = -80.0
+offset_right = 200.0
+offset_bottom = -32.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_font_sizes/font_size = 28
+modulate = Color(1, 1, 1, 0.5)
+text = "Press K to skip"
+horizontal_alignment = 1

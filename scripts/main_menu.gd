@@ -16,7 +16,7 @@ func _ready() -> void:
 	AudioBus.play_music("menu")
 	$VBoxContainer/StartButton.pressed.connect(SceneRouter.goto_level_select)
 	$VBoxContainer/OptionsButton.pressed.connect(_show_coming_soon)
-	$VBoxContainer/CreditsButton.pressed.connect(_show_coming_soon)
+	$VBoxContainer/CreditsButton.pressed.connect(SceneRouter.goto_credits)
 	$VBoxContainer/QuitButton.pressed.connect(SceneRouter.quit_game)
 
 func _unhandled_input(event: InputEvent) -> void:

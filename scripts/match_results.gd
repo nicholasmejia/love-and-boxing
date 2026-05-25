@@ -18,11 +18,22 @@ func _ready() -> void:
 			SaveData.unlock_tier(next_tier)
 			_unlock_label.text = "Unlocked tier %d!" % next_tier
 			_unlock_label.visible = true
-	$CenterContainer/VBox/ReturnButton.pressed.connect(SceneRouter.goto_level_select)
+	if _beat_sebastian():
+		$CenterContainer/VBox/ReturnButton.text = "Roll Credits (K)"
+	$CenterContainer/VBox/ReturnButton.pressed.connect(_advance)
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("menu_confirm"):
+		_advance()
+
+func _advance() -> void:
+	if _beat_sebastian():
+		SceneRouter.goto_credits()
+	else:
 		SceneRouter.goto_level_select()
+
+func _beat_sebastian() -> bool:
+	return Globals.last_match_outcome == Globals.MatchOutcome.WIN and Globals.last_played_tier == 3
 
 func _outcome_text() -> String:
 	match Globals.last_match_outcome:
