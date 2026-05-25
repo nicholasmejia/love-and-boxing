@@ -26,7 +26,7 @@ func _ready() -> void:
 func _apply_lock_states() -> void:
 	if _card_labels.is_empty():
 		for card in _cards:
-			_card_labels.append(card.text)
+			_card_labels.append(_card_label(card).text)
 	var unlocked := SaveData.unlocked_tier()
 	for i in _cards.size():
 		var tier := i + 1
@@ -34,10 +34,14 @@ func _apply_lock_states() -> void:
 		var locked := tier > unlocked
 		card.disabled = locked
 		card.modulate = Color(0.4, 0.4, 0.4) if locked else Color.WHITE
+		var label := _card_label(card)
 		if locked:
-			card.text = "[LOCKED]\n" + _card_labels[i]
+			label.text = "[LOCKED]\n" + _card_labels[i]
 		else:
-			card.text = _card_labels[i]
+			label.text = _card_labels[i]
+
+func _card_label(card: Button) -> Label:
+	return card.get_node("CardLabel") as Label
 
 func _unhandled_input(event: InputEvent) -> void:
 	if event.is_action_pressed("menu_left"):

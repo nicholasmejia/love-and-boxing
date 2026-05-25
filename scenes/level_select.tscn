@@ -1,6 +1,29 @@
-[gd_scene load_steps=2 format=3 uid="uid://b1lvlselect001"]
+[gd_scene load_steps=9 format=3 uid="uid://b1lvlselect001"]
 
 [ext_resource type="Script" path="res://scripts/level_select.gd" id="1_lvlsel"]
+[ext_resource type="Texture2D" uid="uid://dg57gr1a7jyd6" path="res://assets/sprites/opponents/tofu/opponent_tofu_body_idle.png" id="2_tofu"]
+[ext_resource type="Texture2D" uid="uid://uc7qk4kfywms" path="res://assets/sprites/opponents/minty/opponent_minty_body_idle.png" id="3_minty"]
+[ext_resource type="Texture2D" uid="uid://dngobrkxlet4j" path="res://assets/sprites/opponents/sebastian/opponent_sebastian_body_idle.png" id="4_sebas"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_tofu_face"]
+atlas = ExtResource("2_tofu")
+region = Rect2(175, 0, 600, 700)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_minty_face"]
+atlas = ExtResource("3_minty")
+region = Rect2(230, 0, 480, 560)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_sebas_face"]
+atlas = ExtResource("4_sebas")
+region = Rect2(252, 0, 520, 600)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_portrait_border"]
+bg_color = Color(0, 0, 0, 0)
+border_width_left = 5
+border_width_top = 5
+border_width_right = 5
+border_width_bottom = 5
+border_color = Color(1, 0.84, 0.2, 1)
 
 [node name="LevelSelect" type="Control"]
 layout_mode = 3
@@ -78,16 +101,172 @@ theme_override_constants/separation = 40
 [node name="TofuCard" type="Button" parent="HBoxContainer"]
 custom_minimum_size = Vector2(300, 400)
 layout_mode = 2
+
+[node name="PortraitBackground" type="ColorRect" parent="HBoxContainer/TofuCard"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = 330.0
+grow_horizontal = 2
+mouse_filter = 2
+color = Color(0.12549, 0.564706, 1, 1)
+
+[node name="Portrait" type="TextureRect" parent="HBoxContainer/TofuCard"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = 330.0
+grow_horizontal = 2
+mouse_filter = 2
+texture = SubResource("AtlasTexture_tofu_face")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="PortraitBorder" type="Panel" parent="HBoxContainer/TofuCard"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = 330.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_portrait_border")
+
+[node name="CardLabel" type="Label" parent="HBoxContainer/TofuCard"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -65.0
+offset_bottom = -5.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+horizontal_alignment = 1
+vertical_alignment = 1
 text = "Tofu (Easy)"
 
 [node name="MintyCard" type="Button" parent="HBoxContainer"]
 custom_minimum_size = Vector2(300, 400)
 layout_mode = 2
+
+[node name="PortraitBackground" type="ColorRect" parent="HBoxContainer/MintyCard"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = 330.0
+grow_horizontal = 2
+mouse_filter = 2
+color = Color(0.658824, 0.572549, 0.223529, 1)
+
+[node name="Portrait" type="TextureRect" parent="HBoxContainer/MintyCard"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = 330.0
+grow_horizontal = 2
+mouse_filter = 2
+texture = SubResource("AtlasTexture_minty_face")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="PortraitBorder" type="Panel" parent="HBoxContainer/MintyCard"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = 330.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_portrait_border")
+
+[node name="CardLabel" type="Label" parent="HBoxContainer/MintyCard"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -65.0
+offset_bottom = -5.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+horizontal_alignment = 1
+vertical_alignment = 1
 text = "Minty (Medium)"
 
 [node name="SebastianCard" type="Button" parent="HBoxContainer"]
 custom_minimum_size = Vector2(300, 400)
 layout_mode = 2
+
+[node name="PortraitBackground" type="ColorRect" parent="HBoxContainer/SebastianCard"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = 330.0
+grow_horizontal = 2
+mouse_filter = 2
+color = Color(0.690196, 0.156863, 0.156863, 1)
+
+[node name="Portrait" type="TextureRect" parent="HBoxContainer/SebastianCard"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = 330.0
+grow_horizontal = 2
+mouse_filter = 2
+texture = SubResource("AtlasTexture_sebas_face")
+expand_mode = 1
+stretch_mode = 6
+
+[node name="PortraitBorder" type="Panel" parent="HBoxContainer/SebastianCard"]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_left = 10.0
+offset_top = 10.0
+offset_right = -10.0
+offset_bottom = 330.0
+grow_horizontal = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_portrait_border")
+
+[node name="CardLabel" type="Label" parent="HBoxContainer/SebastianCard"]
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -65.0
+offset_bottom = -5.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+horizontal_alignment = 1
+vertical_alignment = 1
 text = "Sebastian (Hard)"
 
 [node name="ControlsTitle" type="Label" parent="."]
